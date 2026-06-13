@@ -200,6 +200,58 @@ class AnthropicClient:
             ),
         )
 
+    def run_text_structured_state(self, bundle: PromptBundle) -> CallResult:
+        """Text-only structured state extraction (e.g. Perplexity migration)."""
+        system_blocks = _system_blocks(bundle, self.settings.prompt_cache_enabled)
+        tool = {
+            "name": STATE_TOOL_NAME,
+            "description": "Emit the structured daily analysis state for the session.",
+            "input_schema": DailyState.model_json_schema(),
+        }
+        response = self._create(
+            model=self.settings.model,
+            max_tokens=self.settings.max_output_tokens,
+            system=system_blocks,
+            tools=[tool],
+            tool_choice={"type": "tool", "name": STATE_TOOL_NAME},
+            messages=[{"role": "user", "content": bundle.body}],
+        )
+        return CallResult(
+            text=None,
+            tool_input=_extract_tool_input(response, STATE_TOOL_NAME),
+            raw_response=response.model_dump(mode="json"),
+            request_snapshot=_snapshot(
+                model=self.settings.model,
+                system_blocks=system_blocks,
+                body_text=bundle.body,
+                image_paths=[],
+                tool_name=STATE_TOOL_NAME,
+            ),
+        )
+
+    def run_text_markdown_report(self, bundle: PromptBundle) -> CallResult:
+        """Text-only markdown report generation (e.g. Perplexity migration)."""
+        system_blocks = _system_blocks(bundle, self.settings.prompt_cache_enabled)
+        response = self._create(
+            model=self.settings.model,
+            max_tokens=self.settings.max_output_tokens,
+            system=system_blocks,
+            messages=[{"role": "user", "content": bundle.body}],
+        )
+        text = _extract_text(response)
+        return CallResult(
+            text=text,
+            tool_input=None,
+            raw_response=response.model_dump(mode="json"),
+            request_snapshot=_snapshot(
+                model=self.settings.model,
+                system_blocks=system_blocks,
+                body_text=bundle.body,
+                image_paths=[],
+                tool_name=None,
+            ),
+        )
+
 
 def _extract_tool_input(response: Any, tool_name: str) -> dict[str, Any]:
     for block in response.content:

@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     prompt_cache_enabled: bool = Field(default=True, alias="SPX_PROMPT_CACHE_ENABLED")
 
     # Run tuning
-    recent_state_count: int = Field(default=5, alias="SPX_RECENT_STATE_COUNT")
+    recent_state_count: int = Field(default=6, alias="SPX_RECENT_STATE_COUNT")
     image_max_dimension: int = Field(default=1568, alias="SPX_IMAGE_MAX_DIMENSION")
     max_report_chars: int = Field(default=24000, alias="SPX_MAX_REPORT_CHARS")
     max_output_tokens: int = Field(default=8000, alias="SPX_MAX_OUTPUT_TOKENS")

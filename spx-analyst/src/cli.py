@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import sys
+from pathlib import Path
 
 import typer
 
@@ -99,7 +100,7 @@ def validate(
 
 @app.command("rebuild-summary")
 def rebuild_summary(
-    days: int = typer.Option(5, help="Number of recent states to include."),
+    days: int = typer.Option(6, help="Number of recent states to include."),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Regenerate the rolling summary artifact from recent states."""
@@ -107,6 +108,76 @@ def rebuild_summary(
     summary, path = rebuild_rolling_summary(days=days)
     typer.secho(f"Wrote rolling summary to {path}", fg=typer.colors.GREEN)
     typer.echo(summary)
+
+
+@app.command("migrate-perplexity")
+def migrate_perplexity(
+    history: str = typer.Option(
+        "../perplexity_analysis_history.md",
+        help="Path to Perplexity export markdown.",
+    ),
+    from_date: str = typer.Option(None, "--from", help="Start date YYYY-MM-DD (inclusive)."),
+    to_date: str = typer.Option(None, "--to", help="End date YYYY-MM-DD (inclusive)."),
+    dry_run: bool = typer.Option(False, help="Parse and list sessions only; no API calls."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Migrate historical Perplexity Full 7-Step analyses into engine artifacts."""
+    _setup_logging(verbose)
+    from .migrate_perplexity import MigrationError, filter_sessions, migrate_history, parse_history
+
+    history_path = Path(history)
+    if not history_path.is_absolute():
+        history_path = Path.cwd() / history_path
+    if not history_path.exists():
+        typer.secho(f"History file not found: {history_path}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    try:
+        sessions = filter_sessions(parse_history(history_path), from_date=from_date, to_date=to_date)
+    except MigrationError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    if not sessions:
+        typer.secho("No sessions matched the date range.", fg=typer.colors.YELLOW)
+        raise typer.Exit(code=1)
+
+    typer.echo(f"Found {len(sessions)} session(s):")
+    for s in sessions:
+        typer.echo(f"  {s.date}  close={s.spx_close}  chars={len(s.clean_markdown)}")
+
+    if dry_run:
+        typer.secho("Dry run complete.", fg=typer.colors.GREEN)
+        return
+
+    try:
+        results = migrate_history(
+            history_path,
+            from_date=from_date,
+            to_date=to_date,
+        )
+    except MigrationError as exc:
+        typer.secho(f"Migration failed: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    failed = 0
+    for result in results:
+        state_ok = result.state_validation.passed
+        report_ok = result.report_validation.passed
+        color = typer.colors.GREEN if state_ok and report_ok else typer.colors.YELLOW
+        typer.secho(
+            f"{result.date}: state={'PASS' if state_ok else 'FAIL'} "
+            f"report={'PASS' if report_ok else 'FAIL'} -> {result.output_dir}",
+            fg=color,
+        )
+        if result.warnings:
+            for w in result.warnings:
+                typer.echo(f"  warning: {w}")
+        if not (state_ok and report_ok):
+            failed += 1
+
+    if failed:
+        raise typer.Exit(code=1)
 
 
 @app.command()
