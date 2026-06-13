@@ -84,8 +84,13 @@ def validate(
         typer.secho(f"No outputs found for {date} in {out}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
 
-    _, state_report = parse_daily_state(read_json(state_path), date)
-    report_report = validate_report(read_text(report_path), date, settings.max_report_chars)
+    daily_state, state_report = parse_daily_state(read_json(state_path), date)
+    report_report = validate_report(
+        read_text(report_path),
+        date,
+        settings.max_report_chars,
+        daily_state=daily_state,
+    )
     _print_validation(state_report)
     _print_validation(report_report)
     if not (state_report.passed and report_report.passed):

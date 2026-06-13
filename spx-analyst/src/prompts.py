@@ -34,6 +34,8 @@ DECISION_MATRIX_ROWS: list[str] = [
     "RECOMMENDED ACTION",
 ]
 
+EVIDENCE_RECONCILIATION_HEADING = "Evidence Reconciliation"
+
 HARD_CONSTRAINTS = """\
 Non-negotiable constraints (from the methodology):
 - A trim or re-entry is "overwhelmingly favorable" only when 3+ independent \
@@ -52,6 +54,11 @@ You are a disciplined S&P 500 / SCHK tactical allocation analyst. You execute th
 provided methodology exactly and in order. You do not invent your own process or \
 override the methodology's rules. You reason jointly across all supplied charts, \
 the external market context, and recent session history.
+
+Chart-reading discipline: read each chart for exact levels AND for geometry and \
+divergence (e.g., MFI higher-low vs price lower-low, spreads holding stress while \
+price rallies, breadth weakening while the index recovers). Reason across evidence \
+layers, not chart-by-chart in isolation.
 
 """ + HARD_CONSTRAINTS
 
@@ -98,6 +105,26 @@ def _memory_block(recent_summary: str, recent_states: list[DailyState]) -> str:
     )
 
 
+def _conflict_block(daily_state: DailyState) -> str:
+    """Compact conflict checklist for Pass 2 reconciliation."""
+    conflicts_json = json.dumps(
+        [d.model_dump(mode="json") for d in daily_state.conflicting_evidence],
+        indent=2,
+    )
+    confirming = "\n".join(f"- {item}" for item in daily_state.confirming_evidence) or "- (none listed)"
+    return (
+        "## Conflict checklist (from validated state)\n"
+        f"Primary tension: {daily_state.primary_tension}\n\n"
+        f"Signal alignment: trim {daily_state.signal_alignment.trim_signals_met}/5, "
+        f"buy {daily_state.signal_alignment.buy_signals_met}/5, "
+        f"overall {daily_state.signal_alignment.overall}\n\n"
+        "Confirming evidence:\n"
+        f"{confirming}\n\n"
+        "Conflicting evidence (re-examine cited charts for each):\n"
+        f"```json\n{conflicts_json}\n```"
+    )
+
+
 def build_state_prompt(
     *,
     framework: str,
@@ -116,11 +143,26 @@ def build_state_prompt(
                 "## Task\n"
                 "Work through the methodology's Daily 7-Step Workflow in order, reasoning "
                 "across every chart and the external context. Then call the `emit_daily_state` "
-                "tool exactly once with the structured result. Compare today against the recent "
-                "sessions above and capture genuine day-over-day changes in `what_changed_today`. "
+                "tool exactly once with the structured result.\n\n"
+                "Before calling the tool, you MUST:\n"
+                "1. Compute `signal_alignment` from the 3-of-5 confirmation table (Layer 2D / "
+                "Step 6): count trim signals met (0-5), buy signals met (0-5), and set `overall` "
+                "to aligned_trim (3+ trim), aligned_buy (3+ buy), mixed (material cross-layer "
+                "tensions or neither side reaches 3), or neutral.\n"
+                "2. List bullet points of genuinely confirming evidence in `confirming_evidence`.\n"
+                "3. Enumerate EVERY material cross-layer tension in `conflicting_evidence`. For "
+                "each Divergence: assign a stable `id`, name the `layers` in conflict, state the "
+                "`bullish_read` and `bearish_read`, cite the governing `framework_rule` from the "
+                "methodology, assign `weight` (high/medium/low), and list `chart_refs` (exact "
+                "filenames from the manifest) that show each side of the conflict.\n"
+                "4. Set `primary_tension` to the single most decision-relevant conflict today.\n"
+                "5. Populate `monte_carlo` with all Step 5 outputs (prob_up_first, prob_down_first, "
+                "conditional_cascade, median_days, cash_drag_prob, meets_threshold).\n"
+                "6. Compare today against recent sessions and capture genuine day-over-day changes "
+                "in `what_changed_today`.\n\n"
                 "Keep `narrative_summary` to a concise 2-4 sentence, single-paragraph synthesis "
                 "in plain text (no line breaks, no step headers, no markdown) — the full "
-                "step-by-step write-up belongs only in the later report, not in this field. "
+                "step-by-step write-up and Evidence Reconciliation belong only in the later report. "
                 "Use null for any signal you cannot determine from the evidence. Honor every hard "
                 "constraint, including the no-forced-signal rule."
             ),
@@ -141,24 +183,45 @@ def build_report_prompt(
     """Pass 2: produce the markdown report scaffolded by the validated state."""
     state_json = json.dumps(daily_state.model_dump(mode="json"), indent=2)
     steps = "\n".join(f"{i + 1}. {s}" for i, s in enumerate(WORKFLOW_STEPS))
+    action = daily_state.decision_matrix.recommended_action
+    mixed = daily_state.signal_alignment.overall == "mixed"
+    mixed_note = (
+        " Because signal alignment is mixed, Decision Matrix rows MUST use qualified "
+        "readings (e.g., 'Fear (mixed)', 'Moderate-to-Elevated') — do not flatten into "
+        "a uniformly bullish or bearish tone."
+        if mixed
+        else ""
+    )
     body = "\n\n".join(
         [
             _memory_block(recent_summary, recent_states),
             _external_block(external_context),
             _manifest_block(manifest),
             (
-                "## Validated daily state (use as the factual backbone)\n"
+                "## Validated daily state (immutable facts)\n"
                 f"```json\n{state_json}\n```"
             ),
+            _conflict_block(daily_state),
             (
                 "## Task\n"
-                "Write the full daily markdown analysis report. Follow the methodology's "
-                "Daily 7-Step Workflow in this exact order, using a clear heading for each step:\n"
-                f"{steps}\n\n"
-                "Keep numbers consistent with the validated state above. Discuss both confirming "
-                "and conflicting evidence. The report MUST end with the '## Updated Decision Matrix' "
-                "as a markdown table containing these rows: "
-                f"{', '.join(DECISION_MATRIX_ROWS)}. "
+                "Write the full daily markdown analysis report. Re-open the attached charts "
+                "to reconcile conflicting evidence — your job is interpretation, not re-decision.\n\n"
+                "IMMUTABLE (do not recompute or contradict): numeric signals, `signal_alignment`, "
+                "`monte_carlo` values, and `decision_matrix.recommended_action` "
+                f"({action!r}).\n\n"
+                "Follow the methodology's Daily 7-Step Workflow in this exact order, using a clear "
+                f"heading for each step:\n{steps}\n\n"
+                f"Within or immediately after Step 2, include a '## {EVIDENCE_RECONCILIATION_HEADING}' "
+                "section that opens by restating `primary_tension` in your own words. Then, for EACH "
+                "item in `conflicting_evidence`, re-examine the cited `chart_refs` and explain: the "
+                "bullish read, the bearish read, which chart shows each side, the framework rule that "
+                "governs the conflict, and whether it blocks trim, buy, or both.\n\n"
+                "In Step 7, explicitly answer: given mixed/conflicting evidence, why does today's "
+                f"evidence resolve to {action!r}? Cite `primary_tension`, the 3-of-5 rule, Monte "
+                "Carlo threshold, and any VIX/ERP gates that apply.\n\n"
+                "The report MUST end with the '## Updated Decision Matrix' as a markdown table "
+                f"containing these rows: {', '.join(DECISION_MATRIX_ROWS)}."
+                f"{mixed_note} "
                 "If the data are mixed, explicitly recommend 'hold and monitor'. Output only the "
                 "markdown report."
             ),

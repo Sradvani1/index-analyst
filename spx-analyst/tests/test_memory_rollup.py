@@ -34,4 +34,5 @@ def test_rebuild_rolling_summary_writes_files(settings):
     summary, path = rebuild_rolling_summary(days=5, settings=settings)
     assert path.exists()
     assert "2026-06-11" in summary
+    assert "Primary tension:" in summary
     assert (settings.rolling_dir / "recent_memory.json").exists()

@@ -30,6 +30,32 @@ SAMPLE_STATE = {
         "risk": "moderate",
         "recommended_action": "hold_and_monitor",
     },
+    "signal_alignment": {
+        "trim_signals_met": 1,
+        "buy_signals_met": 0,
+        "overall": "mixed",
+    },
+    "confirming_evidence": ["50-day SMA remains above 200-day SMA"],
+    "conflicting_evidence": [
+        {
+            "id": "extension_vs_valuation",
+            "layers": ["technicals", "valuation"],
+            "bullish_read": "Price trend remains bullish with momentum intact",
+            "bearish_read": "Forward P/E in cautious bucket limits add aggression",
+            "framework_rule": "Forward P/E calibration table — cautious bucket",
+            "weight": "high",
+            "chart_refs": ["01_chart.png"],
+        }
+    ],
+    "primary_tension": "Bullish trend extension versus cautious valuation bucket",
+    "monte_carlo": {
+        "prob_up_first": 0.58,
+        "prob_down_first": 0.42,
+        "conditional_cascade": "Moderate upside lean if resistance holds",
+        "median_days": "~25 days to upside target",
+        "cash_drag_prob": 0.35,
+        "meets_threshold": False,
+    },
 }
 
 

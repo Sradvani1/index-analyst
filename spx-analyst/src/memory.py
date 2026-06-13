@@ -67,9 +67,11 @@ def build_recent_summary(states: list[DailyState]) -> str:
         action = s.decision_matrix.recommended_action
         vix = s.signals.vix
         vix_txt = f"VIX {vix}" if vix is not None else "VIX n/a"
+        tension = s.primary_tension.strip()
+        tension_txt = f" Primary tension: {tension}" if tension else ""
         lines.append(
             f"- {s.date}: close {s.spx_close}, regime {s.trend_regime}, "
-            f"base case {s.base_case}, {vix_txt}, action: {action}. "
+            f"base case {s.base_case}, {vix_txt}, action: {action}.{tension_txt} "
             f"{s.narrative_summary}"
         )
     return "\n".join(lines)

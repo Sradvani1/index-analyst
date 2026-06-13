@@ -110,7 +110,9 @@ def run_daily_analysis(
     report_md = report_call.text or ""
 
     # Step 8: report validation
-    report_validation = validate_report(report_md, date, settings.max_report_chars)
+    report_validation = validate_report(
+        report_md, date, settings.max_report_chars, daily_state=daily_state
+    )
     warnings.extend(i.message for i in report_validation.warnings)
 
     # Step 9: finalize outputs + refresh rolling memory
@@ -157,7 +159,7 @@ def run_daily_analysis(
 
 def _placeholder_state(date: str, manifest) -> DailyState:
     """Minimal valid state used only to persist artifacts on a failed run."""
-    from .schemas import DecisionMatrix, SignalSet
+    from .schemas import DecisionMatrix, MonteCarloDetail, SignalAlignment, SignalSet
 
     return DailyState(
         date=date,
@@ -176,5 +178,21 @@ def _placeholder_state(date: str, manifest) -> DailyState:
             sentiment="unknown",
             risk="unknown",
             recommended_action="none",
+        ),
+        signal_alignment=SignalAlignment(
+            trim_signals_met=0,
+            buy_signals_met=0,
+            overall="neutral",
+        ),
+        confirming_evidence=[],
+        conflicting_evidence=[],
+        primary_tension="Run failed before conflicts were classified.",
+        monte_carlo=MonteCarloDetail(
+            prob_up_first=0.5,
+            prob_down_first=0.5,
+            conditional_cascade="unknown",
+            median_days="unknown",
+            cash_drag_prob=0.5,
+            meets_threshold=False,
         ),
     )

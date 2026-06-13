@@ -45,7 +45,10 @@ def test_state_prompt_contains_blocks(sample_state):
     )
     assert bundle.framework == "FRAMEWORK_TEXT"
     assert "no forced" in bundle.system_role.lower() or "never force" in bundle.system_role.lower()
+    assert "geometry and divergence" in bundle.system_role.lower()
     assert "emit_daily_state" in bundle.body
+    assert "conflicting_evidence" in bundle.body
+    assert "signal_alignment" in bundle.body
     assert "prior summary" in bundle.body
     assert "SPX daily" in bundle.body
     assert "18.4" in bundle.body
@@ -65,3 +68,7 @@ def test_report_prompt_lists_steps_and_matrix(sample_state):
     for row in DECISION_MATRIX_ROWS:
         assert row in bundle.body
     assert "Updated Decision Matrix" in bundle.body
+    assert "Evidence Reconciliation" in bundle.body
+    assert "Conflict checklist" in bundle.body
+    assert sample_state.primary_tension in bundle.body
+    assert "immutable facts" in bundle.body.lower()

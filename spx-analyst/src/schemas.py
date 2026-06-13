@@ -124,6 +124,47 @@ class SignalSet(BaseModel):
     monte_carlo_probability: Optional[float] = None
 
 
+SignalAlignmentOverall = Literal["aligned_trim", "aligned_buy", "mixed", "neutral"]
+DivergenceWeight = Literal["high", "medium", "low"]
+
+
+class SignalAlignment(BaseModel):
+    """Machine-readable 3-of-5 confirmation counts from the tactical matrix."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    trim_signals_met: int = Field(..., ge=0, le=5)
+    buy_signals_met: int = Field(..., ge=0, le=5)
+    overall: SignalAlignmentOverall
+
+
+class Divergence(BaseModel):
+    """A cross-layer signal tension with chart references for Pass 2 reconciliation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    layers: List[str]
+    bullish_read: str
+    bearish_read: str
+    framework_rule: str
+    weight: DivergenceWeight
+    chart_refs: List[str]
+
+
+class MonteCarloDetail(BaseModel):
+    """Step 5 GBM outputs required by the methodology every session."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    prob_up_first: float = Field(..., ge=0.0, le=1.0)
+    prob_down_first: float = Field(..., ge=0.0, le=1.0)
+    conditional_cascade: str
+    median_days: str
+    cash_drag_prob: float = Field(..., ge=0.0, le=1.0)
+    meets_threshold: bool
+
+
 class DailyState(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -139,6 +180,11 @@ class DailyState(BaseModel):
     narrative_summary: str
     open_questions: List[str]
     decision_matrix: DecisionMatrix
+    signal_alignment: SignalAlignment
+    confirming_evidence: List[str]
+    conflicting_evidence: List[Divergence]
+    primary_tension: str
+    monte_carlo: MonteCarloDetail
 
     @field_validator("narrative_summary")
     @classmethod
