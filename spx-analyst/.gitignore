@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.pytest_cache/
+.DS_Store
+
+# Run artifacts (keep directory structure via .gitkeep)
+output/*/
+data/runs/*/charts/
+memory/daily_states/*.json
+memory/daily_reports/*.md
+memory/rolling/*
