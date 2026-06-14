@@ -96,11 +96,28 @@ output/2026-06-12/
 ## Testing
 
 ```bash
+pip install -e ".[dev]"
 pytest
 ```
 
 Unit and engine tests mock the provider and run offline. Tests marked `live`
 (none required for CI) would call real APIs.
+
+## Phase 2 web viewer (local)
+
+Browse the canonical report archive in `memory/` via a FastAPI backend and
+Next.js frontend. Start both in separate terminals:
+
+```bash
+# Terminal 1 — API on :8000
+cd spx-analyst && source .venv/bin/activate
+uvicorn src.web.app:app --host 127.0.0.1 --port 8000
+
+# Terminal 2 — UI on :3000
+cd spx-analyst/web && npm install && npm run dev
+```
+
+Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
 
 ## Project layout
 
@@ -109,9 +126,10 @@ framework/   methodology markdown (immutable runtime input)
 data/runs/   dated input folders (charts + manifest + external context)
 memory/      rolling state history + report archive
 output/      per-run artifacts
-src/         engine modules
+src/         engine modules (includes src/web/ FastAPI viewer)
+web/         Next.js Phase 2 frontend
 tests/       pytest suite
 ```
 
-Phase 2 (web UI + conversational layer) reuses these file contracts unchanged;
-`chat_context.py` / `chat_service.py` define the read-only retrieval interface.
+Phase 2 reuses Phase 1 file contracts unchanged; `chat_context.py` /
+`chat_service.py` define the read-only retrieval interface for a future chat layer.
