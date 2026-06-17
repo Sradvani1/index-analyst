@@ -6,10 +6,13 @@ from tests.conftest import SAMPLE_STATE
 GOOD_REPORT = """
 # Daily Analysis 2026-06-12
 
-## Step 1: Price Action & Trend Recentering
+## Structural Regime Classification
+Mid Bull structural bias assigned.
+
+## Step 1: Price Action and Trend Recentering
 Close held above the 50-day.
 
-## Step 2: Technical & Sentiment Pulse
+## Step 2: Technical and Sentiment Pulse
 RSI 64, MFI 70.
 
 ## Evidence Reconciliation
@@ -18,37 +21,45 @@ Primary tension: Bullish trend extension versus cautious valuation bucket.
 **extension_vs_valuation**
 - Bullish read: Price trend remains bullish with momentum intact (see SPX charts).
 - Bearish read: Forward P/E in cautious bucket limits add aggression.
-- Framework rule: Forward P/E calibration table — cautious bucket.
-- Blocks action: Neither trim nor buy reaches 3-of-5; hold and monitor.
+- Framework rule: Forward PE calibration — cautious bucket.
+- Blocks action: Neither trim nor buy reaches confluence; hold and monitor.
 
-## Step 3: Fundamental Valuation & ERP
-Forward P/E elevated.
+## Step 3: Fundamental Valuation and ERP
+Forward P/E elevated per analysis_context.
 
-## Step 4: Leverage & Margin Debt Monitor
+## Step 4: Leverage and Liquidation Structure
 VIX below 20.
 
-## Step 5: Monte Carlo & Brownian Motion
-Edge 58% — monitor only, below 65% threshold.
+## Step 5: Monte Carlo and Brownian Motion
+Precomputed edge 53% adjusted — monitor only, below 65% threshold.
 
 ## Step 6: Tactical Matrix
-Trim ladder mapped.
+Trim and re-entry posture mapped.
 
-## Step 7: Narrative & Executive Summary
-Given mixed evidence — bullish trend extension versus cautious valuation — the
-3-of-5 rule is unmet and Monte Carlo edge is below threshold, resolving to hold
-and monitor per the no-forced-signal rule.
+## Step 7: Narrative and Executive Summary
+Given mixed evidence, resolving to hold and monitor.
 
 ## Updated Decision Matrix
 | Signal Layer | Reading | Signal |
 |---|---|---|
+| Structural Bias | Mid Bull | Mid Bull |
+| Monte Carlo Threshold | 65% | 65% |
+| Volatility Input | 0.16 | Moderate |
+| Drift Input | 0.07 | Standard |
+| Rally Exhaustion Score | Moderate | Moderate |
 | Trend Regime | bullish | Bull |
-| RSI / MFI | 64/70 | Neutral |
-| Bollinger Band | upper half | Within |
-| ERP | low | Caution |
-| Leverage Risk | moderate | Moderate |
-| Monte Carlo Edge | 58% | Monitor |
-| Sentiment | greed | Greed (mixed) |
-| RECOMMENDED ACTION | | Hold and monitor |
+| Intraday Close Position | middle third | Neutral |
+| RSI / MFI State | 64/70 | Neutral |
+| 20-Day SMA Status | above | Bullish |
+| Bollinger Band State | upper half | Within |
+| ERP State and Trend | thin / stable | Caution |
+| Credit Condition | flat | Neutral |
+| Breadth Condition | mixed | Mixed |
+| VIX Regime | 18 | Standard |
+| Leverage Risk State | moderate | Moderate |
+| Monte Carlo Edge | 53% | Monitor |
+| Overall Signal Balance | mixed | Mixed |
+| Recommended Action | hold_and_monitor | Hold and monitor |
 """
 
 
@@ -93,7 +104,7 @@ def test_validate_report_missing_matrix():
 
 
 def test_validate_report_missing_step():
-    md = GOOD_REPORT.replace("## Step 5: Monte Carlo & Brownian Motion", "## Step 5: Something else")
+    md = GOOD_REPORT.replace("## Step 5: Monte Carlo and Brownian Motion", "## Step 5: Something else")
     report = validate_report(md, "2026-06-12", max_chars=24000)
     assert not report.passed
     assert any(i.code == "missing_step" for i in report.errors)
@@ -118,15 +129,13 @@ Primary tension: Bullish trend extension versus cautious valuation bucket.
 **extension_vs_valuation**
 - Bullish read: Price trend remains bullish with momentum intact (see SPX charts).
 - Bearish read: Forward P/E in cautious bucket limits add aggression.
-- Framework rule: Forward P/E calibration table — cautious bucket.
-- Blocks action: Neither trim nor buy reaches 3-of-5; hold and monitor.
+- Framework rule: Forward PE calibration — cautious bucket.
+- Blocks action: Neither trim nor buy reaches confluence; hold and monitor.
 """
 
 
 def test_validate_report_mixed_missing_primary_tension():
     state = DailyState.model_validate(SAMPLE_STATE)
-    # Replace the whole reconciliation section with content that never touches
-    # the primary tension's substance.
     unrelated = (
         "## Evidence Reconciliation\n"
         "We focus only on liquidity plumbing today.\n\n"
@@ -134,7 +143,6 @@ def test_validate_report_mixed_missing_primary_tension():
         "- Overnight funding eased; no equity signal implications.\n"
     )
     md = GOOD_REPORT.replace(RECON_SECTION, unrelated)
-    assert unrelated in md  # guard: the replacement actually occurred
     report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
     assert not report.passed
     assert any(i.code == "missing_primary_tension" for i in report.errors)

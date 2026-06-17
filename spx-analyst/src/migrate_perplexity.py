@@ -24,9 +24,9 @@ from .prompts import (
     DECISION_MATRIX_ROWS,
     EVIDENCE_RECONCILIATION_HEADING,
     HARD_CONSTRAINTS,
-    SYSTEM_ROLE,
     WORKFLOW_STEPS,
     PromptBundle,
+    load_system_role,
 )
 from .schemas import DailyManifest, DailyState, ExternalContext, ValidationReport
 from .validation import parse_daily_state, validate_report, validation_errors_text
@@ -205,6 +205,7 @@ def _context_block(ctx: SessionContext, session: PerplexitySession) -> str:
 def build_migration_state_prompt(
     *,
     framework: str,
+    system_role: str,
     session: PerplexitySession,
     ctx: SessionContext,
     recent_summary: str,
@@ -229,11 +230,12 @@ def build_migration_state_prompt(
                 f"- Set date to {session.date!r} and spx_close to {session.spx_close} "
                 "(override if manifest close differs only when Perplexity explicitly uses another close).\n"
                 "- Set framework_version to 'perplexity-migration'.\n"
-                "- monte_carlo.prob_up_first / prob_down_first: use the PRIMARY Step 5 "
-                "first-hit row (upside target first vs downside target first).\n"
+                "- structural_bias: infer from narrative (Early Bull, Mid Bull, Late Bull / Topping, Bear Market).\n"
+                "- monte_carlo: map Step 5 first-hit probabilities to prob_up_first_raw / prob_down_first_raw; "
+                "set adjusted fields equal when no rally-exhaustion adjustment is stated.\n"
                 "- monte_carlo.meets_threshold: true only if the dominant first-hit probability >= 0.65.\n"
-                "- decision_matrix.recommended_action: normalize Perplexity RECOMMENDED ACTION to "
-                "snake_case (e.g. hold_schk_wave1_trim_imminent, prepare_reentry_at_7151).\n"
+                "- decision_matrix.rows: 18 rows per framework; Recommended Action row signal in snake_case "
+                "(e.g. hold_and_monitor, prepare_reentry_at_7151).\n"
                 "- Enumerate genuine cross-layer tensions in conflicting_evidence with chart_refs "
                 "(manifest filenames when known, else descriptive labels from the report).\n"
                 "- Compare against recent sessions in what_changed_today.\n"
@@ -242,12 +244,13 @@ def build_migration_state_prompt(
             ),
         ]
     )
-    return PromptBundle(system_role=SYSTEM_ROLE, framework=framework, body=body)
+    return PromptBundle(system_role=system_role, framework=framework, body=body)
 
 
 def build_migration_report_prompt(
     *,
     framework: str,
+    system_role: str,
     session: PerplexitySession,
     daily_state: DailyState,
     recent_summary: str,
@@ -292,7 +295,7 @@ def build_migration_report_prompt(
             ),
         ]
     )
-    return PromptBundle(system_role=SYSTEM_ROLE, framework=framework, body=body)
+    return PromptBundle(system_role=system_role, framework=framework, body=body)
 
 
 def _enforce_close(state: DailyState, session: PerplexitySession, ctx: SessionContext) -> DailyState:
@@ -320,6 +323,7 @@ def migrate_session(
     settings = settings or get_settings()
     client = client or AnthropicClient(settings)
     framework = files.load_framework(settings)
+    system_role = load_system_role(files.load_role(settings))
     ctx = load_session_context(session.date, settings)
     recent_states = load_recent_states(before_date=session.date, settings=settings)
     recent_summary = build_recent_summary(recent_states)
@@ -327,6 +331,7 @@ def migrate_session(
 
     state_bundle = build_migration_state_prompt(
         framework=framework,
+        system_role=system_role,
         session=session,
         ctx=ctx,
         recent_summary=recent_summary,
@@ -351,6 +356,7 @@ def migrate_session(
 
     report_bundle = build_migration_report_prompt(
         framework=framework,
+        system_role=system_role,
         session=session,
         daily_state=daily_state,
         recent_summary=recent_summary,

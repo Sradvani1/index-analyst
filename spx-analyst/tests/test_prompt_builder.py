@@ -1,15 +1,14 @@
 from src.prompts import (
     DECISION_MATRIX_ROWS,
+    PRE_STEP,
     WORKFLOW_STEPS,
     build_report_prompt,
     build_state_prompt,
+    load_system_role,
 )
-from src.schemas import (
-    DailyManifest,
-    ExternalContext,
-    FearGreedComponents,
-    MetricReading,
-)
+from src.schemas import DailyManifest, ExternalContext
+
+from tests.sample_analysis_context import sample_analysis_context
 
 
 def _manifest():
@@ -17,7 +16,6 @@ def _manifest():
         {
             "date": "2026-06-12",
             "index_symbol": "SPX",
-            "instrument_symbol": "SCHK",
             "close": 7450.25,
             "chart_count": 1,
             "charts": [{"order": 1, "file": "a.png", "label": "SPX daily", "category": "technical"}],
@@ -26,49 +24,46 @@ def _manifest():
 
 
 def _context():
-    return ExternalContext(
-        date="2026-06-12",
-        forward_eps=300.0,
-        fear_greed_components=FearGreedComponents(
-            market_volatility=MetricReading(value=18.4, reading="neutral")
-        ),
-    )
+    return ExternalContext(date="2026-06-12", forward_eps=354.0, trailing_eps=220.0)
 
 
 def test_state_prompt_contains_blocks(sample_state):
+    role = load_system_role("You are an SPX analyst.")
+    ac = sample_analysis_context()
     bundle = build_state_prompt(
+        system_role=role,
         framework="FRAMEWORK_TEXT",
         manifest=_manifest(),
         external_context=_context(),
-        recent_states=[sample_state],
+        analysis_context=ac,
         recent_summary="prior summary",
     )
     assert bundle.framework == "FRAMEWORK_TEXT"
-    assert "no forced" in bundle.system_role.lower() or "never force" in bundle.system_role.lower()
-    assert "geometry and divergence" in bundle.system_role.lower()
+    assert "never force" in bundle.system_role.lower() or "hold and monitor" in bundle.system_role.lower()
+    assert "analysis_context" in bundle.body
     assert "emit_daily_state" in bundle.body
-    assert "conflicting_evidence" in bundle.body
-    assert "signal_alignment" in bundle.body
+    assert "structural_bias" in bundle.body
     assert "prior summary" in bundle.body
-    assert "SPX daily" in bundle.body
-    assert "18.4" in bundle.body
+    assert "7450.25" in bundle.body
 
 
 def test_report_prompt_lists_steps_and_matrix(sample_state):
+    role = load_system_role("Role.")
+    ac = sample_analysis_context()
     bundle = build_report_prompt(
+        system_role=role,
         framework="FW",
         daily_state=sample_state,
         manifest=_manifest(),
         external_context=_context(),
-        recent_states=[],
-        recent_summary="none",
+        analysis_context=ac,
+        recent_summary=None,
     )
+    assert PRE_STEP in bundle.body
     for step in WORKFLOW_STEPS:
         assert step in bundle.body
     for row in DECISION_MATRIX_ROWS:
         assert row in bundle.body
     assert "Updated Decision Matrix" in bundle.body
     assert "Evidence Reconciliation" in bundle.body
-    assert "Conflict checklist" in bundle.body
     assert sample_state.primary_tension in bundle.body
-    assert "immutable facts" in bundle.body.lower()

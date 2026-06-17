@@ -11,7 +11,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SPX Analyst Viewer",
-  description: "Browse daily SPX / SCHK tactical analysis reports",
+  description: "Browse daily SPX tactical analysis reports",
 };
 
 export default async function RootLayout({

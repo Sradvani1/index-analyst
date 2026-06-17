@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { TONE_SURFACE, parseHeader, toneFor } from "@/lib/report";
-import type { DailyState } from "@/lib/types";
+import { getRecommendedAction, type DailyState } from "@/lib/types";
 
 interface RunHeaderProps {
   state: DailyState;
@@ -22,7 +22,7 @@ export function RunHeader({ state, reportMarkdown }: RunHeaderProps) {
   const close = state.spx_close.toLocaleString(undefined, {
     maximumFractionDigits: 2,
   });
-  const actionTone = toneFor(state.decision_matrix.recommended_action);
+  const actionTone = toneFor(getRecommendedAction(state.decision_matrix));
 
   return (
     <header className="flex flex-col gap-4">
@@ -33,7 +33,7 @@ export function RunHeader({ state, reportMarkdown }: RunHeaderProps) {
             {header.instrument ? ` · ${header.instrument}` : ""}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            SPX / SCHK Tactical Analysis
+            SPX Daily Tactical Analysis
           </h1>
         </div>
         <div className="text-right">
@@ -68,7 +68,7 @@ export function RunHeader({ state, reportMarkdown }: RunHeaderProps) {
           Recommended action
         </p>
         <p className="mt-1 text-base font-semibold leading-snug">
-          {humanizeAction(state.decision_matrix.recommended_action)}
+          {humanizeAction(getRecommendedAction(state.decision_matrix))}
         </p>
         <p className="mt-2 text-sm leading-relaxed opacity-90">
           {state.primary_tension}
@@ -76,6 +76,7 @@ export function RunHeader({ state, reportMarkdown }: RunHeaderProps) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
+        <TruncatedFact label="Structural bias" value={state.structural_bias} />
         <TruncatedFact label="Trend regime" value={state.trend_regime} />
         <TruncatedFact label="Valuation bucket" value={state.valuation_bucket} />
       </div>

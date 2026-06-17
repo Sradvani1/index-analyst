@@ -1,13 +1,8 @@
-"""Pydantic models for every file contract in the engine.
-
-These schemas are the source of truth for manifests, external context, daily
-state, validation reports, and the future chat-session contract. Keep them
-stable: Phase 2 reuses them without migration.
-"""
+"""Pydantic models for every file contract in the engine."""
 
 from __future__ import annotations
 
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -28,8 +23,7 @@ class DailyManifest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     date: str
-    index_symbol: str
-    instrument_symbol: str
+    index_symbol: str = "SPX"
     close: float
     chart_count: int
     charts: List[ChartEntry]
@@ -56,55 +50,135 @@ class DailyManifest(BaseModel):
         return sorted(self.charts, key=lambda c: c.order)
 
 
-class MetricReading(BaseModel):
-    """A single indicator expressed as a numeric value plus its zone reading."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    value: Optional[float] = None
-    reading: Optional[str] = None
-
-
-class FearGreedComponents(BaseModel):
-    """The seven CNN Fear & Greed sub-indicators, each as value + reading.
-
-    Notable underlying values: market_volatility is the VIX, put_call_options is
-    the 5-day put/call ratio, junk_bond_demand is the high-yield vs investment
-    grade spread (percent).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    market_momentum: MetricReading = Field(default_factory=MetricReading)
-    stock_price_strength: MetricReading = Field(default_factory=MetricReading)
-    stock_price_breadth: MetricReading = Field(default_factory=MetricReading)
-    put_call_options: MetricReading = Field(default_factory=MetricReading)
-    market_volatility: MetricReading = Field(default_factory=MetricReading)
-    safe_haven_demand: MetricReading = Field(default_factory=MetricReading)
-    junk_bond_demand: MetricReading = Field(default_factory=MetricReading)
-
-
 class ExternalContext(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     date: str
-    us10y: Optional[float] = None
     forward_eps: Optional[float] = None
-    fear_greed_index: MetricReading = Field(default_factory=MetricReading)
-    fear_greed_components: FearGreedComponents = Field(default_factory=FearGreedComponents)
+    trailing_eps: Optional[float] = None
+
+
+# --- Precompute contract (analysis_context.json) -----------------------------
+
+
+class MarketDataContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    spx_close: float
+    vix: float
+    us10y: float
+    as_of_date: str
+    pct_above_200dma: float
+    realized_vol_20d: float
+    sma_50: float
+    sma_200: float
+    precompute_warnings: List[str] = Field(default_factory=list)
+
+
+ERPTrend = Literal["expanding", "stable", "contracting"]
+RallyExhaustionScore = Literal["Low", "Moderate", "High"]
+UpsideTargetRule = Literal["active_swing_high", "next_local_max", "pct_extension"]
+DownsideTargetRule = Literal["fib_382", "fib_500", "first_liquidation_zone"]
+SwingConfirmation = Literal["pullback_3pct", "five_sessions", "rally_5pct", "above_50dma"]
+
+
+class ValuationContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    forward_pe: Optional[float] = None
+    trailing_pe: Optional[float] = None
+    forward_earnings_yield: Optional[float] = None
+    erp: Optional[float] = None
+    erp_trend: Optional[ERPTrend] = None
+    erp_reentry_floor_at_0_5pct: Optional[float] = None
+
+
+class StructureContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    active_swing_high_date: str
+    active_swing_high_price: float
+    swing_high_confirmation: SwingConfirmation
+    active_swing_low_date: str
+    active_swing_low_price: float
+    swing_low_confirmation: SwingConfirmation
+    fib_236: float
+    fib_382: float
+    fib_500: float
+    fib_618: float
+    liquidation_caution: float
+    liquidation_nervous: float
+    liquidation_margin_call: float
+    liquidation_cascade: float
+    upside_target: float
+    upside_target_rule: UpsideTargetRule
+    downside_target: float
+    downside_target_rule: DownsideTargetRule
+
+
+class ThresholdEvaluationRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    adjusted_prob_up_first: float = Field(..., ge=0.0, le=1.0)
+    actionable: bool
+
+
+class MonteCarloContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sigma: float
+    mu: float
+    rally_exhaustion_score: RallyExhaustionScore
+    exhaustion_discount: float
+    upside_target: float
+    downside_target: float
+    upside_target_rule: UpsideTargetRule
+    downside_target_rule: DownsideTargetRule
+    prob_up_first_raw: float = Field(..., ge=0.0, le=1.0)
+    prob_down_first_raw: float = Field(..., ge=0.0, le=1.0)
+    prob_up_first_adjusted: float = Field(..., ge=0.0, le=1.0)
+    prob_down_first_adjusted: float = Field(..., ge=0.0, le=1.0)
+    cascades: str
+    median_days: str
+    drift_path: str
+    cash_drag_prob: float = Field(..., ge=0.0, le=1.0)
+    threshold_evaluation: Dict[str, ThresholdEvaluationRow]
+
+
+class AnalysisContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    date: str
+    market_data: MarketDataContext
+    valuation: ValuationContext
+    structure: StructureContext
+    monte_carlo: MonteCarloContext
 
 
 # --- Output contracts --------------------------------------------------------
 
 
+class DecisionMatrixRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    signal_layer: str
+    current_reading: str
+    signal: str
+
+
 class DecisionMatrix(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    valuation: str
-    technicals: str
-    sentiment: str
-    risk: str
-    recommended_action: str
+    rows: List[DecisionMatrixRow]
+
+    @property
+    def recommended_action(self) -> str:
+        for row in self.rows:
+            if row.signal_layer.strip().lower() == "recommended action":
+                return row.signal or row.current_reading
+        if self.rows:
+            return self.rows[-1].signal or self.rows[-1].current_reading
+        return "hold_and_monitor"
 
 
 class SignalSet(BaseModel):
@@ -115,22 +189,27 @@ class SignalSet(BaseModel):
     bollinger_position: Optional[str] = None
     rsi14: Optional[float] = None
     mfi: Optional[float] = None
-    vix: Optional[float] = None
     vix_regime: Optional[str] = None
     fear_greed: Optional[int] = None
     fear_greed_zone: Optional[str] = None
     put_call: Optional[float] = None
     high_yield_spread: Optional[float] = None
-    monte_carlo_probability: Optional[float] = None
+    intraday_close_position: Optional[str] = None
+    middle_band_regime: Optional[str] = None
 
 
 SignalAlignmentOverall = Literal["aligned_trim", "aligned_buy", "mixed", "neutral"]
+EffectiveThreshold = Literal[65, 70, 75]
 DivergenceWeight = Literal["high", "medium", "low"]
+StructuralBias = Literal[
+    "Early Bull",
+    "Mid Bull",
+    "Late Bull / Topping",
+    "Bear Market",
+]
 
 
 class SignalAlignment(BaseModel):
-    """Machine-readable 3-of-5 confirmation counts from the tactical matrix."""
-
     model_config = ConfigDict(extra="forbid")
 
     trim_signals_met: int = Field(..., ge=0, le=5)
@@ -139,8 +218,6 @@ class SignalAlignment(BaseModel):
 
 
 class Divergence(BaseModel):
-    """A cross-layer signal tension with chart references for Pass 2 reconciliation."""
-
     model_config = ConfigDict(extra="forbid")
 
     id: str
@@ -153,16 +230,25 @@ class Divergence(BaseModel):
 
 
 class MonteCarloDetail(BaseModel):
-    """Step 5 GBM outputs required by the methodology every session."""
+    """Pass 1 selection from precomputed analysis_context.monte_carlo."""
 
     model_config = ConfigDict(extra="forbid")
 
-    prob_up_first: float = Field(..., ge=0.0, le=1.0)
-    prob_down_first: float = Field(..., ge=0.0, le=1.0)
+    effective_threshold: EffectiveThreshold
+    meets_threshold: bool
+    prob_up_first_raw: float = Field(..., ge=0.0, le=1.0)
+    prob_down_first_raw: float = Field(..., ge=0.0, le=1.0)
+    prob_up_first_adjusted: float = Field(..., ge=0.0, le=1.0)
+    prob_down_first_adjusted: float = Field(..., ge=0.0, le=1.0)
+    sigma: float
+    mu: float
+    upside_target: float
+    downside_target: float
+    rally_exhaustion_score: RallyExhaustionScore
     conditional_cascade: str
     median_days: str
+    drift_path: str
     cash_drag_prob: float = Field(..., ge=0.0, le=1.0)
-    meets_threshold: bool
 
 
 class DailyState(BaseModel):
@@ -171,7 +257,7 @@ class DailyState(BaseModel):
     date: str
     framework_version: str
     spx_close: float
-    schk_close: Optional[float] = None
+    structural_bias: StructuralBias
     base_case: str
     trend_regime: str
     valuation_bucket: str
@@ -189,8 +275,6 @@ class DailyState(BaseModel):
     @field_validator("narrative_summary")
     @classmethod
     def _normalize_narrative(cls, v: str) -> str:
-        # Collapse stray literal "\n" escapes and real newlines into a single
-        # clean paragraph so the compact summary stays compact and renders well.
         return " ".join(v.replace("\\n", " ").replace("\n", " ").replace("\\r", " ").split())
 
 
@@ -225,10 +309,7 @@ class ValidationReport(BaseModel):
 
 
 class ChatSessionContext(BaseModel):
-    """Retrieval contract for the future Phase 2 conversational layer.
-
-    Loaded read-only from canonical artifacts; never mutates daily-state memory.
-    """
+    model_config = ConfigDict(extra="forbid")
 
     date: str
     report_markdown: str

@@ -1,15 +1,5 @@
 {
   "date": "2026-06-12",
-  "us10y": 4.49,
   "forward_eps": 354,
-  "fear_greed_index": { "value": 30, "reading": "fear" },
-  "fear_greed_components": {
-    "market_momentum": { "value": 6.2, "reading": "greed" },
-    "stock_price_strength": { "value": 1.5, "reading": "fear" },
-    "stock_price_breadth": { "value": 970, "reading": "extreme_fear" },
-    "put_call_options": { "value": 0.80, "reading": "fear" },
-    "market_volatility": { "value": 20.0, "reading": "neutral" },
-    "safe_haven_demand": { "value": -0.5, "reading": "fear" },
-    "junk_bond_demand": { "value": 1.45, "reading": "extreme_fear" }
-  }
+  "trailing_eps": 220
 }

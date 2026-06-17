@@ -1,10 +1,16 @@
-/** TypeScript mirror of the Layer 1 FastAPI view-models and DailyState schema. */
+/** TypeScript mirror of the FastAPI view-models and DailyState schema. */
 
 export type SignalAlignmentOverall =
   | "aligned_trim"
   | "aligned_buy"
   | "mixed"
   | "neutral";
+
+export type StructuralBias =
+  | "Early Bull"
+  | "Mid Bull"
+  | "Late Bull / Topping"
+  | "Bear Market";
 
 export interface SignalAlignment {
   trim_signals_met: number;
@@ -15,15 +21,11 @@ export interface SignalAlignment {
 export interface RunSummary {
   date: string;
   spx_close: number;
+  structural_bias?: StructuralBias;
   trend_regime: string;
   valuation_bucket: string;
   recommended_action: string;
   signal_alignment: SignalAlignment;
-}
-
-export interface MetricReading {
-  value?: number | null;
-  reading?: string | null;
 }
 
 export interface SignalSet {
@@ -32,21 +34,34 @@ export interface SignalSet {
   bollinger_position?: string | null;
   rsi14?: number | null;
   mfi?: number | null;
-  vix?: number | null;
   vix_regime?: string | null;
   fear_greed?: number | null;
   fear_greed_zone?: string | null;
   put_call?: number | null;
   high_yield_spread?: number | null;
-  monte_carlo_probability?: number | null;
+  intraday_close_position?: string | null;
+  middle_band_regime?: string | null;
+}
+
+export interface DecisionMatrixRow {
+  signal_layer: string;
+  current_reading: string;
+  signal: string;
 }
 
 export interface DecisionMatrix {
-  valuation: string;
-  technicals: string;
-  sentiment: string;
-  risk: string;
-  recommended_action: string;
+  rows: DecisionMatrixRow[];
+}
+
+export function getRecommendedAction(matrix: DecisionMatrix): string {
+  const action = matrix.rows.find((r) =>
+    r.signal_layer.trim().toLowerCase() === "recommended action",
+  );
+  if (action) {
+    return action.signal || action.current_reading;
+  }
+  const last = matrix.rows[matrix.rows.length - 1];
+  return last?.signal || last?.current_reading || "hold_and_monitor";
 }
 
 export interface Divergence {
@@ -60,19 +75,28 @@ export interface Divergence {
 }
 
 export interface MonteCarloDetail {
-  prob_up_first: number;
-  prob_down_first: number;
+  effective_threshold: 65 | 70 | 75;
+  meets_threshold: boolean;
+  prob_up_first_raw: number;
+  prob_down_first_raw: number;
+  prob_up_first_adjusted: number;
+  prob_down_first_adjusted: number;
+  sigma: number;
+  mu: number;
+  upside_target: number;
+  downside_target: number;
+  rally_exhaustion_score: "Low" | "Moderate" | "High";
   conditional_cascade: string;
   median_days: string;
+  drift_path: string;
   cash_drag_prob: number;
-  meets_threshold: boolean;
 }
 
 export interface DailyState {
   date: string;
   framework_version: string;
   spx_close: number;
-  schk_close?: number | null;
+  structural_bias: StructuralBias;
   base_case: string;
   trend_regime: string;
   valuation_bucket: string;

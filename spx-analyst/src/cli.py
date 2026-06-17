@@ -1,4 +1,4 @@
-"""Command-line interface for the analysis engine."""
+"""Command-line interface for the SPX analysis engine."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from .memory import rebuild_rolling_summary
 from .schemas import ValidationReport
 from .validation import parse_daily_state, validate_report
 
-app = typer.Typer(add_completion=False, help="SPX / SCHK daily analysis engine.")
+app = typer.Typer(add_completion=False, help="SPX daily analysis engine.")
 
 
 def _today() -> str:
@@ -27,11 +27,8 @@ def _setup_logging(verbose: bool) -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    # --verbose raises detail for our own modules only. Third-party DEBUG logs
-    # (anthropic/httpx) dump full request bodies, including base64 images, so
-    # keep them quiet regardless.
     logging.getLogger("src").setLevel(logging.DEBUG if verbose else logging.INFO)
-    for noisy in ("anthropic", "httpx", "httpcore", "urllib3", "PIL"):
+    for noisy in ("anthropic", "httpx", "httpcore", "urllib3", "PIL", "yfinance"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
@@ -42,10 +39,53 @@ def _print_validation(report: ValidationReport) -> None:
         typer.echo(f"  {issue.severity.upper()} [{issue.code}] {issue.message}")
 
 
+@app.command("setup-run")
+def setup_run(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+    input_dir: str = typer.Option(None, help="Run directory (default: data/runs/<date>)."),
+    precompute: bool = typer.Option(False, help="Run yfinance precompute if EPS is set."),
+    force_fetch: bool = typer.Option(False, help="Force fresh yfinance fetch."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Scaffold a run directory with external_context template and optional precompute."""
+    _setup_logging(verbose)
+    date = date or _today()
+    settings = get_settings()
+    from .external_data import blank_context, load_external_context
+    from .files import resolve_run_dir, scaffold_run_dir, write_json
+
+    run_dir = Path(input_dir) if input_dir else settings.runs_dir / date
+    scaffold_run_dir(run_dir, date)
+
+    ext_path = run_dir / "external_context.json"
+    if not ext_path.exists():
+        write_json(ext_path, blank_context(date))
+        typer.echo(f"Wrote {ext_path}")
+
+    if precompute:
+        from .files import load_manifest
+        from .precompute import run_precompute
+
+        try:
+            manifest = load_manifest(run_dir)
+        except InputError as exc:
+            typer.secho(f"Cannot precompute: {exc}", fg=typer.colors.RED, err=True)
+            raise typer.Exit(code=1)
+        ext = load_external_context(date, run_dir, settings=settings)
+        if ext.context.forward_eps is None:
+            typer.secho("Set forward_eps in external_context.json before precompute.", fg=typer.colors.YELLOW)
+            raise typer.Exit(code=1)
+        ctx = run_precompute(date, run_dir, manifest, ext.context, settings=settings, force_fetch=force_fetch)
+        typer.secho(f"Wrote analysis_context.json (close={ctx.market_data.spx_close})", fg=typer.colors.GREEN)
+
+    typer.echo(f"Run directory ready: {run_dir}")
+
+
 @app.command()
 def run(
     date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
     input_dir: str = typer.Option(None, help="Run directory (default: data/runs/<date>)."),
+    force_fetch: bool = typer.Option(False, help="Force fresh yfinance fetch for precompute."),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Run a complete daily analysis from a dated chart folder."""
@@ -54,7 +94,7 @@ def run(
     from .analysis_engine import RunError, run_daily_analysis
 
     try:
-        result = run_daily_analysis(date, input_dir)
+        result = run_daily_analysis(date, input_dir, force_fetch=force_fetch)
     except (InputError, RunError) as exc:
         typer.secho(f"Run failed: {exc}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
@@ -108,76 +148,6 @@ def rebuild_summary(
     summary, path = rebuild_rolling_summary(days=days)
     typer.secho(f"Wrote rolling summary to {path}", fg=typer.colors.GREEN)
     typer.echo(summary)
-
-
-@app.command("migrate-perplexity")
-def migrate_perplexity(
-    history: str = typer.Option(
-        "../perplexity_analysis_history.md",
-        help="Path to Perplexity export markdown.",
-    ),
-    from_date: str = typer.Option(None, "--from", help="Start date YYYY-MM-DD (inclusive)."),
-    to_date: str = typer.Option(None, "--to", help="End date YYYY-MM-DD (inclusive)."),
-    dry_run: bool = typer.Option(False, help="Parse and list sessions only; no API calls."),
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
-) -> None:
-    """Migrate historical Perplexity Full 7-Step analyses into engine artifacts."""
-    _setup_logging(verbose)
-    from .migrate_perplexity import MigrationError, filter_sessions, migrate_history, parse_history
-
-    history_path = Path(history)
-    if not history_path.is_absolute():
-        history_path = Path.cwd() / history_path
-    if not history_path.exists():
-        typer.secho(f"History file not found: {history_path}", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
-    try:
-        sessions = filter_sessions(parse_history(history_path), from_date=from_date, to_date=to_date)
-    except MigrationError as exc:
-        typer.secho(str(exc), fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
-    if not sessions:
-        typer.secho("No sessions matched the date range.", fg=typer.colors.YELLOW)
-        raise typer.Exit(code=1)
-
-    typer.echo(f"Found {len(sessions)} session(s):")
-    for s in sessions:
-        typer.echo(f"  {s.date}  close={s.spx_close}  chars={len(s.clean_markdown)}")
-
-    if dry_run:
-        typer.secho("Dry run complete.", fg=typer.colors.GREEN)
-        return
-
-    try:
-        results = migrate_history(
-            history_path,
-            from_date=from_date,
-            to_date=to_date,
-        )
-    except MigrationError as exc:
-        typer.secho(f"Migration failed: {exc}", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
-    failed = 0
-    for result in results:
-        state_ok = result.state_validation.passed
-        report_ok = result.report_validation.passed
-        color = typer.colors.GREEN if state_ok and report_ok else typer.colors.YELLOW
-        typer.secho(
-            f"{result.date}: state={'PASS' if state_ok else 'FAIL'} "
-            f"report={'PASS' if report_ok else 'FAIL'} -> {result.output_dir}",
-            fg=color,
-        )
-        if result.warnings:
-            for w in result.warnings:
-                typer.echo(f"  warning: {w}")
-        if not (state_ok and report_ok):
-            failed += 1
-
-    if failed:
-        raise typer.Exit(code=1)
 
 
 @app.command()

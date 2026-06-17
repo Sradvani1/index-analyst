@@ -1,8 +1,4 @@
-"""Validation of the structured state and the markdown report.
-
-State validation is schema conformance (Pydantic). Report validation checks that
-the methodology's workflow steps and the Updated Decision Matrix are present.
-"""
+"""Validation of the structured state and the markdown report."""
 
 from __future__ import annotations
 
@@ -11,14 +7,13 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from .prompts import DECISION_MATRIX_ROWS, EVIDENCE_RECONCILIATION_HEADING, WORKFLOW_STEPS
+from .prompts import DECISION_MATRIX_ROWS, EVIDENCE_RECONCILIATION_HEADING, PRE_STEP, WORKFLOW_STEPS
 from .schemas import DailyState, ValidationIssue, ValidationReport
 
 
 def parse_daily_state(
     tool_input: dict[str, Any], date: str
 ) -> tuple[DailyState | None, ValidationReport]:
-    """Parse and schema-validate the Pass 1 tool output."""
     issues: list[ValidationIssue] = []
     try:
         state = DailyState.model_validate(tool_input)
@@ -38,7 +33,63 @@ def parse_daily_state(
                 message=f"state.date ({state.date}) does not match run date ({date})",
             )
         )
-    return state, ValidationReport(date=date, target="daily_state", passed=True, issues=issues)
+
+    issues.extend(_validate_decision_matrix(state))
+
+    passed = not any(i.severity == "error" for i in issues)
+    return state, ValidationReport(date=date, target="daily_state", passed=passed, issues=issues)
+
+
+def _validate_decision_matrix(state: DailyState) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    rows = state.decision_matrix.rows
+    if not rows:
+        issues.append(
+            ValidationIssue(
+                severity="error",
+                code="empty_decision_matrix",
+                message="decision_matrix.rows must not be empty",
+            )
+        )
+        return issues
+
+    has_action = any(
+        r.signal_layer.strip().lower() == "recommended action" for r in rows
+    )
+    if not has_action:
+        issues.append(
+            ValidationIssue(
+                severity="error",
+                code="missing_recommended_action",
+                message="decision_matrix must include a Recommended Action row",
+            )
+        )
+
+    if len(rows) != len(DECISION_MATRIX_ROWS):
+        issues.append(
+            ValidationIssue(
+                severity="warning",
+                code="decision_matrix_row_count",
+                message=(
+                    f"decision_matrix has {len(rows)} rows; "
+                    f"framework expects {len(DECISION_MATRIX_ROWS)}"
+                ),
+            )
+        )
+
+    expected_layers = {layer.lower() for layer in DECISION_MATRIX_ROWS}
+    actual_layers = {r.signal_layer.strip().lower() for r in rows}
+    missing_layers = expected_layers - actual_layers
+    if missing_layers:
+        issues.append(
+            ValidationIssue(
+                severity="warning",
+                code="decision_matrix_missing_layers",
+                message=f"decision_matrix missing signal layers: {sorted(missing_layers)}",
+            )
+        )
+
+    return issues
 
 
 def validation_errors_text(report: ValidationReport) -> str:
@@ -69,12 +120,6 @@ def _evidence_reconciliation_section(report_md: str) -> str:
 
 
 def _mentions_tension(report_md: str, tension: str) -> bool:
-    """True if primary_tension's substance appears in Evidence Reconciliation.
-
-    Token-based so the report can paraphrase the tension rather than echo it
-    verbatim; requires a majority of the tension's significant tokens to appear
-    within the reconciliation section.
-    """
     section = _evidence_reconciliation_section(report_md)
     if not section.strip() or not tension.strip():
         return False
@@ -102,7 +147,6 @@ def _conflict_addressed(report_md: str, divergence_id: str, bullish: str, bearis
 
 
 def _matrix_uniformly_directional(report_md: str) -> bool:
-    """Heuristic: matrix rows all read cleanly bull or bear with no mixed qualifiers."""
     matrix_match = re.search(
         r"^#{1,6}\s.*Decision Matrix", report_md, re.IGNORECASE | re.MULTILINE
     )
@@ -131,7 +175,20 @@ def validate_report(
         )
         return ValidationReport(date=date, target="report", passed=False, issues=issues)
 
-    # Each workflow step should appear as a heading, in order.
+    pre_match = re.search(
+        r"^#{1,6}\s.*" + re.escape(PRE_STEP.split()[0]),
+        report_md,
+        re.IGNORECASE | re.MULTILINE,
+    )
+    if pre_match is None and not re.search(r"Structural Regime", report_md, re.IGNORECASE):
+        issues.append(
+            ValidationIssue(
+                severity="warning",
+                code="missing_pre_step",
+                message=f"missing pre-step heading: {PRE_STEP}",
+            )
+        )
+
     last_pos = -1
     out_of_order = False
     for step in WORKFLOW_STEPS:
@@ -161,7 +218,6 @@ def validate_report(
             )
         )
 
-    # Updated Decision Matrix must be present and should be the final section.
     matrix_match = re.search(
         r"^#{1,6}\s.*Decision Matrix", report_md, re.IGNORECASE | re.MULTILINE
     )
@@ -185,7 +241,6 @@ def validate_report(
                     message=f"decision matrix may be missing rows: {missing_rows}",
                 )
             )
-        # Acceptance criterion: the report should END with the decision matrix.
         if re.search(r"^#{1,6}\s", report_md[matrix_match.end() :], re.MULTILINE):
             issues.append(
                 ValidationIssue(

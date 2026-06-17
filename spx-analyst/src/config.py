@@ -1,8 +1,4 @@
-"""Typed configuration loaded from environment / .env.
-
-All runtime paths resolve relative to the package root unless overridden, so the
-engine works the same from the CLI today and from a web backend later.
-"""
+"""Typed configuration loaded from environment / .env."""
 
 from __future__ import annotations
 
@@ -38,11 +34,21 @@ class Settings(BaseSettings):
     image_max_dimension: int = Field(default=1568, alias="SPX_IMAGE_MAX_DIMENSION")
     max_report_chars: int = Field(default=24000, alias="SPX_MAX_REPORT_CHARS")
     max_output_tokens: int = Field(default=8000, alias="SPX_MAX_OUTPUT_TOKENS")
+    include_memory: bool = Field(default=False, alias="SPX_INCLUDE_MEMORY")
+
+    # Market data
+    treasury_ticker: str = Field(default="^TNX", alias="SPX_TREASURY_TICKER")
+    spx_ticker: str = Field(default="^GSPC", alias="SPX_TICKER")
+    vix_ticker: str = Field(default="^VIX", alias="SPX_VIX_TICKER")
 
     # Paths (relative to package root unless absolute)
     framework_path_raw: str = Field(
-        default="framework/SP500-SCHK-Trading-Methodology.md",
+        default="framework/SPX-Daily-Analysis-Framework.md",
         alias="SPX_FRAMEWORK_PATH",
+    )
+    role_path_raw: str = Field(
+        default="framework/SPX-Claude-Role-Block.md",
+        alias="SPX_ROLE_PATH",
     )
     data_dir_raw: str = Field(default="data", alias="SPX_DATA_DIR")
     memory_dir_raw: str = Field(default="memory", alias="SPX_MEMORY_DIR")
@@ -51,6 +57,10 @@ class Settings(BaseSettings):
     @property
     def framework_path(self) -> Path:
         return _resolve(self.framework_path_raw)
+
+    @property
+    def role_path(self) -> Path:
+        return _resolve(self.role_path_raw)
 
     @property
     def data_dir(self) -> Path:

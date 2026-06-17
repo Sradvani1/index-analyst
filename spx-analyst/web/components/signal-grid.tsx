@@ -20,14 +20,20 @@ function fmt(value: number | null | undefined, suffix = ""): string {
   return `${value}${suffix}`;
 }
 
+function pct(value: number | null | undefined): string {
+  if (value == null) {
+    return "—";
+  }
+  return `${Math.round(value * 100)}%`;
+}
+
 function buildTiles(state: DailyState): Tile[] {
   const { signals, monte_carlo: mc } = state;
   const tiles: Tile[] = [];
 
   tiles.push({
-    label: "VIX",
-    value: fmt(signals.vix),
-    hint: signals.vix_regime ?? undefined,
+    label: "VIX regime",
+    value: signals.vix_regime ?? "—",
     tone: signals.vix_regime ? toneFor(signals.vix_regime) : "neutral",
   });
 
@@ -41,14 +47,12 @@ function buildTiles(state: DailyState): Tile[] {
   tiles.push({ label: "RSI-14", value: fmt(signals.rsi14), tone: "neutral" });
   tiles.push({ label: "MFI", value: fmt(signals.mfi), tone: "neutral" });
 
-  const mcPct =
-    signals.monte_carlo_probability != null
-      ? Math.round(signals.monte_carlo_probability * 100)
-      : null;
   tiles.push({
     label: "Monte Carlo edge",
-    value: mcPct != null ? `${mcPct}%` : "—",
-    hint: mc.meets_threshold ? "meets threshold" : "below 65% threshold",
+    value: pct(mc.prob_up_first_adjusted),
+    hint: mc.meets_threshold
+      ? `meets ${mc.effective_threshold}% threshold`
+      : `below ${mc.effective_threshold}% threshold`,
     tone: mc.meets_threshold ? "bull" : "caution",
   });
 

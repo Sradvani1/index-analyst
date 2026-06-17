@@ -1,10 +1,4 @@
-"""Load the daily external market context.
-
-There is no automated fetching: all market context (VIX, US 10Y, Fear & Greed,
-put/call, high-yield spread, headlines) is supplied by the user, both as chart
-screenshots and as numeric values in each run's `external_context.json`. If that
-file is missing, a blank template is written for the user to fill in.
-"""
+"""Load the daily external market context (forward/trailing EPS only)."""
 
 from __future__ import annotations
 
@@ -27,7 +21,6 @@ class FetchResult:
 
 
 def blank_context(date: str) -> ExternalContext:
-    """An all-null context template for manual completion."""
     return ExternalContext(date=date)
 
 
@@ -37,13 +30,17 @@ def load_external_context(
     *,
     settings: Settings | None = None,
 ) -> FetchResult:
-    """Load external_context.json, or write a blank template if it is missing."""
     settings = settings or get_settings()
     path = run_dir / EXTERNAL_CONTEXT_FILENAME
 
     if path.exists():
         context = ExternalContext.model_validate(read_json(path))
-        return FetchResult(context=context, warnings=[])
+        warnings: list[str] = []
+        if context.forward_eps is None:
+            warnings.append("forward_eps is null — valuation and ERP will be incomplete")
+        if context.trailing_eps is None:
+            warnings.append("trailing_eps is null — trailing P/E will be incomplete")
+        return FetchResult(context=context, warnings=warnings)
 
     context = blank_context(date)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -54,5 +51,5 @@ def load_external_context(
     logger.warning("external_context.json not found for %s; wrote a blank template", date)
     return FetchResult(
         context=context,
-        warnings=[f"external_context.json missing; wrote blank template at {path} — fill it in"],
+        warnings=[f"external_context.json missing; wrote blank template at {path} — fill forward_eps and trailing_eps"],
     )

@@ -33,7 +33,7 @@ export default async function RunPage({ params }: RunPageProps) {
       <div className="grid gap-8 lg:grid-cols-[200px_minmax(0,1fr)]">
         <SectionNav sections={sections} />
         <div className="min-w-0">
-          <ReportView markdown={run.report_markdown} />
+          <ReportView markdown={run.report_markdown} dailyState={run.daily_state} />
         </div>
       </div>
     </div>

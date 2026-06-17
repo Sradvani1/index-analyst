@@ -65,8 +65,11 @@ def build_recent_summary(states: list[DailyState]) -> str:
     lines = ["Recent sessions (oldest to newest):"]
     for s in reversed(states):
         action = s.decision_matrix.recommended_action
-        vix = s.signals.vix
-        vix_txt = f"VIX {vix}" if vix is not None else "VIX n/a"
+        vix_txt = (
+            f"VIX regime {s.signals.vix_regime}"
+            if s.signals.vix_regime
+            else "VIX regime n/a"
+        )
         tension = s.primary_tension.strip()
         tension_txt = f" Primary tension: {tension}" if tension else ""
         lines.append(

@@ -46,7 +46,7 @@ def test_list_runs_sorted_descending(tmp_path, monkeypatch) -> None:
     data = response.json()
     assert [r["date"] for r in data] == ["2026-06-12", "2026-06-11", "2026-06-10"]
     assert data[0]["spx_close"] == 7431.46
-    assert data[0]["recommended_action"] == SAMPLE_STATE["decision_matrix"]["recommended_action"]
+    assert data[0]["recommended_action"] == "hold_and_monitor"
 
 
 def test_list_runs_excludes_orphan_state(tmp_path, monkeypatch) -> None:

@@ -17,6 +17,7 @@ from .schemas import DailyManifest, DailyState
 
 MANIFEST_FILENAME = "manifest.json"
 EXTERNAL_CONTEXT_FILENAME = "external_context.json"
+ANALYSIS_CONTEXT_FILENAME = "analysis_context.json"
 CHARTS_DIRNAME = "charts"
 
 
@@ -62,12 +63,26 @@ def load_framework(settings: Settings | None = None) -> str:
     path = settings.framework_path
     if not path.exists():
         raise InputError(
-            f"methodology framework not found at {path}. "
-            "Place SP500-SCHK-Trading-Methodology.md in the framework/ directory."
+            f"analysis framework not found at {path}. "
+            "Place SPX-Daily-Analysis-Framework.md in the framework/ directory."
         )
     text = read_text(path)
     if not text.strip():
-        raise InputError(f"methodology framework is empty: {path}")
+        raise InputError(f"analysis framework is empty: {path}")
+    return text
+
+
+def load_role(settings: Settings | None = None) -> str:
+    settings = settings or get_settings()
+    path = settings.role_path
+    if not path.exists():
+        raise InputError(
+            f"role block not found at {path}. "
+            "Place SPX-Claude-Role-Block.md in the framework/ directory."
+        )
+    text = read_text(path)
+    if not text.strip():
+        raise InputError(f"role block is empty: {path}")
     return text
 
 
@@ -106,6 +121,38 @@ def _verify_chart_files(run_dir: Path, manifest: DailyManifest) -> None:
 def chart_paths(run_dir: Path, manifest: DailyManifest) -> list[Path]:
     charts_dir = run_dir / CHARTS_DIRNAME
     return [charts_dir / c.file for c in manifest.ordered_charts()]
+
+
+def scaffold_run_dir(run_dir: Path, date: str) -> None:
+    """Create charts dir, placeholder chart, and minimal manifest if missing."""
+    from PIL import Image
+
+    run_dir.mkdir(parents=True, exist_ok=True)
+    charts_dir = run_dir / CHARTS_DIRNAME
+    charts_dir.mkdir(exist_ok=True)
+
+    placeholder_name = "00_placeholder.png"
+    placeholder_path = charts_dir / placeholder_name
+    if not placeholder_path.exists():
+        Image.new("RGB", (32, 32), color=(128, 128, 128)).save(placeholder_path)
+
+    manifest_path = run_dir / MANIFEST_FILENAME
+    if not manifest_path.exists():
+        manifest = {
+            "date": date,
+            "index_symbol": "SPX",
+            "close": 0.0,
+            "chart_count": 1,
+            "charts": [
+                {
+                    "order": 1,
+                    "file": placeholder_name,
+                    "label": "Placeholder (replace with chart pack)",
+                    "category": "technical",
+                }
+            ],
+        }
+        write_json(manifest_path, manifest)
 
 
 # --- Output persistence ------------------------------------------------------

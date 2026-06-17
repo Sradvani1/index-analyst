@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "spx-analyst"
 version = "0.1.0"
-description = "Phase 1 headless direct-API analysis engine for the S&P 500 / SCHK tactical trading workflow."
+description = "SPX daily tactical analysis engine with yfinance precompute and two-pass Claude pipeline."
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.40.0",
@@ -17,6 +17,9 @@ dependencies = [
     "tenacity>=8.3.0",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
+    "yfinance>=0.2.40",
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
 ]
 
 [project.optional-dependencies]

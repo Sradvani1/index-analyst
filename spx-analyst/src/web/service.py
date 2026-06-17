@@ -52,6 +52,7 @@ def _state_to_summary(state: DailyState) -> RunSummary:
     return RunSummary(
         date=state.date,
         spx_close=state.spx_close,
+        structural_bias=state.structural_bias,
         trend_regime=state.trend_regime,
         valuation_bucket=state.valuation_bucket,
         recommended_action=state.decision_matrix.recommended_action,

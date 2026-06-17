@@ -2,14 +2,12 @@ import { DecisionMatrix } from "@/components/decision-matrix";
 import { ReportMarkdown } from "@/components/report-markdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import {
-  parseDecisionMatrix,
-  splitSections,
-  type ReportSection,
-} from "@/lib/report";
+import { splitSections, type ReportSection } from "@/lib/report";
+import type { DailyState } from "@/lib/types";
 
 interface ReportViewProps {
   markdown: string;
+  dailyState?: DailyState;
 }
 
 function isEvidenceReconciliation(title: string): boolean {
@@ -20,7 +18,7 @@ function isDecisionMatrix(title: string): boolean {
   return /decision matrix/i.test(title);
 }
 
-export function ReportView({ markdown }: ReportViewProps) {
+export function ReportView({ markdown, dailyState }: ReportViewProps) {
   const { sections } = splitSections(markdown);
 
   if (sections.length === 0) {
@@ -36,19 +34,24 @@ export function ReportView({ markdown }: ReportViewProps) {
   return (
     <div className="flex flex-col gap-5">
       {sections.map((section) => (
-        <Section key={section.id} section={section} />
+        <Section key={section.id} section={section} dailyState={dailyState} />
       ))}
     </div>
   );
 }
 
-function Section({ section }: { section: ReportSection }) {
+function Section({
+  section,
+  dailyState,
+}: {
+  section: ReportSection;
+  dailyState?: DailyState;
+}) {
   if (isDecisionMatrix(section.title)) {
-    const matrix = parseDecisionMatrix(section.body);
     return (
       <SectionCard section={section} accent>
-        {matrix ? (
-          <DecisionMatrix matrix={matrix} />
+        {dailyState?.decision_matrix ? (
+          <DecisionMatrix matrix={dailyState.decision_matrix} />
         ) : (
           <ReportMarkdown markdown={section.body} />
         )}

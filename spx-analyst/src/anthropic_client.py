@@ -92,6 +92,7 @@ def _snapshot(
         "framework_chars": len(system_blocks[1]["text"]),
         "framework_cached": "cache_control" in system_blocks[1],
         "body_chars": len(body_text),
+        "analysis_context_included": "Precomputed analysis context" in body_text,
         "images": [p.name for p in image_paths],
         "forced_tool": tool_name,
     }

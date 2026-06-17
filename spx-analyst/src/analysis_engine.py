@@ -1,7 +1,4 @@
-"""Orchestrates a full daily run: ingest -> context -> memory -> two-pass Claude
--> validate -> persist. Pure service callable from the CLI now and a web backend
-later.
-"""
+"""Orchestrates a full daily run: ingest -> precompute -> two-pass Claude -> persist."""
 
 from __future__ import annotations
 
@@ -15,8 +12,10 @@ from .anthropic_client import AnthropicClient
 from .config import Settings, get_settings
 from .external_data import load_external_context
 from .memory import build_recent_summary, load_recent_states, rebuild_rolling_summary
-from .prompts import build_report_prompt, build_state_prompt
-from .schemas import DailyState, ValidationReport
+from .precompute import run_precompute
+from .prompts import build_report_prompt, build_state_prompt, load_system_role
+from .schemas import AnalysisContext, DailyState, ValidationIssue, ValidationReport
+from .state_enforcement import apply_precomputed_fields, audit_enforcement_issues
 from .validation import parse_daily_state, validate_report, validation_errors_text
 
 logger = logging.getLogger(__name__)
@@ -31,6 +30,7 @@ class RunResult:
     date: str
     output_dir: Path
     daily_state: DailyState
+    analysis_context: AnalysisContext
     report_path: Path
     state_validation: ValidationReport
     report_validation: ValidationReport
@@ -43,39 +43,53 @@ def run_daily_analysis(
     *,
     settings: Settings | None = None,
     client: AnthropicClient | None = None,
+    force_fetch: bool = False,
 ) -> RunResult:
     settings = settings or get_settings()
     started = dt.datetime.now(dt.timezone.utc).isoformat()
     warnings: list[str] = []
 
-    # Step 1-2: bootstrap + input validation
     framework = files.load_framework(settings)
+    role_text = files.load_role(settings)
+    system_role = load_system_role(role_text)
+
     run_dir = files.resolve_run_dir(date, input_dir, settings)
     manifest = files.load_manifest(run_dir)
     image_paths = files.chart_paths(run_dir, manifest)
     logger.info("loaded manifest for %s with %d charts", date, len(image_paths))
 
-    # Step 3: external context (user-supplied; never fetched)
     ext = load_external_context(date, run_dir, settings=settings)
     warnings.extend(ext.warnings)
 
-    # Step 4: memory load (exclude today's own state on reruns)
-    recent_states = load_recent_states(before_date=date, settings=settings)
-    recent_summary = build_recent_summary(recent_states)
+    analysis_context = run_precompute(
+        date,
+        run_dir,
+        manifest,
+        ext.context,
+        settings=settings,
+        force_fetch=force_fetch,
+    )
+    warnings.extend(analysis_context.market_data.precompute_warnings)
+
+    recent_summary: str | None = None
+    if settings.include_memory:
+        recent_states = load_recent_states(before_date=date, settings=settings)
+        recent_summary = build_recent_summary(recent_states)
+    else:
+        recent_states = []
 
     client = client or AnthropicClient(settings)
 
-    # Step 5: Pass 1 structured state
     state_bundle = build_state_prompt(
+        system_role=system_role,
         framework=framework,
         manifest=manifest,
         external_context=ext.context,
-        recent_states=recent_states,
+        analysis_context=analysis_context,
         recent_summary=recent_summary,
     )
     state_call = client.run_structured_state(state_bundle, image_paths)
 
-    # Step 6: JSON validation (+ one repair pass)
     daily_state, state_validation = parse_daily_state(state_call.tool_input or {}, date)
     if daily_state is None:
         logger.warning("state failed validation; attempting one repair pass")
@@ -86,7 +100,7 @@ def run_daily_analysis(
         if daily_state is None:
             files.save_outputs(
                 date=date,
-                daily_state=_placeholder_state(date, manifest),
+                daily_state=_placeholder_state(date, analysis_context),
                 report_md="# Run failed: state validation\n\nSee validation_report.json.",
                 request_snapshot=state_call.request_snapshot,
                 response_raw=state_call.raw_response,
@@ -97,33 +111,39 @@ def run_daily_analysis(
             )
             raise RunError(f"DailyState invalid after repair: {validation_errors_text(state_validation)}")
 
-    # Step 7: Pass 2 markdown report
+    daily_state, enforce_warnings = apply_precomputed_fields(daily_state, analysis_context)
+    warnings.extend(enforce_warnings)
+    state_validation = _merge_enforcement_audit(state_validation, enforce_warnings)
+
     report_bundle = build_report_prompt(
+        system_role=system_role,
         framework=framework,
         daily_state=daily_state,
         manifest=manifest,
         external_context=ext.context,
-        recent_states=recent_states,
+        analysis_context=analysis_context,
         recent_summary=recent_summary,
     )
     report_call = client.run_markdown_report(report_bundle, image_paths)
     report_md = report_call.text or ""
 
-    # Step 8: report validation
     report_validation = validate_report(
         report_md, date, settings.max_report_chars, daily_state=daily_state
     )
     warnings.extend(i.message for i in report_validation.warnings)
 
-    # Step 9: finalize outputs + refresh rolling memory
     run_log = {
         "started": started,
         "finished": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "ok",
         "chart_count": len(image_paths),
-        "recent_states_used": len(recent_states),
+        "memory_included": settings.include_memory,
         "model": settings.model,
         "warnings": warnings,
+        "precompute_enforcement": {
+            "applied": True,
+            "warnings": enforce_warnings,
+        },
     }
     out = files.save_outputs(
         date=date,
@@ -141,15 +161,21 @@ def run_daily_analysis(
         validation_reports=[
             state_validation.model_dump(mode="json"),
             report_validation.model_dump(mode="json"),
+            {"target": "precompute_enforcement", "issues": audit_enforcement_issues(enforce_warnings)},
         ],
         settings=settings,
     )
-    rebuild_rolling_summary(settings=settings)
+    files.write_json(run_dir / files.ANALYSIS_CONTEXT_FILENAME, analysis_context)
+    files.write_json(out / "analysis_context.json", analysis_context)
+
+    if settings.include_memory:
+        rebuild_rolling_summary(settings=settings)
 
     return RunResult(
         date=date,
         output_dir=out,
         daily_state=daily_state,
+        analysis_context=analysis_context,
         report_path=out / f"{date}-analysis.md",
         state_validation=state_validation,
         report_validation=report_validation,
@@ -157,14 +183,26 @@ def run_daily_analysis(
     )
 
 
-def _placeholder_state(date: str, manifest) -> DailyState:
-    """Minimal valid state used only to persist artifacts on a failed run."""
-    from .schemas import DecisionMatrix, MonteCarloDetail, SignalAlignment, SignalSet
+def _merge_enforcement_audit(
+    report: ValidationReport,
+    enforce_warnings: list[str],
+) -> ValidationReport:
+    issues = list(report.issues)
+    for entry in audit_enforcement_issues(enforce_warnings):
+        issues.append(ValidationIssue(**entry))
+    return report.model_copy(update={"issues": issues})
 
+
+def _placeholder_state(date: str, ctx: AnalysisContext) -> DailyState:
+    from .schemas import DecisionMatrix, DecisionMatrixRow, MonteCarloDetail, SignalAlignment, SignalSet
+
+    mc = ctx.monte_carlo
+    row65 = mc.threshold_evaluation["65"]
     return DailyState(
         date=date,
         framework_version="unknown",
-        spx_close=manifest.close,
+        spx_close=ctx.market_data.spx_close,
+        structural_bias="Mid Bull",
         base_case="unknown",
         trend_regime="unknown",
         valuation_bucket="unknown",
@@ -173,11 +211,13 @@ def _placeholder_state(date: str, manifest) -> DailyState:
         narrative_summary="Run failed before a valid state was produced.",
         open_questions=[],
         decision_matrix=DecisionMatrix(
-            valuation="unknown",
-            technicals="unknown",
-            sentiment="unknown",
-            risk="unknown",
-            recommended_action="none",
+            rows=[
+                DecisionMatrixRow(
+                    signal_layer="Recommended Action",
+                    current_reading="none",
+                    signal="none",
+                )
+            ]
         ),
         signal_alignment=SignalAlignment(
             trim_signals_met=0,
@@ -188,11 +228,20 @@ def _placeholder_state(date: str, manifest) -> DailyState:
         conflicting_evidence=[],
         primary_tension="Run failed before conflicts were classified.",
         monte_carlo=MonteCarloDetail(
-            prob_up_first=0.5,
-            prob_down_first=0.5,
-            conditional_cascade="unknown",
-            median_days="unknown",
-            cash_drag_prob=0.5,
-            meets_threshold=False,
+            effective_threshold=65,
+            meets_threshold=row65.actionable,
+            prob_up_first_raw=mc.prob_up_first_raw,
+            prob_down_first_raw=mc.prob_down_first_raw,
+            prob_up_first_adjusted=mc.prob_up_first_adjusted,
+            prob_down_first_adjusted=mc.prob_down_first_adjusted,
+            sigma=mc.sigma,
+            mu=mc.mu,
+            upside_target=mc.upside_target,
+            downside_target=mc.downside_target,
+            rally_exhaustion_score=mc.rally_exhaustion_score,
+            conditional_cascade=mc.cascades,
+            median_days=mc.median_days,
+            drift_path=mc.drift_path,
+            cash_drag_prob=mc.cash_drag_prob,
         ),
     )

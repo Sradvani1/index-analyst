@@ -13,7 +13,6 @@ def _manifest(charts, chart_count=None):
     return {
         "date": "2026-06-12",
         "index_symbol": "SPX",
-        "instrument_symbol": "SCHK",
         "close": 7450.25,
         "chart_count": chart_count if chart_count is not None else len(charts),
         "charts": charts,
