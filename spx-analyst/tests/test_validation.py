@@ -1,3 +1,5 @@
+import copy
+
 from src.schemas import DailyState
 from src.validation import parse_daily_state, validate_report
 
@@ -146,3 +148,41 @@ def test_validate_report_mixed_missing_primary_tension():
     report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
     assert not report.passed
     assert any(i.code == "missing_primary_tension" for i in report.errors)
+
+
+def test_validate_report_contradicting_structural_bias():
+    state = DailyState.model_validate(SAMPLE_STATE)  # Mid Bull
+    md = GOOD_REPORT.replace("Mid Bull", "Bear Market")
+    report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
+    assert not report.passed
+    assert any(i.code == "contradicting_structural_bias" for i in report.errors)
+
+
+def test_validate_report_missing_structural_bias():
+    state = DailyState.model_validate(SAMPLE_STATE)  # Mid Bull
+    md = GOOD_REPORT.replace("Mid Bull", "the regime")
+    report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
+    assert not report.passed
+    assert any(i.code == "missing_structural_bias" for i in report.errors)
+
+
+def test_validate_report_unaddressed_high_weight_conflict_is_error():
+    data = copy.deepcopy(SAMPLE_STATE)
+    data["conflicting_evidence"] = [
+        {
+            "id": "zeta_signal",
+            "layers": ["sentiment"],
+            "bullish_read": "Quixotic zorblax indicators flipping upward",
+            "bearish_read": "Wobblequark structure decaying without warning",
+            "framework_rule": "Distinctive framework clause",
+            "weight": "high",
+            "chart_refs": ["01_chart.png"],
+        }
+    ]
+    state = DailyState.model_validate(data)
+    report = validate_report(GOOD_REPORT, "2026-06-12", max_chars=24000, daily_state=state)
+    assert not report.passed
+    assert any(
+        i.code == "missing_high_weight_conflict" and i.severity == "error"
+        for i in report.issues
+    )

@@ -2,6 +2,7 @@ from src.prompts import (
     DECISION_MATRIX_ROWS,
     PRE_STEP,
     WORKFLOW_STEPS,
+    _analysis_context_block,
     build_report_prompt,
     build_state_prompt,
     load_system_role,
@@ -67,3 +68,50 @@ def test_report_prompt_lists_steps_and_matrix(sample_state):
     assert "Updated Decision Matrix" in bundle.body
     assert "Evidence Reconciliation" in bundle.body
     assert sample_state.primary_tension in bundle.body
+
+
+def test_system_role_has_precompute_authority():
+    role = load_system_role("You are an SPX analyst.").lower()
+    assert "sole numeric source of truth" in role
+    assert "never recompute" in role
+
+
+def test_state_prompt_reduced_numeric_load():
+    bundle = build_state_prompt(
+        system_role=load_system_role("R"),
+        framework="FW",
+        manifest=_manifest(),
+        external_context=_context(),
+        analysis_context=sample_analysis_context(),
+        recent_summary=None,
+    )
+    # Injected threshold map and explicit spx_close step are gone.
+    assert '"Late Bull / Topping": 70' not in bundle.body
+    assert "from analysis_context.market_data.spx_close" not in bundle.body
+    # Precompute-owned rows get a placeholder instead of reasoned numbers.
+    assert "(engine-filled)" in bundle.body
+
+
+def test_report_prompt_exposition_lock_and_divergence_ids(sample_state):
+    bundle = build_report_prompt(
+        system_role=load_system_role("R"),
+        framework="FW",
+        daily_state=sample_state,
+        manifest=_manifest(),
+        external_context=_context(),
+        analysis_context=sample_analysis_context(),
+        recent_summary=None,
+    )
+    body = bundle.body.lower()
+    assert "not re-deciding" in body
+    assert "by its id" in body
+
+
+def test_analysis_context_block_rounds_floats():
+    ctx = sample_analysis_context()
+    ctx = ctx.model_copy(
+        update={"market_data": ctx.market_data.model_copy(update={"spx_close": 7266.990234375})}
+    )
+    block = _analysis_context_block(ctx)
+    assert "7266.990234375" not in block
+    assert "7266.99" in block

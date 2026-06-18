@@ -7,7 +7,13 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from .prompts import DECISION_MATRIX_ROWS, EVIDENCE_RECONCILIATION_HEADING, PRE_STEP, WORKFLOW_STEPS
+from .prompts import (
+    DECISION_MATRIX_ROWS,
+    EVIDENCE_RECONCILIATION_HEADING,
+    PRE_STEP,
+    STRUCTURAL_BIAS_THRESHOLDS,
+    WORKFLOW_STEPS,
+)
 from .schemas import DailyState, ValidationIssue, ValidationReport
 
 
@@ -161,6 +167,65 @@ def _matrix_uniformly_directional(report_md: str) -> bool:
     return bullish >= 3 and bearish == 0
 
 
+def _norm_bias_text(text: str) -> str:
+    """Lowercase and normalize whitespace/slash spacing for tolerant matching."""
+    collapsed = re.sub(r"\s+", " ", text.lower())
+    return re.sub(r"\s*/\s*", " / ", collapsed)
+
+
+def _validate_state_consistency(report_md: str, state: DailyState) -> list[ValidationIssue]:
+    """Always-on guard: the report must not contradict the validated state."""
+    issues: list[ValidationIssue] = []
+    lowered = report_md.lower()
+    normalized = _norm_bias_text(report_md)
+
+    validated_bias = state.structural_bias
+    other_biases = [
+        b
+        for b in STRUCTURAL_BIAS_THRESHOLDS
+        if b != validated_bias and _norm_bias_text(b) in normalized
+    ]
+    if _norm_bias_text(validated_bias) not in normalized:
+        if other_biases:
+            issues.append(
+                ValidationIssue(
+                    severity="error",
+                    code="contradicting_structural_bias",
+                    message=(
+                        f"report states {other_biases} but validated structural_bias is "
+                        f"{validated_bias!r}"
+                    ),
+                )
+            )
+        else:
+            issues.append(
+                ValidationIssue(
+                    severity="error",
+                    code="missing_structural_bias",
+                    message=f"report does not state the validated structural_bias {validated_bias!r}",
+                )
+            )
+
+    action = state.decision_matrix.recommended_action
+    action_tokens = [t for t in re.findall(r"[a-z0-9]+", action.lower()) if len(t) >= 4]
+    if action_tokens:
+        matrix_match = re.search(
+            r"^#{1,6}\s.*Decision Matrix", report_md, re.IGNORECASE | re.MULTILINE
+        )
+        tail = report_md[matrix_match.start() :].lower() if matrix_match else lowered
+        hits = sum(1 for t in action_tokens if t in tail)
+        if hits < max(1, (len(action_tokens) + 1) // 2):
+            issues.append(
+                ValidationIssue(
+                    severity="warning",
+                    code="recommended_action_not_echoed",
+                    message="validated recommended_action is not echoed near the Updated Decision Matrix",
+                )
+            )
+
+    return issues
+
+
 def validate_report(
     report_md: str,
     date: str,
@@ -260,6 +325,7 @@ def validate_report(
         )
 
     if daily_state is not None:
+        issues.extend(_validate_state_consistency(report_md, daily_state))
         mixed_day = (
             daily_state.signal_alignment.overall == "mixed"
             or _hold_or_monitor_action(daily_state.decision_matrix.recommended_action)
@@ -295,7 +361,7 @@ def validate_report(
                 ):
                     issues.append(
                         ValidationIssue(
-                            severity="warning",
+                            severity="error",
                             code="missing_high_weight_conflict",
                             message=f"high-weight conflict not addressed: {div.id}",
                         )

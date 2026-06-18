@@ -31,10 +31,12 @@ def _mc_edge_signal(meets_threshold: bool) -> str:
 
 
 def _erp_signal(erp_trend: str | None) -> str:
+    # Per framework: expanding ERP = structural support improving (bullish),
+    # contracting = support weakening (bearish).
     if erp_trend == "expanding":
-        return "caution"
-    if erp_trend == "contracting":
         return "attractive"
+    if erp_trend == "contracting":
+        return "caution"
     if erp_trend == "stable":
         return "neutral"
     return "unknown"

@@ -71,7 +71,24 @@ def _system_blocks(bundle: PromptBundle, cache_enabled: bool) -> list[dict[str, 
     return [{"type": "text", "text": bundle.system_role}, framework_block]
 
 
+def _state_tool() -> dict[str, Any]:
+    """The emit_daily_state tool, built identically for both passes.
+
+    Both passes must send byte-identical tool definitions so the cached
+    tools+system prefix (framework) is reused on Pass 2. Pass 2 sets
+    tool_choice="none" so it still returns free-form markdown.
+    """
+    return {
+        "name": STATE_TOOL_NAME,
+        "description": "Emit the structured daily analysis state for the session.",
+        "input_schema": DailyState.model_json_schema(),
+    }
+
+
 def _user_content(bundle: PromptBundle, image_paths: list[Path], max_dim: int) -> list[dict[str, Any]]:
+    # Images are NOT cached: they live in the messages layer, and Pass 1 forces the
+    # tool while Pass 2 does not — the differing tool_choice invalidates the messages
+    # cache, so an image breakpoint would only incur write cost with no read.
     content: list[dict[str, Any]] = [_encode_image(p, max_dim) for p in image_paths]
     content.append({"type": "text", "text": bundle.body})
     return content
@@ -94,6 +111,7 @@ def _snapshot(
         "body_chars": len(body_text),
         "analysis_context_included": "Precomputed analysis context" in body_text,
         "images": [p.name for p in image_paths],
+        "image_count": len(image_paths),
         "forced_tool": tool_name,
     }
 
@@ -118,16 +136,11 @@ class AnthropicClient:
         """Pass 1: force the model to emit DailyState via tool use."""
         system_blocks = _system_blocks(bundle, self.settings.prompt_cache_enabled)
         content = _user_content(bundle, image_paths, self.settings.image_max_dimension)
-        tool = {
-            "name": STATE_TOOL_NAME,
-            "description": "Emit the structured daily analysis state for the session.",
-            "input_schema": DailyState.model_json_schema(),
-        }
         response = self._create(
             model=self.settings.model,
             max_tokens=self.settings.max_output_tokens,
             system=system_blocks,
-            tools=[tool],
+            tools=[_state_tool()],
             tool_choice={"type": "tool", "name": STATE_TOOL_NAME},
             messages=[{"role": "user", "content": content}],
         )
@@ -178,13 +191,19 @@ class AnthropicClient:
         )
 
     def run_markdown_report(self, bundle: PromptBundle, image_paths: list[Path]) -> CallResult:
-        """Pass 2: free-form markdown report."""
+        """Pass 2: free-form markdown report.
+
+        Sends the same tools as Pass 1 (with tool_choice="none") so the cached
+        tools+system prefix is reused; the model still returns markdown text.
+        """
         system_blocks = _system_blocks(bundle, self.settings.prompt_cache_enabled)
         content = _user_content(bundle, image_paths, self.settings.image_max_dimension)
         response = self._create(
             model=self.settings.model,
             max_tokens=self.settings.max_output_tokens,
             system=system_blocks,
+            tools=[_state_tool()],
+            tool_choice={"type": "none"},
             messages=[{"role": "user", "content": content}],
         )
         text = _extract_text(response)

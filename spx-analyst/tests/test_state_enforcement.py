@@ -40,6 +40,29 @@ def test_apply_precomputed_fields_maps_late_bull_threshold():
     assert enforced.monte_carlo.effective_threshold == 70
 
 
+def _erp_row_signal(ctx_trend: str) -> str:
+    ctx = sample_analysis_context("2026-06-12")
+    ctx = ctx.model_copy(
+        update={"valuation": ctx.valuation.model_copy(update={"erp_trend": ctx_trend})}
+    )
+    state = DailyState.model_validate({**SAMPLE_STATE, "date": "2026-06-12"})
+    enforced, _ = apply_precomputed_fields(state, ctx)
+    row = next(
+        r for r in enforced.decision_matrix.rows if r.signal_layer == "ERP State and Trend"
+    )
+    return row.signal
+
+
+def test_erp_signal_expanding_is_attractive():
+    # Framework: expanding ERP = structural support improving (bullish).
+    assert _erp_row_signal("expanding") == "attractive"
+
+
+def test_erp_signal_contracting_is_caution():
+    # Framework: contracting ERP = structural support weakening (bearish).
+    assert _erp_row_signal("contracting") == "caution"
+
+
 def test_apply_precomputed_fields_syncs_matrix_rows():
     ctx = sample_analysis_context("2026-06-12")
     state = DailyState.model_validate({**SAMPLE_STATE, "date": "2026-06-12"})

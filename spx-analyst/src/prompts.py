@@ -40,6 +40,18 @@ DECISION_MATRIX_ROWS: list[str] = [
     "Recommended Action",
 ]
 
+# Rows deterministically overwritten by state_enforcement.sync_matrix_precomputed_rows;
+# the model emits placeholders for these instead of reasoning out numbers.
+PRECOMPUTE_OWNED_MATRIX_ROWS: list[str] = [
+    "Structural Bias",
+    "Monte Carlo Threshold",
+    "Volatility Input",
+    "Drift Input",
+    "Rally Exhaustion Score",
+    "Monte Carlo Edge",
+    "ERP State and Trend",
+]
+
 EVIDENCE_RECONCILIATION_HEADING = "Evidence Reconciliation"
 
 STRUCTURAL_BIAS_THRESHOLDS: dict[str, int] = {
@@ -51,14 +63,15 @@ STRUCTURAL_BIAS_THRESHOLDS: dict[str, int] = {
 
 HARD_CONSTRAINTS = """\
 Non-negotiable constraints (from the framework):
-- Complete Structural Regime Classification before Step 1.
+- Complete Structural Regime Classification before Step 1; assign exactly one structural_bias.
 - Signals are actionable only when multiple independent indicators align; mixed data means hold and monitor.
-- Never use Monte Carlo output in isolation — interpret through structural bias and chart evidence.
-- Monte Carlo values come from analysis_context (Python precompute). Select effective_threshold from \
-structural_bias (Early/Mid Bull=65, Late Bull=70, Bear=75), copy the matching threshold_evaluation row \
-and simulation fields into emit_daily_state. Do not recalculate or adjust probabilities.
-- Use analysis_context for ERP, structural levels, and all precomputed numerics (close, VIX, 10Y).
-- Chart labels never override analysis_context numeric values.
+- Never use Monte Carlo output in isolation — interpret it through structural_bias and chart evidence.
+- analysis_context is the sole numeric source of truth. Wherever the framework says "Calculate" (ERP, \
+Fibonacci, drawdown/liquidation zones, volatility, drift, Monte Carlo), read and interpret the precomputed \
+value instead — never recompute or adjust it. Chart labels never override analysis_context numerics.
+- The engine deterministically re-derives spx_close, the Monte Carlo block, and the numeric decision-matrix \
+rows after this step, so spend your effort on the qualitative chart reads and structural_bias, not on \
+transcribing numbers precisely.
 - Always end with the Updated Decision Matrix (18 rows)."""
 
 
@@ -78,8 +91,19 @@ def _external_block(ctx: ExternalContext) -> str:
     return "## External context (manual EPS inputs)\n```json\n" + json.dumps(payload, indent=2) + "\n```"
 
 
+def _round_floats(obj: object, places: int = 4) -> object:
+    """Strip float32 noise from rendered numbers (prompt-only; never persisted)."""
+    if isinstance(obj, float):
+        return round(obj, places)
+    if isinstance(obj, dict):
+        return {k: _round_floats(v, places) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_round_floats(v, places) for v in obj]
+    return obj
+
+
 def _analysis_context_block(ctx: AnalysisContext) -> str:
-    payload = ctx.model_dump(mode="json")
+    payload = _round_floats(ctx.model_dump(mode="json"))
     return (
         "## Precomputed analysis context (immutable numeric truth for this run)\n"
         "Use these values for ERP, structure, and Monte Carlo. Do not recalculate.\n"
@@ -148,22 +172,24 @@ def build_state_prompt(
     if mem:
         parts.insert(0, mem)
 
-    threshold_map = json.dumps(STRUCTURAL_BIAS_THRESHOLDS, indent=2)
+    owned_rows = ", ".join(PRECOMPUTE_OWNED_MATRIX_ROWS)
     parts.append(
         "## Task\n"
         f"Complete `{PRE_STEP}` first, then the Daily 7-Step Workflow in order. "
         "Read all charts for qualitative technical and sentiment evidence. "
         "Call `emit_daily_state` exactly once.\n\n"
-        "Before calling the tool:\n"
-        "1. Set `structural_bias` from chart evidence (Pre-Step).\n"
-        f"2. Map structural_bias to effective_threshold using: {threshold_map}\n"
-        "3. Copy Monte Carlo fields from analysis_context — select threshold_evaluation row "
-        "for effective_threshold; set meets_threshold from row.actionable. Do not recalculate.\n"
-        "4. Set `spx_close` from analysis_context.market_data.spx_close.\n"
-        "5. Compute signal_alignment from chart evidence; list confirming_evidence and conflicting_evidence.\n"
-        "6. Build decision_matrix.rows with all 18 framework rows.\n"
-        "7. Set framework_version to 'daily-2026-06'.\n\n"
-        "Keep narrative_summary to 2-4 sentences plain text."
+        "Priorities (these survive into the report — spend your effort here):\n"
+        "1. Assign `structural_bias` from chart evidence (Pre-Step). This single choice selects the "
+        "Monte Carlo threshold downstream, so justify it against extension, ERP, credit, and breadth.\n"
+        "2. Read charts for `signals`, `signal_alignment`, `confirming_evidence`, and "
+        "`conflicting_evidence` (cite chart files in each divergence's `chart_refs`).\n"
+        "3. Set `primary_tension` and a 2-4 sentence plain-text `narrative_summary`.\n"
+        "4. Build `decision_matrix.rows` with all 18 framework rows using their exact labels.\n\n"
+        "Numeric fields are re-verified by the engine, so do not tune them:\n"
+        f"- Emit `monte_carlo` and `spx_close` as schema-valid copies from analysis_context.\n"
+        f"- For these precompute-owned rows, put a brief '(engine-filled)' placeholder in "
+        f"current_reading/signal: {owned_rows}.\n\n"
+        "Set `framework_version` to 'daily-2026-06'."
     )
     return PromptBundle(system_role=system_role, framework=framework, body="\n\n".join(parts))
 
@@ -184,7 +210,8 @@ def build_report_prompt(
     action = daily_state.decision_matrix.recommended_action
     mixed = daily_state.signal_alignment.overall == "mixed"
     mixed_note = (
-        " Use qualified readings in the Decision Matrix when alignment is mixed."
+        " When alignment is mixed, present qualified/hedged readings in the matrix cells without "
+        "altering the validated signal values."
         if mixed
         else ""
     )
@@ -202,11 +229,17 @@ def build_report_prompt(
 
     parts.append(
         "## Task\n"
-        "Write the full daily markdown report. Re-open charts for Evidence Reconciliation.\n\n"
-        "IMMUTABLE: structural_bias, monte_carlo, signal_alignment, decision_matrix, spx_close "
-        f"from state. Recommended action: {action!r}.\n\n"
+        "Write the full daily markdown report for an already-decided posture. The validated state is "
+        "final: do not introduce or imply signal readings that contradict its structural_bias, "
+        "signal_alignment, decision_matrix, or recommended action. Your job is exposition and "
+        "reconciliation, not re-deciding.\n\n"
+        f"Recommended action (verbatim): {action!r}.\n\n"
+        "Re-open charts only to add descriptive detail and to reconcile the conflicts already listed in "
+        "the conflict checklist — not to form new conclusions.\n\n"
         f"Workflow headings in order:\n{pre}\n\n"
-        f"Include `## {EVIDENCE_RECONCILIATION_HEADING}` after Step 2 for mixed/conflicting evidence.\n\n"
+        f"After Step 2, include `## {EVIDENCE_RECONCILIATION_HEADING}` and address each listed divergence "
+        "by its id (e.g. DIV-1), giving the bullish read, the bearish read, and how the framework rule "
+        "resolves it.\n\n"
         "Step 5 must cite precomputed Monte Carlo from analysis_context (do not recompute).\n\n"
         f"End with `## Updated Decision Matrix` table rows: {', '.join(DECISION_MATRIX_ROWS)}."
         f"{mixed_note}"
