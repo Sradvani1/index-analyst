@@ -27,7 +27,7 @@ from .schemas import (
     ExternalContext,
     StructureContext,
 )
-from .structure import compute_structure
+from .structure import compute_structure, reanchor_downside_for_straddle
 
 logger = logging.getLogger(__name__)
 
@@ -86,12 +86,24 @@ def run_precompute(
         sma50=sma50,
         pct_above_200dma=market.pct_above_200dma,
     )
-    structure = _structure_to_schema(structure_result)
 
     tnx_history = [float(v) for v in series.tnx.values]
     from .valuation import compute_valuation_context
 
     valuation = compute_valuation_context(market, external, tnx_history)
+
+    structure_result, reanchor_warnings = reanchor_downside_for_straddle(
+        structure_result,
+        market.spx_close,
+        erp_reentry_floor=valuation.erp_reentry_floor_at_0_5pct,
+        sma_200=market.sma_200,
+    )
+    if reanchor_warnings:
+        market.precompute_warnings.extend(reanchor_warnings)
+        for warning in reanchor_warnings:
+            logger.warning("precompute straddle guard: %s", warning)
+
+    structure = _structure_to_schema(structure_result)
 
     vol_60 = realized_vol_annualized(closes, min(60, len(closes) - 1))
     exh_inputs = exhaustion_inputs_from_bars(

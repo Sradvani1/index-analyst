@@ -200,7 +200,22 @@ def run_monte_carlo(
     prob_down_adj = 1.0 - prob_up_adj
 
     # Cascades
-    down_next = structure.fib_500 if structure.downside_target_rule == "fib_382" else structure.fib_618
+    if structure.downside_target_rule == "fib_382":
+        down_next = structure.fib_500
+    elif structure.downside_target_rule == "fib_500":
+        down_next = structure.fib_618
+    else:
+        lower_levels = [
+            z
+            for z in (
+                structure.liquidation_caution,
+                structure.liquidation_nervous,
+                structure.liquidation_margin_call,
+                structure.liquidation_cascade,
+            )
+            if z < downside
+        ]
+        down_next = max(lower_levels) if lower_levels else downside * (1.0 - 0.0125)
     p_down_cascade = _conditional_hit(paths, downside, down_next, "down")
     up_next = next_resistance_above(upside, bars)
     p_up_cascade = _conditional_hit(paths, upside, up_next, "up")

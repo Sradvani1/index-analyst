@@ -77,6 +77,45 @@ external_context.json  →     valuation.py   (ERP, P/E)
 
 ---
 
+## Monte Carlo target straddle guard (Option A)
+
+The framework requires Monte Carlo to report actionable probabilities, key levels,
+and drift-path expectations for the **current** market state. The engine therefore
+must never simulate with targets that fail to straddle spot.
+
+`structure.reanchor_downside_for_straddle()` runs after structure + valuation and
+before Monte Carlo. It enforces the invariant:
+
+```
+downside_target < spx_close < upside_target
+```
+
+When the close has fully retraced (and broken below) the active swing low, the prior
+H→L Fibonacci ladder sits entirely above spot and the resolved downside target is
+`>= close`. In that case the downside is **re-anchored to the nearest structurally
+valid level strictly below spot**, in priority order:
+
+1. nearest liquidation level strictly below spot (`reanchor_liquidation`),
+2. ERP re-entry floor, if strictly below spot (`reanchor_erp_floor`),
+3. 200-day SMA, if strictly below spot (`reanchor_sma200`),
+4. margin-call zone (`reanchor_margin_call`),
+5. deterministic −1.25% fallback only if no structural level is below spot
+   (`reanchor_fallback_pct`; catastrophic >15% break).
+
+`fib_618` is intentionally **not** a fallback: once price is below the whole leg,
+the Fib retracement ladder is no longer a valid downside map. Any re-anchor writes a
+`precompute_warning` to `market_data.precompute_warnings` so `analysis_context.json`
+stays traceable. The MC downside cascade level is derived from liquidation zones
+below the (re-anchored) target so cascades also stay below spot.
+
+**Not yet implemented (deferred, Option B):** formal down-leg re-anchoring — treating
+a fully-retraced-and-broken leg as a new governing down-leg with its own swing
+high/low and Fib construction. That is a framework-methodology decision (the Daily
+framework still describes Step 6 as Fib/leverage/support from the current swing high)
+and should be specified before implementation.
+
+---
+
 ## Schema changes
 
 ### `external_context.json` (input) — **strict breaking change**
@@ -285,6 +324,7 @@ python -m src.cli rebuild-summary --days 6
 | Item | Notes |
 |------|-------|
 | DL-3 rule 2 (liquidation near fib) | −10% zone is usually below `fib_382`; rule rarely fires per locked spec |
+| Down-leg re-anchoring (Option B) | Deferred; straddle guard re-anchors only the downside target, not the full leg/Fib construction |
 | Perplexity migration | `migrate_perplexity.py` bypasses precompute; legacy import only |
 | First run offline | Requires network or cached `market_history.json` |
 | Qualitative matrix rows | Trend, breadth, credit, etc. remain LLM-authored from charts |

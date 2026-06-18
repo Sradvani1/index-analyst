@@ -30,7 +30,7 @@ Monte Carlo primary targets
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Literal, Sequence
 
@@ -38,7 +38,16 @@ import numpy as np
 
 SwingConfirmation = Literal["pullback_3pct", "five_sessions", "rally_5pct", "above_50dma"]
 UpsideTargetRule = Literal["active_swing_high", "next_local_max", "pct_extension"]
-DownsideTargetRule = Literal["fib_382", "fib_500", "first_liquidation_zone"]
+DownsideTargetRule = Literal[
+    "fib_382",
+    "fib_500",
+    "first_liquidation_zone",
+    "reanchor_liquidation",
+    "reanchor_erp_floor",
+    "reanchor_sma200",
+    "reanchor_margin_call",
+    "reanchor_fallback_pct",
+]
 
 LOCAL_EXTREMA_K = 2
 PULLBACK_CONFIRM_PCT = 0.03
@@ -331,3 +340,71 @@ def compute_structure(
         downside_target=downside,
         downside_target_rule=downside_rule,
     )
+
+
+def reanchor_downside_for_straddle(
+    result: StructureResult,
+    close: float,
+    *,
+    erp_reentry_floor: float | None,
+    sma_200: float | None,
+) -> tuple[StructureResult, list[str]]:
+    """Option-A straddle guard: enforce ``downside_target < close < upside_target``.
+
+    Once the current close sits at or below the resolved downside target, the prior
+    active H->L leg has been fully retraced (and likely broken), so its Fibonacci
+    ladder is no longer a valid downside map. Re-anchor the downside target to the
+    nearest structurally valid level strictly below spot, in priority order:
+
+      1. nearest liquidation level strictly below spot,
+      2. ERP re-entry floor (if strictly below spot),
+      3. 200-day SMA (if strictly below spot),
+      4. margin-call zone.
+
+    A deterministic percentage fallback is used only if no structural level lies
+    below spot (a catastrophic >15% break), so the straddle invariant always holds.
+    Returns the (possibly updated) result and any precompute warnings.
+    """
+    warnings: list[str] = []
+    prior_downside = result.downside_target
+
+    if prior_downside < close:
+        return result, warnings
+
+    candidates: list[tuple[float, DownsideTargetRule]] = []
+    liq_below = [
+        z
+        for z in (
+            result.liquidation_caution,
+            result.liquidation_nervous,
+            result.liquidation_margin_call,
+            result.liquidation_cascade,
+        )
+        if z < close
+    ]
+    if liq_below:
+        candidates.append((max(liq_below), "reanchor_liquidation"))
+    if erp_reentry_floor is not None and erp_reentry_floor < close:
+        candidates.append((erp_reentry_floor, "reanchor_erp_floor"))
+    if sma_200 is not None and sma_200 < close:
+        candidates.append((sma_200, "reanchor_sma200"))
+    if result.liquidation_margin_call < close:
+        candidates.append((result.liquidation_margin_call, "reanchor_margin_call"))
+
+    if candidates:
+        new_downside, new_rule = candidates[0]
+    else:
+        new_downside = close * (1.0 - EXTENSION_FALLBACK_PCT)
+        new_rule = "reanchor_fallback_pct"
+
+    warnings.append(
+        f"active leg fully retraced: close {close:.2f} <= prior downside target "
+        f"{prior_downside:.2f} ({result.downside_target_rule}); re-anchored downside to "
+        f"{new_downside:.2f} ({new_rule}) for Monte Carlo straddle validity"
+    )
+    updated = replace(
+        result,
+        downside_target=new_downside,
+        downside_target_rule=new_rule,
+    )
+    return updated, warnings

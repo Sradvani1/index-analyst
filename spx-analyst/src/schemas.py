@@ -78,7 +78,16 @@ class MarketDataContext(BaseModel):
 ERPTrend = Literal["expanding", "stable", "contracting"]
 RallyExhaustionScore = Literal["Low", "Moderate", "High"]
 UpsideTargetRule = Literal["active_swing_high", "next_local_max", "pct_extension"]
-DownsideTargetRule = Literal["fib_382", "fib_500", "first_liquidation_zone"]
+DownsideTargetRule = Literal[
+    "fib_382",
+    "fib_500",
+    "first_liquidation_zone",
+    "reanchor_liquidation",
+    "reanchor_erp_floor",
+    "reanchor_sma200",
+    "reanchor_margin_call",
+    "reanchor_fallback_pct",
+]
 SwingConfirmation = Literal["pullback_3pct", "five_sessions", "rally_5pct", "above_50dma"]
 
 
