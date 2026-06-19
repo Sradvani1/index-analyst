@@ -294,7 +294,7 @@ Updated for SPX-only schema:
    [external_context.json](#external_contextjson-input--strict-breaking-change).
 2. **Old `memory/daily_states/*.json`** — incompatible schema; skipped when unreadable
 3. **Decision matrix shape** — `{ rows: [...] }` not `{ headers, cells }`
-4. **Runtime frameworks** — V1/V3 SCHK files remain in repo but are **not loaded**
+4. **Runtime frameworks** — V1/V3 SCHK files moved to `docs/archive/`; **not loaded** at runtime
 
 ### One-time migration
 
