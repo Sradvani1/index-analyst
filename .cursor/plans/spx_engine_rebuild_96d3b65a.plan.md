@@ -277,9 +277,9 @@ Orchestrates the above; called from [`analysis_engine.py`](spx-analyst/src/analy
 load role + framework
 load manifest + external_context
 run precompute → analysis_context.json   # sole numeric truth for this run
-Pass 1 (charts + external_context + analysis_context + optional prior-run narrative context)
+Pass 1 (charts + external_context + analysis_context + optional prior posture snapshot)
 validate state
-Pass 2 (charts + external_context + analysis_context + validated state + optional prior-run narrative context)
+Pass 2 (charts + external_context + analysis_context + validated state + optional prior posture snapshot)
 validate report
 persist
 ```

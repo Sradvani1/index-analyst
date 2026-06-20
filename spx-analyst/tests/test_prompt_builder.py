@@ -45,7 +45,29 @@ def test_state_prompt_contains_blocks(sample_state):
     assert "emit_daily_state" in bundle.body
     assert "structural_bias" in bundle.body
     assert "prior summary" in bundle.body
+    assert "Prior posture snapshot" in bundle.body
+    assert "Optional prior-run narrative context" not in bundle.body
     assert "7450.25" in bundle.body
+
+
+def test_memory_block_absent_when_none(sample_state):
+    """Memory block omitted when recent_summary is None (covers include_memory=false path)."""
+    role = load_system_role("Role.")
+    ac = sample_analysis_context()
+    for builder in (build_state_prompt, build_report_prompt):
+        kwargs = dict(
+            system_role=role,
+            framework="FW",
+            manifest=_manifest(),
+            external_context=_context(),
+            analysis_context=ac,
+            recent_summary=None,
+        )
+        if builder is build_report_prompt:
+            kwargs["daily_state"] = sample_state
+        bundle = builder(**kwargs)
+        assert "Prior posture snapshot" not in bundle.body
+        assert "Optional prior-run narrative context" not in bundle.body
 
 
 def test_report_prompt_lists_steps_and_matrix(sample_state):

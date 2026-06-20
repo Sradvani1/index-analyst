@@ -11,7 +11,11 @@ from . import files
 from .anthropic_client import AnthropicClient
 from .config import Settings, get_settings
 from .external_data import load_external_context
-from .memory import build_recent_summary, load_recent_states, rebuild_rolling_summary
+from .memory import (
+    build_recent_summary,
+    load_recent_states_with_stats,
+    rebuild_rolling_summary,
+)
 from .precompute import run_precompute
 from .prompts import build_report_prompt, build_state_prompt, load_system_role
 from .schemas import AnalysisContext, DailyState, ValidationIssue, ValidationReport
@@ -72,11 +76,22 @@ def run_daily_analysis(
     warnings.extend(analysis_context.market_data.precompute_warnings)
 
     recent_summary: str | None = None
+    memory_load: dict[str, int] | None = None
     if settings.include_memory:
-        recent_states = load_recent_states(before_date=date, settings=settings)
+        recent_states, mem_stats = load_recent_states_with_stats(
+            before_date=date, settings=settings
+        )
         recent_summary = build_recent_summary(recent_states)
-    else:
-        recent_states = []
+        memory_load = {
+            "requested": mem_stats.requested,
+            "loaded": mem_stats.loaded,
+            "skipped_invalid": mem_stats.skipped_invalid,
+            "skipped_before_date": mem_stats.skipped_before_date,
+        }
+        if mem_stats.skipped_invalid > 0:
+            warnings.append(
+                f"memory load skipped {mem_stats.skipped_invalid} invalid prior state file(s)"
+            )
 
     client = client or AnthropicClient(settings)
 
@@ -132,7 +147,7 @@ def run_daily_analysis(
     )
     warnings.extend(i.message for i in report_validation.warnings)
 
-    run_log = {
+    run_log: dict[str, object] = {
         "started": started,
         "finished": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "ok",
@@ -145,6 +160,8 @@ def run_daily_analysis(
             "warnings": enforce_warnings,
         },
     }
+    if memory_load is not None:
+        run_log["memory_load"] = memory_load
     out = files.save_outputs(
         date=date,
         daily_state=daily_state,
@@ -168,8 +185,7 @@ def run_daily_analysis(
     files.write_json(run_dir / files.ANALYSIS_CONTEXT_FILENAME, analysis_context)
     files.write_json(out / "analysis_context.json", analysis_context)
 
-    if settings.include_memory:
-        rebuild_rolling_summary(settings=settings)
+    rebuild_rolling_summary(settings=settings)
 
     return RunResult(
         date=date,

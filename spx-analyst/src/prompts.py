@@ -128,8 +128,10 @@ def _optional_memory_block(recent_summary: str | None) -> str:
     if not recent_summary:
         return ""
     return (
-        "## Optional prior-run narrative context (non-authoritative)\n"
-        "Use only for day-over-day narrative continuity — never for numeric calculations.\n"
+        "## Prior posture snapshot (continuity only — not authoritative for today's numerics)\n"
+        "Each run is a fresh analysis. Use this block only to track regime shifts, action posture, "
+        "day-over-day changes, and unresolved tensions. All calculations, thresholds, targets, and "
+        "price levels come from today's analysis_context and charts — never from prior sessions.\n\n"
         f"{recent_summary}"
     )
 

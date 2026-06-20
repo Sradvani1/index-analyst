@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from unittest.mock import patch
 
 import pytest
@@ -125,3 +126,69 @@ def test_failed_run_does_not_pollute_memory(mock_precompute, tmp_path, settings)
 
     assert (settings.output_dir / date / "validation_report.json").exists()
     assert not (settings.daily_states_dir / f"{date}-state.json").exists()
+
+
+@patch("src.analysis_engine.run_precompute")
+def test_memory_block_absent_when_include_memory_false(mock_precompute, tmp_path, settings):
+    date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    settings.include_memory = False
+    state = dict(SAMPLE_STATE)
+    state["date"] = date
+    client = FakeClient(state)
+    run_daily_analysis(date, str(run_dir), settings=settings, client=client)
+    assert "Prior posture snapshot" not in client.state_bodies[0]
+    assert "Prior posture snapshot" not in client.report_bodies[0]
+
+
+@patch("src.analysis_engine.run_precompute")
+def test_rolling_rebuilt_without_include_memory(mock_precompute, tmp_path, settings):
+    date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    settings.include_memory = False
+    write_state(settings, "2026-06-11")
+    state = dict(SAMPLE_STATE)
+    state["date"] = date
+    client = FakeClient(state)
+    run_daily_analysis(date, str(run_dir), settings=settings, client=client)
+    rolling = settings.rolling_dir / "recent_summary.md"
+    assert rolling.exists()
+    text = rolling.read_text(encoding="utf-8")
+    assert "###" in text
+    assert date in text or "2026-06-11" in text
+
+
+@patch("src.analysis_engine.run_precompute")
+def test_no_warning_young_archive_zero_invalid_skips(mock_precompute, tmp_path, settings):
+    date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    settings.include_memory = True
+    state = dict(SAMPLE_STATE)
+    state["date"] = date
+    client = FakeClient(state)
+    result = run_daily_analysis(date, str(run_dir), settings=settings, client=client)
+    memory_warnings = [w for w in result.warnings if "memory load skipped" in w]
+    assert memory_warnings == []
+    run_log = json.loads((result.output_dir / "run_log.json").read_text(encoding="utf-8"))
+    assert run_log["memory_load"]["skipped_invalid"] == 0
+
+
+@patch("src.analysis_engine.run_precompute")
+def test_warning_when_prior_file_unreadable(mock_precompute, tmp_path, settings):
+    date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    settings.include_memory = True
+    bad = settings.daily_states_dir / "2026-06-11-state.json"
+    bad.parent.mkdir(parents=True, exist_ok=True)
+    bad.write_text("{broken", encoding="utf-8")
+    state = dict(SAMPLE_STATE)
+    state["date"] = date
+    client = FakeClient(state)
+    result = run_daily_analysis(date, str(run_dir), settings=settings, client=client)
+    assert any("memory load skipped" in w for w in result.warnings)
+    run_log = json.loads((result.output_dir / "run_log.json").read_text(encoding="utf-8"))
+    assert run_log["memory_load"]["skipped_invalid"] >= 1
