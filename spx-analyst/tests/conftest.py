@@ -94,6 +94,7 @@ def make_settings(tmp_path: Path) -> Settings:
         data_dir_raw=str(tmp_path / "data"),
         memory_dir_raw=str(tmp_path / "memory"),
         output_dir_raw=str(tmp_path / "output"),
+        eps_history_path_raw=str(tmp_path / "data" / "master" / "eps_history.json"),
     )
 
 
@@ -116,7 +117,25 @@ def write_state(settings: Settings, date: str, **overrides) -> None:
     path.write_text(json.dumps(data), encoding="utf-8")
 
 
+def write_eps_history(tmp_path: Path, entries: list[dict] | None = None) -> Path:
+    path = tmp_path / "data" / "master" / "eps_history.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "entries": entries
+        or [
+            {
+                "effective_from": "2026-06-01",
+                "forward_eps": 354.0,
+                "trailing_eps": 220.0,
+            }
+        ]
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
 def build_run_dir(tmp_path: Path, date: str = "2026-06-12", n: int = 3) -> Path:
+    write_eps_history(tmp_path)
     run_dir = tmp_path / "runs" / date
     charts = run_dir / "charts"
     charts.mkdir(parents=True, exist_ok=True)
@@ -135,10 +154,4 @@ def build_run_dir(tmp_path: Path, date: str = "2026-06-12", n: int = 3) -> Path:
         "charts": entries,
     }
     (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
-    ext = {
-        "date": date,
-        "forward_eps": 354.0,
-        "trailing_eps": 220.0,
-    }
-    (run_dir / "external_context.json").write_text(json.dumps(ext), encoding="utf-8")
     return run_dir

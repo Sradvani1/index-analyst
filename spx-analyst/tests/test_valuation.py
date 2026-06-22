@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.schemas import ExternalContext, MarketDataContext
+from src.schemas import MarketDataContext, ResolvedEps
 from src.valuation import compute_valuation_context, erp_reentry_floor_price
 
 
@@ -23,7 +23,7 @@ def test_compute_valuation_context():
         sma_50=5900.0,
         sma_200=5700.0,
     )
-    external = ExternalContext(date="2026-06-12", forward_eps=354.0, trailing_eps=220.0)
+    external = ResolvedEps(forward_eps=354.0, trailing_eps=220.0, effective_from="2026-06-12")
     tnx = [4.3, 4.35, 4.4, 4.42, 4.45, 4.5]
     val = compute_valuation_context(market, external, tnx)
     assert val.forward_pe == round(6000 / 354, 2)

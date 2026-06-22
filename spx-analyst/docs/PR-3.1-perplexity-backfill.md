@@ -32,25 +32,25 @@ mv memory/daily_reports/2026-06-0{1,2,4,5,8}-analysis.md memory-archive/perplexi
 
 Keep **2026-06-10** unless you want a full MC/enforcement-consistent re-backfill.
 
-### Step 1 — EPS-only run dirs
+### Step 1 — Seed master EPS history
+
+Ensure `data/master/eps_history.json` has a row with `effective_from <=` each backfill date, e.g.:
+
+```json
+{
+  "entries": [
+    { "effective_from": "2026-06-01", "forward_eps": 354, "trailing_eps": 220 }
+  ]
+}
+```
+
+Scaffold run dirs (charts optional for backfill):
 
 ```bash
 for d in 2026-06-01 2026-06-02 2026-06-04 2026-06-05 2026-06-08; do
   python -m src.cli setup-run --date $d
 done
 ```
-
-Edit each `data/runs/{d}/external_context.json`:
-
-```json
-{
-  "date": "2026-06-01",
-  "forward_eps": 354,
-  "trailing_eps": 220
-}
-```
-
-Adjust EPS if you have session-specific values; document assumptions in `run_log.json` warnings.
 
 ### Step 2 — Sequential backfill (oldest first)
 

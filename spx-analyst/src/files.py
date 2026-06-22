@@ -16,7 +16,6 @@ from .config import Settings, get_settings
 from .schemas import DailyManifest, DailyState
 
 MANIFEST_FILENAME = "manifest.json"
-EXTERNAL_CONTEXT_FILENAME = "external_context.json"
 ANALYSIS_CONTEXT_FILENAME = "analysis_context.json"
 CHARTS_DIRNAME = "charts"
 

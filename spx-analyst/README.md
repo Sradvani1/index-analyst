@@ -1,7 +1,7 @@
 # SPX Daily Analysis Engine
 
 A headless, file-driven analysis engine for the S&P 500 daily tactical framework.
-It ingests a daily chart pack, precomputes numeric context (yfinance + manual EPS),
+It ingests a daily chart pack, precomputes numeric context (yfinance + master EPS history),
 runs a two-pass Claude pipeline with deterministic post-Pass-1 enforcement, and emits
 a markdown report plus structured JSON state.
 
@@ -14,20 +14,21 @@ a markdown report plus structured JSON state.
 - [PR-3: Memory rollup overhaul](docs/PR-3-memory-rollup-overhaul.md) — categorical posture snapshot, unconditional rolling rebuild, load observability
 - [PR-4: Pass 2 image optimization](docs/PR-4-pass2-image-optimization.md) — dynamic chart selection, Pass 2 downscaling, attached vs reference-only authority
 - [PR-4.1: Pass 2 stub-response fix](docs/PR-4.1-pass2-stub-response-fix.md) — `claude-opus-4-8` tools-free retry when Pass 2 returns a preamble stub
+- [PR-5: EPS master history](docs/PR-5-eps-master-history.md) — single `eps_history.json` source; no per-run EPS files
 
 ## How it works
 
 Each daily run has five stages:
 
 1. **Step 0 — Python precompute.** Fetches `^GSPC` (300d), `^VIX` (60d), and `^TNX`
-   (25 sessions) via yfinance, combines manual `forward_eps` / `trailing_eps` from
-   `external_context.json`, and writes `analysis_context.json` (ERP, structure,
+   (25 sessions) via yfinance, resolves `forward_eps` / `trailing_eps` from
+   `data/master/eps_history.json`, and writes `analysis_context.json` (ERP, structure,
    Monte Carlo simulation, threshold evaluation). When price has fully retraced the
    active swing leg, a **Monte Carlo straddle guard** re-anchors the downside target
    to the nearest valid level strictly below spot so simulation targets always straddle
    close (see PR-1 doc).
-2. **Pass 1 — structured state.** The **full** chart pack (all manifest entries), external
-   context, precomputed `analysis_context`, framework, and optional prior posture snapshot
+2. **Pass 1 — structured state.** The **full** chart pack (all manifest entries), resolved
+   EPS inputs, precomputed `analysis_context`, framework, and optional prior posture snapshot
    are sent in one multimodal request at `SPX_IMAGE_MAX_DIMENSION` (default 1568). The model
    emits a schema-valid `DailyState` JSON object, focusing on qualitative chart reads and
    `structural_bias`. Seven decision-matrix rows are `(engine-filled)` placeholders; the
@@ -63,6 +64,9 @@ See [PR-4: Pass 2 image optimization](docs/PR-4-pass2-image-optimization.md) for
 selector rules, flag-off semantics, and `run_log` pass2 audit fields. Pass 2 stub handling:
 [PR-4.1](docs/PR-4.1-pass2-stub-response-fix.md). Live token A/B: [PR-4-live-ab-results.md](docs/PR-4-live-ab-results.md).
 
+See [PR-5: EPS master history](docs/PR-5-eps-master-history.md) for the append-only
+`eps_history.json` workflow, `show-eps`, resolution rules, and `run_log.eps_resolution`.
+
 ## Install
 
 ```bash
@@ -89,30 +93,33 @@ Set these in `.env` (see `.env.example`):
 | `SPX_MAX_REPORT_CHARS` | `24000` | Report length validation limit |
 | `SPX_MAX_OUTPUT_TOKENS` | `8000` | Max tokens per Claude response |
 | `SPX_RECENT_STATE_COUNT` | `6` | Recent states loaded when memory is enabled |
+| `SPX_EPS_HISTORY_PATH` | `data/master/eps_history.json` | Append-only forward/trailing EPS history ([PR-5](docs/PR-5-eps-master-history.md)) |
 
-Path overrides (`SPX_FRAMEWORK_PATH`, `SPX_ROLE_PATH`, `SPX_DATA_DIR`, `SPX_MEMORY_DIR`,
-`SPX_OUTPUT_DIR`) default to the package layout below.
+Path overrides (`SPX_FRAMEWORK_PATH`, `SPX_ROLE_PATH`, `SPX_DATA_DIR`, `SPX_EPS_HISTORY_PATH`,
+`SPX_MEMORY_DIR`, `SPX_OUTPUT_DIR`) default to the package layout below.
 
-Manual inputs per run (`external_context.json`):
+EPS master history (`data/master/eps_history.json`):
 
-- `forward_eps` — S&P 500 consensus forward EPS
-- `trailing_eps` — trailing EPS for trailing P/E
+- Append-only list of `{ effective_from, forward_eps, trailing_eps }` rows
+- Resolved by run date: latest row where `effective_from <= run_date`
+- Provenance recorded in `run_log.eps_resolution` on each completed run
 
-**Breaking change:** the schema accepts only `date`, `forward_eps`, and
-`trailing_eps`. Any other key (e.g. legacy `us10y`, `fear_greed_index`) causes a
-**hard validation error** before the run starts. Remove those fields from existing
-run folders before testing.
+See [PR-5](docs/PR-5-eps-master-history.md) for operator workflow and failure policy.
 
-All other qualitative indicators (VIX regime, Fear & Greed, breadth, etc.) come from
+All qualitative indicators (VIX regime, Fear & Greed, breadth, etc.) come from
 charts in the two-pass LLM pipeline.
 
 ## Usage
 
 ```bash
-# Scaffold a run directory (placeholder manifest + external_context template)
+# Scaffold a run directory (placeholder manifest)
 python -m src.cli setup-run --date 2026-06-12
 
-# Optional: preview Step 0 precompute after EPS is set
+# Append a row when consensus changes (never edit old rows)
+# effective_from = date the new values apply; runs on/after that date pick this row
+python -m src.cli show-eps --date 2026-06-10   # verify before run
+
+# Optional: preview Step 0 precompute when EPS resolves
 python -m src.cli setup-run --date 2026-06-12 --precompute
 
 # Run a full daily analysis (replace placeholder charts with the 15-chart pack first)
@@ -157,9 +164,11 @@ data/runs/2026-06-12/
     14_safe_haven_demand.png
     15_junk_bond_spread.png
   manifest.json
-  external_context.json   # EPS only — date, forward_eps, trailing_eps (strict schema)
   analysis_context.json   # Step 0 precompute (written during run)
   market_history.json     # yfinance cache (optional after first fetch)
+
+data/master/
+  eps_history.json        # sole EPS source — append rows when consensus changes
 ```
 
 `setup-run` creates a **placeholder** 1-chart manifest. Replace it with the full
@@ -179,7 +188,7 @@ output/2026-06-12/
   analysis_context.json      # mirror of data/runs/.../analysis_context.json
   request_snapshot.json      # reproducibility metadata per pass (no secrets)
   response_raw.json          # raw provider responses (state_pass + report_pass)
-  run_log.json               # timings, warnings, model, precompute enforcement; pass2_* audit fields; memory_load when SPX_INCLUDE_MEMORY=true
+  run_log.json               # timings, warnings, eps_resolution, model, precompute enforcement; pass2_* audit fields; memory_load when SPX_INCLUDE_MEMORY=true
   validation_report.json     # schema, report structure, enforcement audit
 
 memory/daily_states/2026-06-12-state.json      # mirrored on successful run
@@ -223,8 +232,10 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
 
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime)
-docs/        PR-1 through PR-4.1 implementation records; docs/archive/ for retired specs
-data/runs/   dated input folders (charts + manifest + external context)
+docs/        PR-1 through PR-5 implementation records; docs/archive/ for retired specs
+data/
+  master/    eps_history.json — sole EPS source (append-only)
+  runs/      dated input folders (charts + manifest + precompute cache)
 memory/      archived states/reports + rolling summary (rebuilt on every successful run)
 output/      per-run artifacts
 src/         engine modules (includes src/web/ FastAPI viewer)
@@ -244,6 +255,7 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Memory rollup posture snapshot, categorical signals, rebuild decoupled from injection flag | PR-3 |
 | Pass 2 dynamic chart selection, downscaling, attached vs reference-only prompt authority | PR-4 |
 | Pass 2 stub-response retry for `claude-opus-4-8` | PR-4.1 |
+| EPS master history — single `eps_history.json`, `show-eps`, no per-run EPS files | PR-5 |
 | Monte Carlo target straddle guard (downside re-anchor when leg fully retraced) | PR-1 doc + `structure.reanchor_downside_for_straddle()` |
 
 ## Memory migration (one-time)
@@ -263,9 +275,8 @@ are **incompatible** with the daily framework engine. On upgrade:
 python -m src.cli rebuild-summary --days 6
 ```
 
-Update each run's `external_context.json` to EPS-only (`date`, `forward_eps`,
-`trailing_eps`) before running. **Do not** leave legacy keys — they are rejected,
-not ignored.
+Ensure `data/master/eps_history.json` has an entry with `effective_from <=` each run
+date before running. See [PR-5](docs/PR-5-eps-master-history.md).
 
 ## Legacy Perplexity migration
 

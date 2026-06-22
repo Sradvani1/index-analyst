@@ -27,7 +27,11 @@ FIXTURES = Path(__file__).parent / "fixtures" / "pass2_images"
 STANDARD_MANIFEST = Path(__file__).parent.parent / "data" / "runs" / "2026-06-10" / "manifest.json"
 
 
+from tests.conftest import write_eps_history
+
+
 def _build_full_run_dir(tmp_path: Path, manifest_path: Path | None = None) -> Path:
+    write_eps_history(tmp_path)
     manifest_path = manifest_path or STANDARD_MANIFEST
     raw = json.loads(manifest_path.read_text(encoding="utf-8"))
     run_dir = tmp_path / "runs" / raw["date"]
@@ -220,8 +224,8 @@ def test_zero_chart_day(tmp_path):
         framework="FW",
         daily_state=state,
         manifest=load_manifest(_build_full_run_dir(tmp_path)),
-        external_context=__import__("src.schemas", fromlist=["ExternalContext"]).ExternalContext(
-            date="2026-06-10"
+        resolved_eps=__import__("src.schemas", fromlist=["ResolvedEps"]).ResolvedEps(
+            forward_eps=354.0, trailing_eps=220.0, effective_from="2026-06-01"
         ),
         analysis_context=sample_analysis_context("2026-06-10"),
         pass2_attached=[],
@@ -307,8 +311,8 @@ def test_feature_flag_off_full_manifest(tmp_path):
         framework="FW",
         daily_state=state,
         manifest=manifest,
-        external_context=__import__("src.schemas", fromlist=["ExternalContext"]).ExternalContext(
-            date="2026-06-10"
+        resolved_eps=__import__("src.schemas", fromlist=["ResolvedEps"]).ResolvedEps(
+            forward_eps=354.0, trailing_eps=220.0, effective_from="2026-06-01"
         ),
         analysis_context=sample_analysis_context("2026-06-10"),
         pass2_attached=[c for c in manifest.ordered_charts()],

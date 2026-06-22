@@ -1,0 +1,15 @@
+{
+  "entries": [
+    {
+      "effective_from": "2026-06-01",
+      "forward_eps": 354,
+      "trailing_eps": 220,
+      "notes": "Initial seed — update by appending new rows when consensus changes"
+    },
+    {
+      "effective_from": "2026-06-10",
+      "forward_eps": 370,
+      "trailing_eps": 290
+    }
+  ]
+}

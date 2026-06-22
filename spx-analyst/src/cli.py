@@ -43,24 +43,33 @@ def _print_validation(report: ValidationReport) -> None:
 def setup_run(
     date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
     input_dir: str = typer.Option(None, help="Run directory (default: data/runs/<date>)."),
-    precompute: bool = typer.Option(False, help="Run yfinance precompute if EPS is set."),
+    precompute: bool = typer.Option(False, help="Run yfinance precompute if EPS resolves."),
     force_fetch: bool = typer.Option(False, help="Force fresh yfinance fetch."),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
-    """Scaffold a run directory with external_context template and optional precompute."""
+    """Scaffold a run directory and optionally run Step 0 precompute."""
     _setup_logging(verbose)
     date = date or _today()
     settings = get_settings()
-    from .external_data import blank_context, load_external_context
-    from .files import resolve_run_dir, scaffold_run_dir, write_json
+    from .eps_history import get_eps_for_run, require_eps_for_run
+    from .files import resolve_run_dir, scaffold_run_dir
 
     run_dir = Path(input_dir) if input_dir else settings.runs_dir / date
     scaffold_run_dir(run_dir, date)
 
-    ext_path = run_dir / "external_context.json"
-    if not ext_path.exists():
-        write_json(ext_path, blank_context(date))
-        typer.echo(f"Wrote {ext_path}")
+    resolution = get_eps_for_run(date, settings=settings)
+    if resolution.eps is None:
+        for warning in resolution.warnings:
+            typer.secho(warning, fg=typer.colors.YELLOW, err=True)
+        typer.secho(
+            "Run is not ready — append EPS to data/master/eps_history.json before precompute/run.",
+            fg=typer.colors.YELLOW,
+        )
+    else:
+        typer.echo(
+            f"EPS resolved: forward={resolution.forward_eps} trailing={resolution.trailing_eps} "
+            f"(effective_from={resolution.effective_from})"
+        )
 
     if precompute:
         from .files import load_manifest
@@ -71,14 +80,36 @@ def setup_run(
         except InputError as exc:
             typer.secho(f"Cannot precompute: {exc}", fg=typer.colors.RED, err=True)
             raise typer.Exit(code=1)
-        ext = load_external_context(date, run_dir, settings=settings)
-        if ext.context.forward_eps is None:
-            typer.secho("Set forward_eps in external_context.json before precompute.", fg=typer.colors.YELLOW)
+        try:
+            eps, _ = require_eps_for_run(date, settings=settings)
+        except InputError as exc:
+            typer.secho(str(exc), fg=typer.colors.RED, err=True)
             raise typer.Exit(code=1)
-        ctx = run_precompute(date, run_dir, manifest, ext.context, settings=settings, force_fetch=force_fetch)
+        ctx = run_precompute(date, run_dir, manifest, eps, settings=settings, force_fetch=force_fetch)
         typer.secho(f"Wrote analysis_context.json (close={ctx.market_data.spx_close})", fg=typer.colors.GREEN)
 
     typer.echo(f"Run directory ready: {run_dir}")
+
+
+@app.command("show-eps")
+def show_eps(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+) -> None:
+    """Show EPS resolved from master history for a run date."""
+    date = date or _today()
+    settings = get_settings()
+    from .eps_history import get_eps_for_run
+
+    resolution = get_eps_for_run(date, settings=settings)
+    if resolution.eps is None:
+        for warning in resolution.warnings:
+            typer.secho(warning, fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo(
+        f"EPS for {date}: forward={resolution.forward_eps} trailing={resolution.trailing_eps} "
+        f"(effective_from={resolution.effective_from})"
+    )
 
 
 @app.command()
@@ -162,6 +193,9 @@ def migrate_perplexity(
             force_fetch=force_fetch,
         )
     except MigrationError as exc:
+        typer.secho(f"Migration failed: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+    except InputError as exc:
         typer.secho(f"Migration failed: {exc}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
 

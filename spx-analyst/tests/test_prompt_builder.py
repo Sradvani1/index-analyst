@@ -7,7 +7,7 @@ from src.prompts import (
     build_state_prompt,
     load_system_role,
 )
-from src.schemas import DailyManifest, ExternalContext
+from src.schemas import DailyManifest, ResolvedEps
 
 from tests.sample_analysis_context import sample_analysis_context
 
@@ -25,7 +25,7 @@ def _manifest():
 
 
 def _context():
-    return ExternalContext(date="2026-06-12", forward_eps=354.0, trailing_eps=220.0)
+    return ResolvedEps(forward_eps=354.0, trailing_eps=220.0, effective_from="2026-06-12")
 
 
 def test_state_prompt_contains_blocks(sample_state):
@@ -35,13 +35,14 @@ def test_state_prompt_contains_blocks(sample_state):
         system_role=role,
         framework="FRAMEWORK_TEXT",
         manifest=_manifest(),
-        external_context=_context(),
+        resolved_eps=_context(),
         analysis_context=ac,
         recent_summary="prior summary",
     )
     assert bundle.framework == "FRAMEWORK_TEXT"
     assert "never force" in bundle.system_role.lower() or "hold and monitor" in bundle.system_role.lower()
     assert "analysis_context" in bundle.body
+    assert "resolved from master history" in bundle.body
     assert "emit_daily_state" in bundle.body
     assert "structural_bias" in bundle.body
     assert "prior summary" in bundle.body
@@ -59,7 +60,7 @@ def test_memory_block_absent_when_none(sample_state):
             system_role=role,
             framework="FW",
             manifest=_manifest(),
-            external_context=_context(),
+            resolved_eps=_context(),
             analysis_context=ac,
             recent_summary=None,
         )
@@ -78,7 +79,7 @@ def test_report_prompt_lists_steps_and_matrix(sample_state):
         framework="FW",
         daily_state=sample_state,
         manifest=_manifest(),
-        external_context=_context(),
+        resolved_eps=_context(),
         analysis_context=ac,
         recent_summary=None,
     )
@@ -103,7 +104,7 @@ def test_state_prompt_reduced_numeric_load():
         system_role=load_system_role("R"),
         framework="FW",
         manifest=_manifest(),
-        external_context=_context(),
+        resolved_eps=_context(),
         analysis_context=sample_analysis_context(),
         recent_summary=None,
     )
@@ -120,7 +121,7 @@ def test_report_prompt_exposition_lock_and_divergence_ids(sample_state):
         framework="FW",
         daily_state=sample_state,
         manifest=_manifest(),
-        external_context=_context(),
+        resolved_eps=_context(),
         analysis_context=sample_analysis_context(),
         recent_summary=None,
     )
@@ -166,7 +167,7 @@ def test_report_prompt_pass2_attached_reference_block(sample_state):
         framework="FW",
         daily_state=sample_state,
         manifest=manifest,
-        external_context=_context(),
+        resolved_eps=_context(),
         analysis_context=sample_analysis_context(),
         recent_summary="prior summary",
         pass2_attached=attached,
@@ -192,7 +193,7 @@ def test_report_prompt_pass2_body_order(sample_state):
         framework="FW",
         daily_state=sample_state,
         manifest=manifest,
-        external_context=_context(),
+        resolved_eps=_context(),
         analysis_context=sample_analysis_context(),
         recent_summary="snap",
         pass2_attached=manifest.charts,

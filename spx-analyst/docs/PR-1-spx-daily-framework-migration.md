@@ -118,7 +118,11 @@ and should be specified before implementation.
 
 ## Schema changes
 
-### `external_context.json` (input) — **strict breaking change**
+### `external_context.json` (input) — **removed in [PR-5](PR-5-eps-master-history.md)**
+
+Per-run EPS files are **no longer used**. Forward/trailing EPS now live in `data/master/eps_history.json` (append-only history, resolved by run date). The section below describes the **pre-PR-5** contract for historical context only.
+
+### `external_context.json` (input) — **strict breaking change** *(superseded)*
 
 The schema accepts **only** these three fields. Any additional key causes Pydantic
 validation to fail (`extra="forbid"`) and the run aborts before precompute.

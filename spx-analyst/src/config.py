@@ -57,6 +57,14 @@ class Settings(BaseSettings):
     data_dir_raw: str = Field(default="data", alias="SPX_DATA_DIR")
     memory_dir_raw: str = Field(default="memory", alias="SPX_MEMORY_DIR")
     output_dir_raw: str = Field(default="output", alias="SPX_OUTPUT_DIR")
+    eps_history_path_raw: str = Field(
+        default="data/master/eps_history.json",
+        alias="SPX_EPS_HISTORY_PATH",
+    )
+
+    @property
+    def eps_history_path(self) -> Path:
+        return _resolve(self.eps_history_path_raw)
 
     @property
     def framework_path(self) -> Path:

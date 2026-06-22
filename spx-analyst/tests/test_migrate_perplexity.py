@@ -20,7 +20,7 @@ from src.migrate_perplexity import (
     parse_history,
 )
 from src.schemas import DailyState
-from tests.conftest import SAMPLE_STATE, make_settings
+from tests.conftest import SAMPLE_STATE, make_settings, write_eps_history
 from tests.sample_analysis_context import sample_analysis_context
 
 JUNE_10_SNIPPET = """\
@@ -118,17 +118,14 @@ def test_build_migration_state_prompt_uses_posture_snapshot():
 @patch("src.migrate_perplexity.rebuild_rolling_summary")
 @patch("src.migrate_perplexity.run_precompute")
 def test_migrate_session_applies_precompute(mock_precompute, mock_rebuild, tmp_path: Path):
-    from src.files import EXTERNAL_CONTEXT_FILENAME, scaffold_run_dir, write_json
+    from src.files import scaffold_run_dir
     from src.migrate_perplexity import PerplexitySession
 
     settings = make_settings(tmp_path)
+    write_eps_history(tmp_path)
     date = "2026-06-01"
     run_dir = settings.runs_dir / date
     scaffold_run_dir(run_dir, date)
-    write_json(
-        run_dir / EXTERNAL_CONTEXT_FILENAME,
-        {"date": date, "forward_eps": 354.0, "trailing_eps": 220.0},
-    )
 
     analysis_context = sample_analysis_context(date)
     mock_precompute.return_value = analysis_context

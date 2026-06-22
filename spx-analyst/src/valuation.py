@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional, Sequence
 
-from .schemas import ERPTrend, ExternalContext, MarketDataContext, ValuationContext
+from .schemas import ERPTrend, MarketDataContext, ResolvedEps, ValuationContext
 
 ERPTrendLiteral = Literal["expanding", "stable", "contracting"]
 ERP_TREND_STABLE_BPS = 0.10  # 10 bps ERP change = stable band
@@ -43,12 +43,12 @@ def _classify_erp_trend(current: float, prior_avg: float) -> ERPTrend:
 
 def compute_valuation_context(
     market: MarketDataContext,
-    external: ExternalContext,
+    eps: ResolvedEps,
     tnx_history: Sequence[float],
 ) -> ValuationContext:
     price = market.spx_close
-    forward_eps = external.forward_eps
-    trailing_eps = external.trailing_eps
+    forward_eps = eps.forward_eps
+    trailing_eps = eps.trailing_eps
 
     forward_pe = None
     trailing_pe = None

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from .schemas import AnalysisContext, ChartEntry, DailyManifest, DailyState, ExternalContext
+from .schemas import AnalysisContext, ChartEntry, DailyManifest, DailyState, ResolvedEps
 
 PRE_STEP = "Structural Regime Classification"
 
@@ -86,9 +86,9 @@ class PromptBundle:
     body: str
 
 
-def _external_block(ctx: ExternalContext) -> str:
-    payload = ctx.model_dump(mode="json")
-    return "## External context (manual EPS inputs)\n```json\n" + json.dumps(payload, indent=2) + "\n```"
+def _eps_block(eps: ResolvedEps) -> str:
+    payload = eps.model_dump(mode="json")
+    return "## EPS inputs (resolved from master history)\n```json\n" + json.dumps(payload, indent=2) + "\n```"
 
 
 def _round_floats(obj: object, places: int = 4) -> object:
@@ -201,13 +201,13 @@ def build_state_prompt(
     system_role: str,
     framework: str,
     manifest: DailyManifest,
-    external_context: ExternalContext,
+    resolved_eps: ResolvedEps,
     analysis_context: AnalysisContext,
     recent_summary: str | None = None,
 ) -> PromptBundle:
     parts = [
         _analysis_context_block(analysis_context),
-        _external_block(external_context),
+        _eps_block(resolved_eps),
         _manifest_block(manifest),
     ]
     mem = _optional_memory_block(recent_summary)
@@ -242,7 +242,7 @@ def build_report_prompt(
     framework: str,
     daily_state: DailyState,
     manifest: DailyManifest,
-    external_context: ExternalContext,
+    resolved_eps: ResolvedEps,
     analysis_context: AnalysisContext,
     recent_summary: str | None = None,
     pass2_attached: list[ChartEntry] | None = None,
@@ -268,7 +268,7 @@ def build_report_prompt(
 
     parts = [
         _analysis_context_block(analysis_context),
-        _external_block(external_context),
+        _eps_block(resolved_eps),
         chart_block,
         f"## Validated daily state (immutable)\n```json\n{state_json}\n```",
         _conflict_block(daily_state),

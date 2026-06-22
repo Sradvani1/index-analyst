@@ -20,10 +20,9 @@ from pathlib import Path
 from . import files
 from .anthropic_client import AnthropicClient
 from .config import Settings, get_settings
-from .external_data import blank_context, load_external_context
+from .eps_history import EpsResolution, eps_resolution_log, get_eps_for_run, require_eps_for_run
 from .files import (
     ANALYSIS_CONTEXT_FILENAME,
-    EXTERNAL_CONTEXT_FILENAME,
     MANIFEST_FILENAME,
     read_json,
     scaffold_run_dir,
@@ -51,7 +50,7 @@ from .schemas import (
     AnalysisContext,
     DailyManifest,
     DailyState,
-    ExternalContext,
+    ResolvedEps,
     ValidationIssue,
     ValidationReport,
 )
@@ -105,7 +104,7 @@ class PerplexitySession:
 @dataclass
 class SessionContext:
     manifest: DailyManifest | None = None
-    external_context: ExternalContext | None = None
+    resolved_eps: ResolvedEps | None = None
     chart_ref_map: dict[str, str] = field(default_factory=dict)
 
 
@@ -183,14 +182,13 @@ def filter_sessions(
 
 
 def load_session_context(date: str, settings: Settings | None = None) -> SessionContext:
-    """Attach manifest/external context when a run directory exists."""
+    """Attach manifest and resolved EPS when a run directory exists."""
     settings = settings or get_settings()
     run_dir = settings.runs_dir / date
     if not run_dir.is_dir():
         return SessionContext()
 
     manifest = None
-    external = None
     chart_map: dict[str, str] = {}
 
     manifest_path = run_dir / MANIFEST_FILENAME
@@ -199,15 +197,11 @@ def load_session_context(date: str, settings: Settings | None = None) -> Session
         for entry in manifest.ordered_charts():
             chart_map[entry.label.lower()] = entry.file
 
-    ext_path = run_dir / EXTERNAL_CONTEXT_FILENAME
-    if ext_path.exists():
-        external = ExternalContext.model_validate(read_json(ext_path))
-    else:
-        external = blank_context(date)
+    resolution = get_eps_for_run(date, settings=settings)
 
     return SessionContext(
         manifest=manifest,
-        external_context=external,
+        resolved_eps=resolution.eps,
         chart_ref_map=chart_map,
     )
 
@@ -227,21 +221,12 @@ def _prepare_session_precompute(
     settings: Settings,
     *,
     force_fetch: bool = False,
-) -> tuple[AnalysisContext, SessionContext]:
+) -> tuple[AnalysisContext, SessionContext, EpsResolution]:
     """Scaffold run dir, require EPS, run Step 0 precompute for the session date."""
     run_dir = settings.runs_dir / session.date
     scaffold_run_dir(run_dir, session.date)
 
-    ext_path = run_dir / EXTERNAL_CONTEXT_FILENAME
-    if not ext_path.exists():
-        write_json(ext_path, blank_context(session.date))
-
-    ext = load_external_context(session.date, run_dir, settings=settings)
-    if ext.context.forward_eps is None:
-        raise MigrationError(
-            f"{session.date}: set forward_eps in {ext_path} before backfill "
-            "(run setup-run and edit external_context.json)"
-        )
+    eps, eps_resolution = require_eps_for_run(session.date, settings=settings)
 
     _patch_manifest_close(run_dir, session)
     manifest = files.load_manifest(run_dir)
@@ -249,14 +234,14 @@ def _prepare_session_precompute(
         session.date,
         run_dir,
         manifest,
-        ext.context,
+        eps,
         settings=settings,
         force_fetch=force_fetch,
     )
     write_json(run_dir / ANALYSIS_CONTEXT_FILENAME, analysis_context)
 
     ctx = load_session_context(session.date, settings)
-    return analysis_context, ctx
+    return analysis_context, ctx, eps_resolution
 
 
 def _session_metadata_block(session: PerplexitySession, ctx: SessionContext) -> str:
@@ -272,10 +257,10 @@ def _session_metadata_block(session: PerplexitySession, ctx: SessionContext) -> 
         lines.append("Chart filenames (use in chart_refs when applicable):")
         for c in ctx.manifest.ordered_charts():
             lines.append(f"  - {c.file}: {c.label}")
-    if ctx.external_context:
+    if ctx.resolved_eps:
         lines.append(
-            "## External context\n```json\n"
-            + json.dumps(ctx.external_context.model_dump(mode="json"), indent=2)
+            "## EPS inputs (resolved from master history)\n```json\n"
+            + json.dumps(ctx.resolved_eps.model_dump(mode="json"), indent=2)
             + "\n```"
         )
     return "\n".join(lines)
@@ -412,7 +397,7 @@ def migrate_session(
     system_role = load_system_role(files.load_role(settings))
     warnings: list[str] = []
 
-    analysis_context, ctx = _prepare_session_precompute(
+    analysis_context, ctx, eps_resolution = _prepare_session_precompute(
         session, settings, force_fetch=force_fetch
     )
     warnings.extend(analysis_context.market_data.precompute_warnings)
@@ -507,6 +492,7 @@ def migrate_session(
             "applied": True,
             "warnings": enforce_warnings,
         },
+        "eps_resolution": eps_resolution_log(eps_resolution),
     }
 
     output_dir = files.save_outputs(

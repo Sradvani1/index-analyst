@@ -24,7 +24,7 @@ from .monte_carlo import (
 from .schemas import (
     AnalysisContext,
     DailyManifest,
-    ExternalContext,
+    ResolvedEps,
     StructureContext,
 )
 from .structure import compute_structure, reanchor_downside_for_straddle
@@ -59,7 +59,7 @@ def run_precompute(
     run_date: str,
     run_dir: Path,
     manifest: DailyManifest,
-    external: ExternalContext,
+    eps: ResolvedEps,
     *,
     settings: Settings | None = None,
     force_fetch: bool = False,
@@ -90,7 +90,7 @@ def run_precompute(
     tnx_history = [float(v) for v in series.tnx.values]
     from .valuation import compute_valuation_context
 
-    valuation = compute_valuation_context(market, external, tnx_history)
+    valuation = compute_valuation_context(market, eps, tnx_history)
 
     structure_result, reanchor_warnings = reanchor_downside_for_straddle(
         structure_result,

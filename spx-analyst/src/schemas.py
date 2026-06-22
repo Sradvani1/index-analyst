@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -50,12 +51,43 @@ class DailyManifest(BaseModel):
         return sorted(self.charts, key=lambda c: c.order)
 
 
-class ExternalContext(BaseModel):
+class EpsHistoryEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    date: str
-    forward_eps: Optional[float] = None
-    trailing_eps: Optional[float] = None
+    effective_from: str
+    forward_eps: float = Field(..., gt=0)
+    trailing_eps: float = Field(..., gt=0)
+    notes: Optional[str] = None
+
+    @field_validator("effective_from")
+    @classmethod
+    def _validate_effective_from(cls, v: str) -> str:
+        dt.date.fromisoformat(v)
+        return v
+
+
+class EpsHistory(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    entries: List[EpsHistoryEntry] = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def _check_unique_effective_from(self) -> "EpsHistory":
+        dates = [e.effective_from for e in self.entries]
+        if len(set(dates)) != len(dates):
+            raise ValueError(f"duplicate effective_from values in EPS history: {dates}")
+        return self
+
+
+class ResolvedEps(BaseModel):
+    """In-memory EPS carrier resolved from master history (not a run-dir artifact)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    forward_eps: float
+    trailing_eps: float
+    effective_from: str
+    source: Literal["master"] = "master"
 
 
 # --- Precompute contract (analysis_context.json) -----------------------------

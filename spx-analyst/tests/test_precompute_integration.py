@@ -9,7 +9,7 @@ import pandas as pd
 
 from src.market_data import MarketSeries
 from src.precompute import run_precompute
-from src.schemas import ExternalContext
+from src.schemas import ResolvedEps
 from src.structure import PriceBar
 
 from tests.conftest import build_run_dir
@@ -42,7 +42,7 @@ def test_run_precompute_writes_analysis_context(mock_load, tmp_path, settings):
     from src.files import load_manifest
 
     manifest = load_manifest(run_dir)
-    external = ExternalContext(date=run_date, forward_eps=354.0, trailing_eps=220.0)
+    external = ResolvedEps(forward_eps=354.0, trailing_eps=220.0, effective_from="2026-06-01")
 
     ctx = run_precompute(run_date, run_dir, manifest, external, settings=settings)
 
@@ -72,7 +72,7 @@ def test_run_precompute_warns_on_manifest_close_drift(mock_load, tmp_path, setti
         run_date,
         run_dir,
         manifest,
-        ExternalContext(date=run_date, forward_eps=354.0, trailing_eps=220.0),
+        ResolvedEps(forward_eps=354.0, trailing_eps=220.0, effective_from="2026-06-01"),
         settings=settings,
     )
     assert any("manifest.close" in w for w in ctx.market_data.precompute_warnings)

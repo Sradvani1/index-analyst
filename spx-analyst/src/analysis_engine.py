@@ -10,7 +10,7 @@ from pathlib import Path
 from . import files
 from .anthropic_client import AnthropicClient
 from .config import Settings, get_settings
-from .external_data import load_external_context
+from .eps_history import eps_resolution_log, require_eps_for_run
 from .memory import (
     build_recent_summary,
     load_recent_states_with_stats,
@@ -63,14 +63,13 @@ def run_daily_analysis(
     image_paths = files.chart_paths(run_dir, manifest)
     logger.info("loaded manifest for %s with %d charts", date, len(image_paths))
 
-    ext = load_external_context(date, run_dir, settings=settings)
-    warnings.extend(ext.warnings)
+    eps, eps_resolution = require_eps_for_run(date, settings=settings)
 
     analysis_context = run_precompute(
         date,
         run_dir,
         manifest,
-        ext.context,
+        eps,
         settings=settings,
         force_fetch=force_fetch,
     )
@@ -100,7 +99,7 @@ def run_daily_analysis(
         system_role=system_role,
         framework=framework,
         manifest=manifest,
-        external_context=ext.context,
+        resolved_eps=eps,
         analysis_context=analysis_context,
         recent_summary=recent_summary,
     )
@@ -144,7 +143,7 @@ def run_daily_analysis(
         framework=framework,
         daily_state=daily_state,
         manifest=manifest,
-        external_context=ext.context,
+        resolved_eps=eps,
         analysis_context=analysis_context,
         recent_summary=recent_summary,
         pass2_attached=pass2_attached_entries,
@@ -184,6 +183,7 @@ def run_daily_analysis(
             "applied": True,
             "warnings": enforce_warnings,
         },
+        "eps_resolution": eps_resolution_log(eps_resolution),
     }
     if memory_load is not None:
         run_log["memory_load"] = memory_load
