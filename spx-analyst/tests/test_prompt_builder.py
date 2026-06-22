@@ -49,6 +49,18 @@ def test_state_prompt_contains_blocks(sample_state):
     assert "Prior posture snapshot" in bundle.body
     assert "Optional prior-run narrative context" not in bundle.body
     assert "7450.25" in bundle.body
+    assert "signals` contract" in bundle.body
+    assert "vix_regime_detail" in bundle.body
+    assert "put_call_zone" in bundle.body
+
+
+def test_signal_set_schema_includes_field_descriptions():
+    from src.schemas import DailyState
+
+    props = DailyState.model_json_schema()["$defs"]["SignalSet"]["properties"]
+    for field in ("vix_regime", "fear_greed_zone", "put_call"):
+        assert "description" in props[field]
+        assert props[field]["description"]
 
 
 def test_memory_block_absent_when_none(sample_state):

@@ -21,7 +21,8 @@ from .precompute import run_precompute
 from .prompts import build_report_prompt, build_state_prompt, load_system_role
 from .schemas import AnalysisContext, DailyState, ValidationIssue, ValidationReport
 from .state_enforcement import apply_precomputed_fields, audit_enforcement_issues
-from .validation import parse_daily_state, validate_report, validation_errors_text
+from .state_normalize import resolve_pass1_daily_state
+from .validation import validate_report, validation_errors_text
 
 logger = logging.getLogger(__name__)
 
@@ -105,26 +106,40 @@ def run_daily_analysis(
     )
     state_call = client.run_structured_state(state_bundle, image_paths)
 
-    daily_state, state_validation = parse_daily_state(state_call.tool_input or {}, date)
+    def _repair(invalid: dict, errors: str):
+        repair_call = client.repair_structured_state(invalid, errors)
+        return repair_call.tool_input or {}, repair_call.raw_response
+
+    pass1 = resolve_pass1_daily_state(
+        state_call.tool_input or {},
+        date,
+        repair_fn=_repair,
+    )
+    daily_state = pass1.daily_state
+    state_validation = pass1.validation
     if daily_state is None:
-        logger.warning("state failed validation; attempting one repair pass")
-        repair_call = client.repair_structured_state(
-            state_call.tool_input or {}, validation_errors_text(state_validation)
+        files.save_outputs(
+            date=date,
+            daily_state=_placeholder_state(date, analysis_context),
+            report_md="# Run failed: state validation\n\nSee validation_report.json.",
+            request_snapshot=state_call.request_snapshot,
+            response_raw=_pass1_response_raw(state_call, pass1),
+            run_log={
+                "started": started,
+                "status": "failed_state_validation",
+                "pass1_schema_status": pass1.pass1_schema_status(),
+            },
+            validation_reports=[state_validation.model_dump(mode="json")],
+            mirror_to_memory=False,
+            settings=settings,
         )
-        daily_state, state_validation = parse_daily_state(repair_call.tool_input or {}, date)
-        if daily_state is None:
-            files.save_outputs(
-                date=date,
-                daily_state=_placeholder_state(date, analysis_context),
-                report_md="# Run failed: state validation\n\nSee validation_report.json.",
-                request_snapshot=state_call.request_snapshot,
-                response_raw=state_call.raw_response,
-                run_log={"started": started, "status": "failed_state_validation"},
-                validation_reports=[state_validation.model_dump(mode="json")],
-                mirror_to_memory=False,
-                settings=settings,
-            )
-            raise RunError(f"DailyState invalid after repair: {validation_errors_text(state_validation)}")
+        raise RunError(f"DailyState invalid after repair: {validation_errors_text(state_validation)}")
+
+    if pass1.normalized and not pass1.original_valid:
+        warnings.append("Pass 1 state coalesced known signals drift before validation")
+    if pass1.repair_triggered:
+        logger.warning("state failed validation; attempted one repair pass")
+        warnings.append("state required one repair pass")
 
     daily_state, enforce_warnings = apply_precomputed_fields(daily_state, analysis_context)
     warnings.extend(enforce_warnings)
@@ -184,6 +199,7 @@ def run_daily_analysis(
             "warnings": enforce_warnings,
         },
         "eps_resolution": eps_resolution_log(eps_resolution),
+        "pass1_schema_status": pass1.pass1_schema_status(),
     }
     if memory_load is not None:
         run_log["memory_load"] = memory_load
@@ -195,10 +211,7 @@ def run_daily_analysis(
             "state_pass": state_call.request_snapshot,
             "report_pass": report_call.request_snapshot,
         },
-        response_raw={
-            "state_pass": state_call.raw_response,
-            "report_pass": report_call.raw_response,
-        },
+        response_raw=_pass1_response_raw(state_call, pass1, report_raw=report_call.raw_response),
         run_log=run_log,
         validation_reports=[
             state_validation.model_dump(mode="json"),
@@ -232,6 +245,25 @@ def _merge_enforcement_audit(
     for entry in audit_enforcement_issues(enforce_warnings):
         issues.append(ValidationIssue(**entry))
     return report.model_copy(update={"issues": issues})
+
+
+def _pass1_response_raw(
+    state_call,
+    pass1,
+    *,
+    report_raw: dict | None = None,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "state_pass": state_call.raw_response,
+        "state_pass_original": pass1.original_tool_input,
+    }
+    if pass1.normalized:
+        payload["state_pass_normalized"] = pass1.normalized_tool_input
+    if pass1.repair_triggered and pass1.repair_raw_response is not None:
+        payload["repair_pass"] = pass1.repair_raw_response
+    if report_raw is not None:
+        payload["report_pass"] = report_raw
+    return payload
 
 
 def _pass2_audit_payload(

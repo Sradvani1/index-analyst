@@ -231,6 +231,13 @@ def build_state_prompt(
         f"- Emit `monte_carlo` and `spx_close` as schema-valid copies from analysis_context.\n"
         f"- For these precompute-owned rows, put a brief '(engine-filled)' placeholder in "
         f"current_reading/signal: {owned_rows}.\n\n"
+        "`signals` contract (schema is strict — extra keys fail validation):\n"
+        "- Use only keys defined on `emit_daily_state.signals`; no `*_detail`, `*_note`, or extra "
+        "`*_zone` fields.\n"
+        "- `fear_greed` + `fear_greed_zone` is the only score+label pair.\n"
+        "- `vix_regime`: one string with zone and level/MA context; no `vix_regime_detail` or "
+        "`signals.vix`.\n"
+        "- `put_call`: numeric ratio only; no `put_call_zone`.\n\n"
         "Set `framework_version` to 'daily-2026-06'."
     )
     return PromptBundle(system_role=system_role, framework=framework, body="\n\n".join(parts))

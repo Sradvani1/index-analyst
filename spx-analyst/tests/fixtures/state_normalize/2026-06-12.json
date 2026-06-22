@@ -1,0 +1,226 @@
+{
+  "date": "2026-06-12",
+  "original_tool_input": {
+    "date": "2026-06-12",
+    "framework_version": "daily-2026-06",
+    "spx_close": 7431.46,
+    "structural_bias": "Late Bull / Topping",
+    "base_case": "Over the next 30-60 days the base case is a choppy stabilization-to-recovery attempt off the 50-day SMA. The bull skeleton remains mechanically intact (50d > 200d, price ~8% above the 200d), and the active correction has now retraced fully into the 38.2-61.8% Fib zone where the rising 50-day SMA (~7,248) is acting as primary support. RSI and MFI are turning up from neutral/depressed readings and VIX has reset back below 18, which supports a constructive base-building bias \u2014 but ERP at a valuation ceiling, weak breadth, and a still-elevated junk spread cap upside and keep this a recovery-watch rather than a fresh trend leg.",
+    "trend_regime": "50-day SMA (~7,248) remains above the rising 200-day SMA (~6,882) \u2014 mechanically healthy bullish regime, but maturing after a confirmed distribution top in early June. Price sits ~2.5% above the 50d and ~8.0% above the 200d, having bounced off the 50d after a multi-week pullback from the 7,621 swing high.",
+    "valuation_bucket": "Forward PE 20.09x (20-22x cautious-buying band); ERP 0.49% sits in the 0.0-0.5% valuation-ceiling band \u2014 trim bias, no aggressive adds.",
+    "signals": {
+      "rsi14": 56,
+      "mfi": 62,
+      "fear_greed": 33,
+      "fear_greed_zone": "Fear",
+      "put_call": 0.81,
+      "vix_regime": "Standard (15-20)",
+      "high_yield_spread": 1.35,
+      "pct_vs_50dma": 2.53,
+      "pct_vs_200dma": 7.98,
+      "bollinger_position": "Mid-to-upper band, recovering toward middle band from below",
+      "middle_band_regime": "Reclaimed 20-day SMA after breakdown \u2014 short-term structure improving",
+      "intraday_close_position": "Top third of range",
+      "vix_regime_detail": "VIX 17.68, back below 20 and below its 50-day MA"
+    },
+    "what_changed_today": [
+      "SPX closed 7,431.46 (+) in the top third of the daily intraday range (low 7,363 / high 7,456) \u2014 first clean strong close after a multi-session distribution sequence.",
+      "VIX collapsed from ~22 to 17.68, dropping back below the 20 risk threshold and below its 50-day MA \u2014 the volatility-driven 'MA less reliable' caveat is lifted.",
+      "RSI-14 turned up to mid-50s and MFI surged toward ~62 on the 5-day chart \u2014 short-term momentum recovering from the correction low; price has reclaimed the 20-day SMA.",
+      "Price bounced off and held the rising 50-day SMA (~7,248) and now sits at the 61.8% Fib (7,443) zone \u2014 the active leg is recovering rather than cascading.",
+      "Monte Carlo edge remains decisively down-first (70% raw) because the engine re-anchored the downside straddle to the liquidation-caution level 7,392 just below current price."
+    ],
+    "narrative_summary": "The market is Late Bull / Topping but staging a credible recovery: after an early-June distribution top and a pullback to the rising 50-day SMA, price closed strong in the top third of its range, reclaimed the 20-day SMA, and saw VIX reset back below 18 while RSI/MFI turned up. That technical repair is genuine and lifts the posture off pure defense. But the structural ceiling is unchanged \u2014 ERP at just 0.49% (valuation ceiling), McClellan breadth in Extreme Fear, junk spreads elevated, and a Monte Carlo edge still pinned down-first because the downside target sits right beneath spot. This is a stabilization-and-watch tape: the bounce earns partial re-entry confirmation, but the valuation ceiling and weak internals forbid aggressive adds.",
+    "open_questions": [
+      "Does the recovery follow through and reclaim the 38.2% Fib (7,511) and the prior 7,621 swing high, or does it stall at the 61.8%/20-day-SMA zone and roll over again?",
+      "Can breadth (McClellan ~990, Extreme Fear) confirm the price recovery, or does the persistent breadth/credit divergence cap any rally as narrow leadership?",
+      "With the Monte Carlo downside target re-anchored to 7,392 just below spot, is a brief retest of that level the launch point for a cleaner re-entry, or a break toward the nervous zone at 7,240?"
+    ],
+    "primary_tension": "A genuine short-term technical recovery \u2014 strong top-of-range close, reclaimed 20-day SMA, VIX back under 18, RSI/MFI turning up off the 50-day SMA \u2014 is colliding with an unchanged structural ceiling: ERP at the 0.49% valuation cap, Extreme Fear breadth, an elevated junk spread, and a Monte Carlo edge still 70% down-first because the downside target sits just beneath spot. The result is a constructive-but-capped tape that supports partial re-entry confirmation while forbidding aggressive adds.",
+    "confirming_evidence": [
+      "Trend skeleton intact: 50-day SMA (~7,248) above rising 200-day SMA (~6,882); price ~8% above the 200d (6-month/1-year charts).",
+      "Strong intraday close in the top third of the daily range (7,431 vs range 7,363-7,456) after a multi-day distribution sequence (01_spx_intraday.png).",
+      "RSI-14 turning up to mid-50s and MFI rising toward ~62 on the 5-day panel \u2014 short-term momentum recovery off the correction low (02_spx_5day.png).",
+      "VIX reset to 17.68, back below 20 and below its 50-day MA \u2014 volatility regime normalized, MA support more reliable (13_vix_volatility.png).",
+      "Price held and bounced off the rising 50-day SMA and reclaimed the 20-day SMA \u2014 short-term structure repaired (03_spx_1month.png)."
+    ],
+    "conflicting_evidence": [
+      {
+        "id": "erp_ceiling_vs_recovery",
+        "layers": [
+          "Fundamental Valuation",
+          "Technical Structure"
+        ],
+        "bullish_read": "Price recovering off the 50-day SMA with momentum turning up and VIX normalized supports a constructive base.",
+        "bearish_read": "ERP at just 0.49% sits in the 0.0-0.5% valuation-ceiling band \u2014 trim bias, no aggressive adds; the re-entry floor (7,419) is essentially at spot, so there is no valuation cushion underneath the bounce.",
+        "framework_rule": "ERP 0.0-0.5% = valuation ceiling, trim bias, no aggressive adds.",
+        "weight": "high",
+        "chart_refs": [
+          "03_spx_1month.png",
+          "09_fear_greed_momentum.png"
+        ]
+      },
+      {
+        "id": "breadth_credit_vs_price_recovery",
+        "layers": [
+          "Sentiment and Leverage",
+          "Technical Structure"
+        ],
+        "bullish_read": "Index price is recovering with a strong close and reclaimed 20-day SMA.",
+        "bearish_read": "McClellan Summation in Extreme Fear (~990) and junk spread still elevated (~1.35%) \u2014 breadth and credit have not confirmed the price recovery, signaling narrow leadership.",
+        "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not broken down.",
+        "weight": "high",
+        "chart_refs": [
+          "11_breadth_mcclellan.png",
+          "15_junk_bond_spread.png",
+          "10_breadth_52wk_highs_lows.png"
+        ]
+      },
+      {
+        "id": "montecarlo_vs_technical_bounce",
+        "layers": [
+          "Monte Carlo Probability Analysis",
+          "Technical Structure"
+        ],
+        "bullish_read": "Technical signals (close, RSI/MFI, VIX, 20-day reclaim) point to recovery.",
+        "bearish_read": "Monte Carlo is 70% down-first because the re-anchored downside target (7,392) sits just below spot; the edge does not meet any regime threshold for bullish action.",
+        "framework_rule": "Never use Monte Carlo in isolation; if adjusted probability does not meet the regime threshold, the setup is not actionable.",
+        "weight": "medium",
+        "chart_refs": [
+          "01_spx_intraday.png",
+          "02_spx_5day.png"
+        ]
+      }
+    ],
+    "decision_matrix": {
+      "rows": [
+        {
+          "signal_layer": "Structural Bias",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Monte Carlo Threshold",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Volatility Input",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Drift Input",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Rally Exhaustion Score",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Trend Regime",
+          "current_reading": "50d (~7,248) > 200d (~6,882); price ~2.5% above 50d, ~8.0% above 200d",
+          "signal": "Bullish but maturing"
+        },
+        {
+          "signal_layer": "Intraday Close Position",
+          "current_reading": "Top third of range (close 7,431 vs 7,363-7,456)",
+          "signal": "Strong close"
+        },
+        {
+          "signal_layer": "RSI / MFI State",
+          "current_reading": "RSI-14 ~56 turning up; MFI ~62 rising",
+          "signal": "Neutral, momentum recovering"
+        },
+        {
+          "signal_layer": "20-Day SMA Status",
+          "current_reading": "Reclaimed 20-day SMA after breakdown",
+          "signal": "Short-term structure improving"
+        },
+        {
+          "signal_layer": "Bollinger Band State",
+          "current_reading": "Recovering from lower band back toward/through the middle band",
+          "signal": "Regime test passed to the upside"
+        },
+        {
+          "signal_layer": "ERP State and Trend",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Credit Condition",
+          "current_reading": "Junk spread ~1.35%, still elevated after spike; Extreme Fear",
+          "signal": "Credit warning / divergence"
+        },
+        {
+          "signal_layer": "Breadth Condition",
+          "current_reading": "McClellan ~990 (Extreme Fear); net new highs weak (Fear)",
+          "signal": "Narrow / deteriorating \u2014 divergence from price"
+        },
+        {
+          "signal_layer": "VIX Regime",
+          "current_reading": "17.68, below 20 and below its 50-day MA",
+          "signal": "Standard regime \u2014 normalized, MA support reliable"
+        },
+        {
+          "signal_layer": "Leverage Risk State",
+          "current_reading": "Price ~8% above 200d; no drawdown threshold breached at current level; nearest liquidation-caution 7,392 just below spot",
+          "signal": "Contained but proximate downside trigger"
+        },
+        {
+          "signal_layer": "Monte Carlo Edge",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Overall Signal Balance",
+          "current_reading": "Technical recovery (strong close, 20d reclaim, VIX reset, RSI/MFI up) vs structural ceiling (ERP cap, Extreme Fear breadth, credit warning, down-first MC)",
+          "signal": "Mixed \u2014 constructive but capped"
+        },
+        {
+          "signal_layer": "Recommended Action",
+          "current_reading": "Hold core; recovery earns partial re-entry confirmation but valuation ceiling and weak internals forbid aggressive adds",
+          "signal": "Hold and monitor \u2014 light/partial re-entry only on follow-through above the 38.2% Fib (7,511); no aggressive adds"
+        }
+      ]
+    },
+    "signal_alignment": {
+      "trim_signals_met": 2,
+      "buy_signals_met": 2,
+      "overall": "mixed"
+    },
+    "monte_carlo": {
+      "effective_threshold": 70,
+      "meets_threshold": false,
+      "prob_up_first_raw": 0.2947,
+      "prob_down_first_raw": 0.7053,
+      "prob_up_first_adjusted": 0.2947,
+      "prob_down_first_adjusted": 0.7053,
+      "sigma": 0.1549,
+      "mu": 0.07,
+      "upside_target": 7620.9,
+      "downside_target": 7392.27,
+      "rally_exhaustion_score": "Low",
+      "conditional_cascade": "If 7392 breaks, P(7240)=73%; If 7621 breaks, P(7716)=86%",
+      "median_days": "upside 11d / downside 3d",
+      "drift_path": "5d=7440.02; 10d=7448.58; 20d=7465.75; 30d=7482.95; 60d=7534.80",
+      "cash_drag_prob": 0.1467
+    }
+  },
+  "repaired_signals": {
+    "pct_vs_50dma": 2.53,
+    "pct_vs_200dma": 7.98,
+    "bollinger_position": "Mid-to-upper band, recovering toward middle band from below",
+    "rsi14": 56.0,
+    "mfi": 62.0,
+    "vix_regime": "Standard (15-20)",
+    "fear_greed": 33,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.81,
+    "high_yield_spread": 1.35,
+    "intraday_close_position": "Top third of range",
+    "middle_band_regime": "Reclaimed 20-day SMA after breakdown \u2014 short-term structure improving"
+  }
+}

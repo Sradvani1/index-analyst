@@ -55,7 +55,8 @@ from .schemas import (
     ValidationReport,
 )
 from .state_enforcement import apply_precomputed_fields, audit_enforcement_issues
-from .validation import parse_daily_state, validate_report, validation_errors_text
+from .state_normalize import resolve_pass1_daily_state
+from .validation import validate_report, validation_errors_text
 
 logger = logging.getLogger(__name__)
 
@@ -435,19 +436,27 @@ def migrate_session(
         recent_summary=recent_summary,
     )
     state_call = client.run_text_structured_state(state_bundle)
-    daily_state, state_validation = parse_daily_state(state_call.tool_input or {}, session.date)
+
+    def _repair(invalid: dict, errors: str):
+        repair = client.repair_structured_state(invalid, errors)
+        return repair.tool_input or {}, repair.raw_response
+
+    pass1 = resolve_pass1_daily_state(
+        state_call.tool_input or {},
+        session.date,
+        repair_fn=_repair,
+    )
+    daily_state = pass1.daily_state
+    state_validation = pass1.validation
 
     if daily_state is None:
-        repair = client.repair_structured_state(
-            state_call.tool_input or {},
-            validation_errors_text(state_validation),
+        raise MigrationError(
+            f"{session.date}: state validation failed after repair: "
+            f"{validation_errors_text(state_validation)}"
         )
-        daily_state, state_validation = parse_daily_state(repair.tool_input or {}, session.date)
-        if daily_state is None:
-            raise MigrationError(
-                f"{session.date}: state validation failed after repair: "
-                f"{validation_errors_text(state_validation)}"
-            )
+    if pass1.normalized and not pass1.original_valid:
+        warnings.append("Pass 1 state coalesced known signals drift before validation")
+    if pass1.repair_triggered:
         warnings.append("state required one repair pass")
 
     daily_state, enforce_warnings = apply_precomputed_fields(daily_state, analysis_context)
@@ -493,7 +502,18 @@ def migrate_session(
             "warnings": enforce_warnings,
         },
         "eps_resolution": eps_resolution_log(eps_resolution),
+        "pass1_schema_status": pass1.pass1_schema_status(),
     }
+
+    response_raw: dict[str, object] = {
+        "pass1": state_call.raw_response,
+        "pass2": report_call.raw_response,
+        "state_pass_original": pass1.original_tool_input,
+    }
+    if pass1.normalized:
+        response_raw["state_pass_normalized"] = pass1.normalized_tool_input
+    if pass1.repair_triggered and pass1.repair_raw_response is not None:
+        response_raw["repair_pass"] = pass1.repair_raw_response
 
     output_dir = files.save_outputs(
         date=session.date,
@@ -503,10 +523,7 @@ def migrate_session(
             "pass1": state_call.request_snapshot,
             "pass2": report_call.request_snapshot,
         },
-        response_raw={
-            "pass1": state_call.raw_response,
-            "pass2": report_call.raw_response,
-        },
+        response_raw=response_raw,
         run_log=run_log,
         validation_reports=[
             state_validation.model_dump(mode="json"),

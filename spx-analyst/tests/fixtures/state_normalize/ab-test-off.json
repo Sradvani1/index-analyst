@@ -1,0 +1,237 @@
+{
+  "date": "2026-06-10",
+  "original_tool_input": {
+    "date": "2026-06-10",
+    "framework_version": "daily-2026-06",
+    "spx_close": 7266.9902,
+    "structural_bias": "Late Bull / Topping",
+    "base_case": "Over the next 30-60 days the most likely path is a continued corrective phase off the 6/2 swing high (7620.90) that has already broken the 50% fib and re-anchored to the nervous-zone liquidation level near 7240. Price remains above all key SMAs (5.7% over 200dma, 50>200) so the primary uptrend is structurally intact, but momentum, breadth, credit, and sentiment have all rolled over together. Base case: choppy consolidation / further mean reversion toward 7240, with the 50-day SMA (~7213) and ERP-confirmed floor (~7021) as the deeper supports, before the trend resumes only if breadth and credit stabilize.",
+    "trend_regime": "Bullish but maturing: 50-day SMA above 200-day SMA with price +0.74% over the 50dma and +5.74% over the 200dma, but the daily/short-term structure has turned lower with a series of lower highs and lower lows since the 6/2 top.",
+    "valuation_bucket": "ERP 0.33% (0.0-0.5% valuation ceiling band) - trim bias; Forward PE 20.5x - cautious buying only at strong confluence",
+    "signals": {
+      "rsi14": 42.0,
+      "mfi": 32.0,
+      "bollinger_position": "Below middle band, riding toward lower band on the 1-month chart",
+      "middle_band_regime": "Closed below 20-day SMA after an extended advance - short-term regime shift",
+      "intraday_close_position": "Bottom third of daily range (close 7266.99 vs range 7265.93-7396.56)",
+      "pct_vs_50dma": 0.74,
+      "pct_vs_200dma": 5.74,
+      "fear_greed": 27,
+      "fear_greed_zone": "Fear",
+      "put_call": 0.78,
+      "vix_regime": "Elevated (>20)",
+      "high_yield_spread": 1.36,
+      "middle_band_regime_note": null
+    },
+    "what_changed_today": [
+      "SPX fell -119.66 (-1.62%) to close 7266.99 in the bottom third of its daily range - a weak, distribution-style close",
+      "Active leg fully retraced the prior downside fib target; engine re-anchored the downside Monte Carlo straddle to the nervous-zone liquidation level (7239.85)",
+      "Close confirmed below the 20-day SMA, signaling a short-term regime shift after the extended advance",
+      "VIX pushed into the elevated >20 regime (22.22), reducing reliability of moving-average support",
+      "Fear & Greed dropped sharply into Fear (~27) with multiple sub-indicators at Extreme Fear (breadth/McClellan, safe-haven demand, junk-bond demand)"
+    ],
+    "narrative_summary": "SPX sold off 1.62% to 7266.99, closing weakly in the bottom third of its range and below the 20-day SMA, while VIX climbed into the elevated >20 regime. The longer-term trend is still bullish (50>200, +5.7% over the 200dma), but momentum, breadth, credit, and sentiment have all deteriorated together, with several Fear & Greed components at Extreme Fear. Monte Carlo strongly favors hitting the re-anchored downside (7240) first (~82%) and is not actionable for new longs at any threshold. Posture: defensive patience - hold, protect capital, and wait for re-entry confirmation rather than buying this shallow-to-moderate pullback.",
+    "open_questions": [
+      "Will the 50-day SMA (~7213) and re-anchored 7240 nervous zone hold, or does price extend toward the ERP floor (~7021)?",
+      "Does credit keep widening (junk spread spiked to ~1.46% intraday) and confirm escalating risk, or was the spike a transient ex-dividend artifact?",
+      "Will VIX spike and reverse to produce a high-quality capitulative re-entry, or does the correction stay orderly without a volatility climax?"
+    ],
+    "primary_tension": "An intact longer-term uptrend (50>200, price still 5.7% above the 200dma) versus a synchronized short-term breakdown in momentum, breadth, credit, and sentiment - structure says 'still a bull,' but the tape, internals, and probabilities say 'defend, don't buy.'",
+    "confirming_evidence": [
+      "50-day SMA remains above 200-day SMA across the 3M/6M/1Y charts; price still 5.74% above the 200dma - primary uptrend intact",
+      "Pullback so far is shallow-to-moderate (-4.6% off the 7620.90 high), not yet a margin-call (10%) or cascade (15%) event",
+      "ERP still marginally positive (0.33%) and ERP-confirmed re-entry floor sits well below at ~7021, leaving room before valuation forces trim-only",
+      "Put/call rose off complacent ~0.60 lows toward ~0.78, consistent with rising fear from low levels - an early bottoming-watch ingredient (not yet confirmation)"
+    ],
+    "conflicting_evidence": [
+      {
+        "id": "div-breadth-price",
+        "layers": [
+          "Technical Structure",
+          "Breadth Confirmation"
+        ],
+        "bullish_read": "Price is still well above its 200dma and the 50>200 regime is intact, so the trend hasn't structurally broken.",
+        "bearish_read": "McClellan Summation has rolled over to ~1000 and net new highs/lows are falling toward zero while price sits near highs - narrow, deteriorating participation classic of a topping phase.",
+        "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not yet broken down.",
+        "weight": "high",
+        "chart_refs": [
+          "11_breadth_mcclellan.png",
+          "10_breadth_52wk_highs_lows.png",
+          "09_fear_greed_momentum.png"
+        ]
+      },
+      {
+        "id": "div-credit-price",
+        "layers": [
+          "Sentiment and Leverage",
+          "Credit Confirmation"
+        ],
+        "bullish_read": "Junk spread absolute level (~1.36%) is still mid-range historically and spikes often reflect ex-dividend artifacts.",
+        "bearish_read": "Junk spread spiked sharply higher to ~1.46% and the Fear & Greed junk-bond component reads Extreme Fear - credit is diverging from equity strength.",
+        "framework_rule": "Widening spreads = credit warning; sustained widening well above recent average is escalating caution.",
+        "weight": "medium",
+        "chart_refs": [
+          "15_junk_bond_spread.png"
+        ]
+      },
+      {
+        "id": "div-momentum",
+        "layers": [
+          "Technical Structure"
+        ],
+        "bullish_read": "RSI ~42 and MFI ~32 are mid-range/neutral, not yet oversold, so there is no momentum-exhaustion buy signal but also no overbought trim trigger.",
+        "bearish_read": "On the 1-month chart RSI rolled from ~70 down to low-40s and MFI fell below 50 toward ~32, confirming institutional selling pressure during the decline.",
+        "framework_rule": "MFI falling below 50 during a decline confirms institutional selling pressure.",
+        "weight": "medium",
+        "chart_refs": [
+          "03_spx_1month.png",
+          "02_spx_5day.png"
+        ]
+      },
+      {
+        "id": "div-vix-mas",
+        "layers": [
+          "Sentiment and Leverage",
+          "Monte Carlo Probability Analysis"
+        ],
+        "bullish_read": "VIX at 22 is only modestly elevated and could mean-revert lower, supporting a bounce.",
+        "bearish_read": "VIX in the >20 regime reduces reliability of moving-average support and widens probability tails; no spike-and-reverse capitulation has occurred yet.",
+        "framework_rule": "When VIX is above 20, reduce confidence in moving-average support.",
+        "weight": "medium",
+        "chart_refs": [
+          "13_vix_volatility.png"
+        ]
+      }
+    ],
+    "decision_matrix": {
+      "rows": [
+        {
+          "signal_layer": "Structural Bias",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Monte Carlo Threshold",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Volatility Input",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Drift Input",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Rally Exhaustion Score",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Trend Regime",
+          "current_reading": "50>200, price +0.74% vs 50dma, +5.74% vs 200dma; short-term lower highs/lows",
+          "signal": "Bullish but maturing"
+        },
+        {
+          "signal_layer": "Intraday Close Position",
+          "current_reading": "Close 7266.99 in bottom third of 7265.93-7396.56 range",
+          "signal": "Weak / distribution-style close"
+        },
+        {
+          "signal_layer": "RSI / MFI State",
+          "current_reading": "RSI ~42, MFI ~32; both rolled from overbought; MFI < 50 in decline",
+          "signal": "Neutral-to-weak, institutional selling confirmed"
+        },
+        {
+          "signal_layer": "20-Day SMA Status",
+          "current_reading": "Closed below 20-day SMA after extended advance",
+          "signal": "Short-term regime shift - bearish"
+        },
+        {
+          "signal_layer": "Bollinger Band State",
+          "current_reading": "Below middle band, drifting toward lower band",
+          "signal": "Regime test / downside pressure"
+        },
+        {
+          "signal_layer": "ERP State and Trend",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Credit Condition",
+          "current_reading": "Junk spread spiked to ~1.46% (level ~1.36%); F&G junk = Extreme Fear",
+          "signal": "Widening - credit warning"
+        },
+        {
+          "signal_layer": "Breadth Condition",
+          "current_reading": "McClellan rolled to ~1000; net new highs/lows falling toward zero",
+          "signal": "Narrow / deteriorating - bearish"
+        },
+        {
+          "signal_layer": "VIX Regime",
+          "current_reading": "VIX 22.22, above 50dma",
+          "signal": "Elevated (>20) - reduce MA-support confidence"
+        },
+        {
+          "signal_layer": "Leverage Risk State",
+          "current_reading": "-4.6% off swing high; below 5% nervous zone; re-anchored downside 7239.85",
+          "signal": "Early caution, no margin-call breach yet"
+        },
+        {
+          "signal_layer": "Monte Carlo Edge",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Overall Signal Balance",
+          "current_reading": "Trend intact but momentum, breadth, credit, sentiment all rolled over; MC favors downside",
+          "signal": "Aligned defensive / not actionable for longs"
+        },
+        {
+          "signal_layer": "Recommended Action",
+          "current_reading": "Hold core, protect capital, no new deployment; monitor 7240/7213 and await re-entry confirmation (close above prior high + RSI turn + breadth improving + VIX reversal)",
+          "signal": "Defensive patience"
+        }
+      ]
+    },
+    "signal_alignment": {
+      "trim_signals_met": 4,
+      "buy_signals_met": 0,
+      "overall": "aligned_trim"
+    },
+    "monte_carlo": {
+      "effective_threshold": 70,
+      "meets_threshold": false,
+      "prob_up_first_raw": 0.1821,
+      "prob_down_first_raw": 0.8179,
+      "prob_up_first_adjusted": 0.1821,
+      "prob_down_first_adjusted": 0.8179,
+      "sigma": 0.144,
+      "mu": 0.07,
+      "upside_target": 7620.8999,
+      "downside_target": 7239.8549,
+      "rally_exhaustion_score": "Low",
+      "conditional_cascade": "If 7240 breaks, P(6859)=35%; If 7621 breaks, P(7716)=81%",
+      "median_days": "upside 23d / downside 2d",
+      "drift_path": "5d=7275.59; 10d=7284.21; 20d=7301.47; 30d=7318.77; 60d=7370.91",
+      "cash_drag_prob": 0.1358
+    }
+  },
+  "repaired_signals": {
+    "pct_vs_50dma": 0.74,
+    "pct_vs_200dma": 5.74,
+    "bollinger_position": "Below middle band, riding toward lower band on the 1-month chart",
+    "rsi14": 42.0,
+    "mfi": 32.0,
+    "vix_regime": "Elevated (>20)",
+    "fear_greed": 27,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.78,
+    "high_yield_spread": 1.36,
+    "intraday_close_position": "Bottom third of daily range (close 7266.99 vs range 7265.93-7396.56)",
+    "middle_band_regime": "Closed below 20-day SMA after an extended advance - short-term regime shift"
+  }
+}

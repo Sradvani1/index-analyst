@@ -15,6 +15,7 @@ a markdown report plus structured JSON state.
 - [PR-4: Pass 2 image optimization](docs/PR-4-pass2-image-optimization.md) — dynamic chart selection, Pass 2 downscaling, attached vs reference-only authority
 - [PR-4.1: Pass 2 stub-response fix](docs/PR-4.1-pass2-stub-response-fix.md) — `claude-opus-4-8` tools-free retry when Pass 2 returns a preamble stub
 - [PR-5: EPS master history](docs/PR-5-eps-master-history.md) — single `eps_history.json` source; no per-run EPS files
+- [PR-6: Pass 1 schema discipline](docs/PR-6-pass1-schema-discipline.md) — signals contract prompt + tool schema descriptions, allowlisted drift coalescer, `pass1_schema_status` audit trail
 
 ## How it works
 
@@ -232,7 +233,7 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
 
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime)
-docs/        PR-1 through PR-5 implementation records; docs/archive/ for retired specs
+docs/        PR-1 through PR-6 implementation records; docs/archive/ for retired specs
 data/
   master/    eps_history.json — sole EPS source (append-only)
   runs/      dated input folders (charts + manifest + precompute cache)
@@ -256,6 +257,7 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Pass 2 dynamic chart selection, downscaling, attached vs reference-only prompt authority | PR-4 |
 | Pass 2 stub-response retry for `claude-opus-4-8` | PR-4.1 |
 | EPS master history — single `eps_history.json`, `show-eps`, no per-run EPS files | PR-5 |
+| Pass 1 schema discipline — signals contract, allowlisted coalescer, repair observability | PR-6 |
 | Monte Carlo target straddle guard (downside re-anchor when leg fully retraced) | PR-1 doc + `structure.reanchor_downside_for_straddle()` |
 
 ## Memory migration (one-time)

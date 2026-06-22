@@ -57,6 +57,108 @@ class FakeClient:
 
 
 @patch("src.analysis_engine.run_precompute")
+def test_pass1_schema_status_original_valid(mock_precompute, tmp_path, settings):
+    date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    state = dict(SAMPLE_STATE)
+    state["date"] = date
+    client = FakeClient(state)
+    result = run_daily_analysis(date, str(run_dir), settings=settings, client=client)
+
+    run_log = json.loads((result.output_dir / "run_log.json").read_text(encoding="utf-8"))
+    status = run_log["pass1_schema_status"]
+    assert status["original_valid"] is True
+    assert status["normalized"] is False
+    assert status["repair_triggered"] is False
+    assert status["final_valid"] is True
+
+    raw = json.loads((result.output_dir / "response_raw.json").read_text(encoding="utf-8"))
+    assert "state_pass_original" in raw
+    assert raw["state_pass_original"]["date"] == date
+    assert "state_pass_normalized" not in raw
+    assert "repair_pass" not in raw
+
+
+@patch("src.analysis_engine.run_precompute")
+def test_pass1_normalize_avoids_repair(mock_precompute, tmp_path, settings):
+    date = "2026-06-10"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    state = dict(SAMPLE_STATE)
+    state["date"] = date
+    state["signals"] = {
+        **state["signals"],
+        "vix_regime": "Elevated (>20)",
+        "vix_regime_detail": "VIX 22.22, above 20 threshold",
+    }
+    client = FakeClient(state)
+    result = run_daily_analysis(date, str(run_dir), settings=settings, client=client)
+
+    run_log = json.loads((result.output_dir / "run_log.json").read_text(encoding="utf-8"))
+    status = run_log["pass1_schema_status"]
+    assert status["original_valid"] is False
+    assert status["normalized"] is True
+    assert status["repair_triggered"] is False
+    assert status["final_valid"] is True
+    assert status["normalize_audit"]["merged"]
+    assert status["normalize_audit"]["untouched_unknown"] == []
+
+    raw = json.loads((result.output_dir / "response_raw.json").read_text(encoding="utf-8"))
+    assert "state_pass_normalized" in raw
+    assert "vix_regime_detail" not in raw["state_pass_normalized"]["signals"]
+
+
+class RepairFallbackClient(FakeClient):
+    def __init__(self, invalid: dict, repaired: dict):
+        super().__init__(repaired)
+        self._invalid = invalid
+        self.repair_called = False
+
+    def run_structured_state(self, bundle, image_paths) -> CallResult:
+        return CallResult(
+            text=None,
+            tool_input=self._invalid,
+            raw_response={"ok": True, "pass": "original"},
+            request_snapshot={},
+        )
+
+    def repair_structured_state(self, invalid, errors) -> CallResult:
+        self.repair_called = True
+        return CallResult(
+            text=None,
+            tool_input=self._state,
+            raw_response={"ok": True, "pass": "repair", "usage": {"input_tokens": 10}},
+            request_snapshot={"mode": "repair"},
+        )
+
+
+@patch("src.analysis_engine.run_precompute")
+def test_pass1_repair_fallback_on_unknown_extra(mock_precompute, tmp_path, settings):
+    date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    repaired = dict(SAMPLE_STATE)
+    repaired["date"] = date
+    invalid = dict(repaired)
+    invalid["signals"] = {**repaired["signals"], "unexpected_key": "nope"}
+
+    client = RepairFallbackClient(invalid, repaired)
+    result = run_daily_analysis(date, str(run_dir), settings=settings, client=client)
+
+    assert client.repair_called
+    run_log = json.loads((result.output_dir / "run_log.json").read_text(encoding="utf-8"))
+    status = run_log["pass1_schema_status"]
+    assert status["original_valid"] is False
+    assert status["repair_triggered"] is True
+    assert status["final_valid"] is True
+    assert status["repair_usage"]["input_tokens"] == 10
+
+    raw = json.loads((result.output_dir / "response_raw.json").read_text(encoding="utf-8"))
+    assert "repair_pass" in raw
+
+
+@patch("src.analysis_engine.run_precompute")
 def test_full_run_writes_artifacts(mock_precompute, tmp_path, settings):
     date = "2026-06-12"
     run_dir = build_run_dir(tmp_path, date=date, n=3)

@@ -230,10 +230,22 @@ class SignalSet(BaseModel):
     bollinger_position: Optional[str] = None
     rsi14: Optional[float] = None
     mfi: Optional[float] = None
-    vix_regime: Optional[str] = None
+    vix_regime: Optional[str] = Field(
+        default=None,
+        description=(
+            "Single string: VIX zone label plus level and moving-average context. "
+            "Do not add vix_regime_detail or signals.vix."
+        ),
+    )
     fear_greed: Optional[int] = None
-    fear_greed_zone: Optional[str] = None
-    put_call: Optional[float] = None
+    fear_greed_zone: Optional[str] = Field(
+        default=None,
+        description="Fear & Greed zone label; the only allowed score+label pair with fear_greed.",
+    )
+    put_call: Optional[float] = Field(
+        default=None,
+        description="Numeric put/call ratio only; no put_call_zone or zone label field.",
+    )
     high_yield_spread: Optional[float] = None
     intraday_close_position: Optional[str] = None
     middle_band_regime: Optional[str] = None

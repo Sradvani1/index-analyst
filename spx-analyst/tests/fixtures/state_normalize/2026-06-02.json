@@ -1,0 +1,238 @@
+{
+  "date": "2026-06-02",
+  "original_tool_input": {
+    "date": "2026-06-02",
+    "framework_version": "daily-2026-06",
+    "spx_close": 7609.7798,
+    "structural_bias": "Late Bull / Topping",
+    "base_case": "Over the next 30-60 days the highest single-outcome probability remains a melt-up toward the 7,705 upside target (Monte Carlo P(up-first)=65%), but the structural backdrop \u2014 extreme extension (+11.2% vs 200dma, narrative cites +15.1%), sub-0.10% ERP, persistent breadth/credit divergence, and a sharply widening junk-bond spread \u2014 argues that any further upside is a final-gasp trim window rather than a durable advance. Base case: grind/churn near ATHs with an obligation to trim into strength and a deeper mean-reversion risk if credit stress resolves violently.",
+    "trend_regime": "50-day SMA above 200-day SMA with price above both; trend intact but extension at cycle highs (+10.6% vs 50dma, +15.1% vs 200dma per narrative) \u2014 bullish but maturing/late-stage.",
+    "valuation_bucket": "Forward PE ~21.5x (20-22x cautious band, trim bias increasing); ERP ~0.0% sitting at the valuation-ceiling floor (0.0-0.5% band) \u2014 trim bias, no aggressive adds.",
+    "signals": {
+      "rsi14": 70,
+      "mfi": null,
+      "fear_greed": 57,
+      "fear_greed_zone": "Greed",
+      "put_call": 0.6,
+      "vix_regime": "complacent_below_15",
+      "high_yield_spread": 1.45,
+      "pct_vs_50dma": 10.6,
+      "pct_vs_200dma": 11.2183,
+      "bollinger_position": "walking_upper_band",
+      "middle_band_regime": "above_20dma",
+      "intraday_close_position": "bottom_third",
+      "put_call_zone": null
+    },
+    "what_changed_today": [
+      "Seventh consecutive ATH close but smallest gain of the streak (+0.13% / +9.82 pts), 35% below the streak average \u2014 momentum decelerating sharply.",
+      "RSI-14 closed at ~70, the first ATH-day close below the overbought threshold this cycle \u2014 a fresh momentum crack vs prior overbought ATH closes.",
+      "Overall Fear & Greed fell a 4th consecutive session (61->57), extending the sentiment fade flagged on 2026-06-01.",
+      "Junk bond spread spiked to ~1.45%, widest since the April tariff shock \u2014 credit divergence escalated materially vs prior session.",
+      "McClellan breadth ticked up a 2nd day (~1,060), modest improvement but still in Fear; participation watch from prior run continues unresolved.",
+      "Decision score deteriorated to 7 RED / 6 CAUTION / 3 GREEN, +1 Red vs prior session."
+    ],
+    "narrative_summary": "SPX printed a seventh consecutive all-time high at 7,609.78 but the move is stalling: the smallest daily gain of the streak, an intraday close in the lower half of the range, RSI slipping to ~70, and a Monte Carlo upside edge that still clears only the 65% threshold (not 70%/75%). Beneath the surface the divergences are widening \u2014 sub-0.10% ERP at the valuation ceiling, breadth and Stock Price Strength stuck in Fear, sentiment fading four sessions running, and a junk-bond spread spiking to April-shock levels. The structural bias is Late Bull / Topping, so the melt-up path is a trim obligation rather than a buy signal. Tactical posture: hold the core, be actively prepared to execute Wave 1 trims into the 7,705 upside zone, and stage re-entry capital toward the 7,449/7,428 fib zone and deeper liquidation levels.",
+    "open_questions": [
+      "Will price tag the ~7,705 upside / Wave 1 trim ceiling before momentum fully exhausts, and is the trim executed cleanly on touch?",
+      "Does the ~1.45% junk-bond spread keep widening \u2014 forcing a VIX spike to match credit stress \u2014 or does it compress back toward equity complacency?",
+      "Does McClellan breadth (~1,060) continue its tentative recovery toward ~1,100 to confirm participation, or roll back into deeper Fear?",
+      "Does ERP hold the ~0.0% ceiling or tip negative, hardening the trim-only posture?"
+    ],
+    "decision_matrix": {
+      "rows": [
+        {
+          "signal_layer": "Structural Bias",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Monte Carlo Threshold",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Volatility Input",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Drift Input",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Rally Exhaustion Score",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Trend Regime",
+          "current_reading": "50d > 200d, price above both; +10.6% vs 50dma, +11.2% vs 200dma (cycle-extended)",
+          "signal": "bullish_but_extended"
+        },
+        {
+          "signal_layer": "Intraday Close Position",
+          "current_reading": "Lower half of range after early peak and 5hr sideways grind",
+          "signal": "weak_close"
+        },
+        {
+          "signal_layer": "RSI / MFI State",
+          "current_reading": "RSI-14 ~70 (first ATH close below OB this cycle); MFI flat-declining vs price",
+          "signal": "bearish_divergence"
+        },
+        {
+          "signal_layer": "20-Day SMA Status",
+          "current_reading": "Price above 20dma, riding upper band 14 sessions",
+          "signal": "intact_but_overextended"
+        },
+        {
+          "signal_layer": "Bollinger Band State",
+          "current_reading": "Walking upper band for 14 consecutive sessions",
+          "signal": "extended_trim_window"
+        },
+        {
+          "signal_layer": "ERP State and Trend",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Credit Condition",
+          "current_reading": "Junk spread ~1.45% \u2014 widest since April tariff shock, worsening",
+          "signal": "credit_warning_diverging"
+        },
+        {
+          "signal_layer": "Breadth Condition",
+          "current_reading": "McClellan ~1,060 (2nd day tiny improvement, still Fear); Stock Price Strength ~2% Fear 8th session",
+          "signal": "narrow_deteriorating"
+        },
+        {
+          "signal_layer": "VIX Regime",
+          "current_reading": "~15.77 \u2014 below 50d MA; complacent regime",
+          "signal": "complacent"
+        },
+        {
+          "signal_layer": "Leverage Risk State",
+          "current_reading": "No drawdown thresholds breached; caution zone ~7,292, nervous ~7,141",
+          "signal": "no_breach_but_credit_contradiction"
+        },
+        {
+          "signal_layer": "Monte Carlo Edge",
+          "current_reading": "(engine-filled)",
+          "signal": "(engine-filled)"
+        },
+        {
+          "signal_layer": "Overall Signal Balance",
+          "current_reading": "7 RED / 6 CAUTION / 3 GREEN \u2014 intact uptrend colliding with cycle-extreme exhaustion and credit divergence",
+          "signal": "aligned_trim"
+        },
+        {
+          "signal_layer": "Recommended Action",
+          "current_reading": "Hold core; be actively prepared to execute Wave 1 trim into the ~7,705 upside zone; stage re-entry capital toward 7,449/7,428 fib and deeper liquidation levels",
+          "signal": "hold_and_trim_into_strength"
+        }
+      ]
+    },
+    "signal_alignment": {
+      "trim_signals_met": 4,
+      "buy_signals_met": 1,
+      "overall": "aligned_trim"
+    },
+    "confirming_evidence": [
+      "Smallest daily gain of a 7-session ATH streak (+0.13%) with weak lower-half intraday close \u2014 momentum exhaustion confirming late-stage trim posture.",
+      "RSI-14 closing ~70 (first ATH-day close below overbought) plus flat-declining MFI = bearish momentum divergence at the highs.",
+      "ERP ~0.0% at the valuation ceiling and forward PE ~21.5x both support a trim-bias / no-aggressive-add valuation stance.",
+      "Walking the upper Bollinger band for 14 sessions confirms an extended trim window rather than a fresh breakout.",
+      "Fear & Greed fading 4 consecutive sessions during new highs \u2014 classic topping warning."
+    ],
+    "conflicting_evidence": [
+      {
+        "id": "mc_edge_vs_exhaustion",
+        "layers": [
+          "Monte Carlo Probability Analysis",
+          "Technical Structure"
+        ],
+        "bullish_read": "Monte Carlo P(up-first)=65% clears the Late Bull threshold's lower analog and median 9 days to the 7,705 upside target favors a melt-up.",
+        "bearish_read": "Decelerating daily gains, RSI ~70 crack, weak intraday close, and 14-session upper-band ride signal the rally is stalling \u2014 the model cannot price these.",
+        "framework_rule": "Never use Monte Carlo output in isolation; interpret through structural bias and chart evidence. In Late Bull / Topping the action threshold is 70% \u2014 65% is not actionable.",
+        "weight": "high",
+        "chart_refs": [
+          "00_placeholder.png"
+        ]
+      },
+      {
+        "id": "credit_vs_price_and_vix",
+        "layers": [
+          "Sentiment and Leverage",
+          "Technical Structure"
+        ],
+        "bullish_read": "Equities at fresh ATHs and VIX ~15.77 (complacent) signal no stress in the volatility market.",
+        "bearish_read": "Junk-bond spread spiked to ~1.45%, widest since the April tariff shock \u2014 credit is screaming danger while equities and VIX show none; resolution historically favors VIX spiking to match credit.",
+        "framework_rule": "When breadth and credit diverge from price, elevate caution even if price has not broken down; sustained spread widening above recent average = escalating alarm.",
+        "weight": "high",
+        "chart_refs": [
+          "00_placeholder.png"
+        ]
+      },
+      {
+        "id": "erp_vs_price",
+        "layers": [
+          "Fundamental Valuation",
+          "Technical Structure"
+        ],
+        "bullish_read": "Price continues making new all-time highs with trend fully intact.",
+        "bearish_read": "ERP ~0.0% (sub-0.10%, cycle low) means equities offer essentially no premium over risk-free yield \u2014 valuation ceiling reached even as price rises.",
+        "framework_rule": "ERP 0.0-0.5% = valuation ceiling, trim bias, no aggressive adds; below 0.0% = trim only.",
+        "weight": "high",
+        "chart_refs": [
+          "00_placeholder.png"
+        ]
+      },
+      {
+        "id": "headline_greed_vs_breadth",
+        "layers": [
+          "Sentiment and Leverage",
+          "Technical Structure"
+        ],
+        "bullish_read": "Headline Fear & Greed still in Greed (57) and momentum components in Extreme Greed.",
+        "bearish_read": "Stock Price Strength stuck in Fear 8 sessions and McClellan breadth in Fear (~1,060) \u2014 headline strength masks narrow leadership, and sentiment is fading 4 days running.",
+        "framework_rule": "Headline strength with weak breadth indicates narrow leadership; falling sentiment near new highs is a topping warning.",
+        "weight": "medium",
+        "chart_refs": [
+          "00_placeholder.png"
+        ]
+      }
+    ],
+    "primary_tension": "An intact, still-rising bull trend with a Monte Carlo upside edge (65% up-first, melt-up favored) is colliding with cycle-extreme exhaustion signals \u2014 decelerating gains, RSI cracking below overbought, sub-zero-cushion ERP, and a junk-bond spread blowing out to April-shock levels \u2014 making further upside a trim obligation rather than a buy.",
+    "monte_carlo": {
+      "effective_threshold": 70,
+      "meets_threshold": false,
+      "prob_up_first_raw": 0.6501,
+      "prob_down_first_raw": 0.3499,
+      "prob_up_first_adjusted": 0.6501,
+      "prob_down_first_adjusted": 0.3499,
+      "sigma": 0.0978,
+      "mu": 0.045,
+      "upside_target": 7704.902,
+      "downside_target": 7448.9025,
+      "rally_exhaustion_score": "Low",
+      "conditional_cascade": "If 7449 breaks, P(7428)=92%; If 7705 breaks, P(7801)=79%",
+      "median_days": "upside 9d / downside 16d",
+      "drift_path": "5d=7615.85; 10d=7621.93; 20d=7634.11; 30d=7646.30; 60d=7683.00",
+      "cash_drag_prob": 0.4582
+    }
+  },
+  "repaired_signals": {
+    "pct_vs_50dma": 10.6,
+    "pct_vs_200dma": 11.2183,
+    "bollinger_position": "walking_upper_band",
+    "rsi14": 70.0,
+    "mfi": null,
+    "vix_regime": "complacent_below_15",
+    "fear_greed": 57,
+    "fear_greed_zone": "Greed",
+    "put_call": 0.6,
+    "high_yield_spread": 1.45,
+    "intraday_close_position": "bottom_third",
+    "middle_band_regime": "above_20dma"
+  }
+}
