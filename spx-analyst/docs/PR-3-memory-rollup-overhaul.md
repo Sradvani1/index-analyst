@@ -2,7 +2,9 @@
 
 **Status:** Implemented  
 **Framework version:** `daily-2026-06`  
-**Design plan:** [`.cursor/plans/memory_rollup_overhaul_012f6344.plan.md`](../../.cursor/plans/memory_rollup_overhaul_012f6344.plan.md) (aligned to this record)
+**Design plan:** [`.cursor/plans/memory_rollup_overhaul_012f6344.plan.md`](../../.cursor/plans/memory_rollup_overhaul_012f6344.plan.md) (aligned to this record)  
+**Backfill:** [PR-3.1](PR-3.1-perplexity-backfill.md) — rebuild early-June memory from Perplexity markdown without chart packs  
+**Design review:** [PR-3.2](PR-3.2-memory-design-decision-brief.md) — **Decision: Option B** (no char truncation on selected fields; narrative deferred)
 
 ## Summary
 
@@ -89,18 +91,27 @@ No numeric indicator values appear in the `signals:` line.
 
 `add tranche` always resolves to `deploy` because step 3 runs before the bare-`tranche` rule in step 4.
 
-Final token capped at 60 characters.
+Final token capped at 60 characters (pathological matrix strings only).
 
-## Truncation caps
+## Selection limits (PR-3.2 Option B)
 
-| Field | Cap |
-|-------|-----|
-| Normalized action | 60 chars |
-| `what_changed_today` | 3 × 60 chars |
-| `primary_tension` | 120 chars |
-| `conflicting_evidence` | 2 × 90 chars (by weight: high → medium → low) |
-| Unresolved watchlist | 2 × 80 chars |
-| 6-day rollup total | Soft ≤ 2,500; hard test ≤ 3,000 |
+Per-day rollup uses **selection limits** only — no character truncation on selected text.
+
+| Field | Selection limit | Truncation |
+|-------|-----------------|------------|
+| Normalized action | closed set | 60 chars only for unmapped matrix strings |
+| `what_changed_today` | **3 items** | **None** — full text each |
+| `primary_tension` | 1 | **None** — full text |
+| `conflicting_evidence` | **2** (weight order) | **None** — full `framework_rule` |
+| Unresolved watchlist | **2 questions** (eligibility rules) | **None** — full text |
+
+**Excluded from rollup:** `narrative_summary` (deferred), `spx_close`, numeric signals, `base_case`, `trend_regime`, Monte Carlo / Fib / ERP prose, per-day `open_questions`.
+
+Typical 6-day rollup: ~2,000–2,500 tokens (~8–10k chars) with real states; still well below pre-PR-3 ~3,700-token narrative replay.
+
+## Truncation caps (superseded)
+
+~~PR-3.1 char caps (60/120/90/80)~~ removed in PR-3.2 Option B. See [PR-3.2 decision brief](PR-3.2-memory-design-decision-brief.md).
 
 ## Unresolved watchlist
 

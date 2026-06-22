@@ -1,0 +1,39 @@
+{
+  "description": "Multiple divergences with overlapping chart_refs; matrix adds minimal; prune does not drop protected",
+  "conflicting_evidence": [
+    {
+      "id": "DIV-1",
+      "layers": ["technicals", "credit"],
+      "bullish_read": "Trend intact",
+      "bearish_read": "Credit widening",
+      "framework_rule": "Credit divergence rule",
+      "weight": "high",
+      "chart_refs": ["03_spx_1month.png", "15_junk_bond_spread.png"]
+    },
+    {
+      "id": "DIV-2",
+      "layers": ["breadth"],
+      "bullish_read": "Price strong",
+      "bearish_read": "Breadth weak",
+      "framework_rule": "Breadth divergence",
+      "weight": "medium",
+      "chart_refs": ["11_breadth_mcclellan.png", "charts/03_spx_1month.png"]
+    }
+  ],
+  "matrix_signals": {
+    "Trend Regime": "neutral",
+    "Intraday Close Position": "within range",
+    "RSI / MFI State": "neutral",
+    "20-Day SMA Status": "stable",
+    "Bollinger Band State": "within bands",
+    "Credit Condition": "neutral",
+    "Breadth Condition": "monitor",
+    "VIX Regime": "stable"
+  },
+  "expected_attached": [
+    "03_spx_1month.png",
+    "11_breadth_mcclellan.png",
+    "15_junk_bond_spread.png"
+  ],
+  "expected_pruned_absent": ["02_spx_5day.png"]
+}

@@ -247,9 +247,7 @@ def _signal_labels(s: DailyState) -> str:
 
 def _conflict_line(d: Divergence) -> str:
     layers = "/".join(d.layers)
-    rule_budget = max(0, 90 - len(d.id) - len(layers) - 6)
-    rule = _truncate(d.framework_rule, rule_budget)
-    return f"{d.id} | {layers} | {rule}"
+    return f"{d.id} | {layers} | {d.framework_rule.strip()}"
 
 
 def _select_conflicts(divergences: list[Divergence]) -> list[Divergence]:
@@ -282,14 +280,14 @@ def _format_day(s: DailyState) -> str:
         _signal_labels(s),
     ]
     if s.what_changed_today:
-        items = [_truncate(item, 60) for item in s.what_changed_today[:3]]
+        items = [item.strip() for item in s.what_changed_today[:3]]
         lines.append(f"changed: {'; '.join(items)}")
     tension = s.primary_tension.strip()
     if tension:
-        lines.append(f"tension: {_truncate(tension, 120)}")
+        lines.append(f"tension: {tension}")
     conflicts = _select_conflicts(s.conflicting_evidence)
     if conflicts:
-        conflict_lines = [_truncate(_conflict_line(c), 90) for c in conflicts]
+        conflict_lines = [_conflict_line(c) for c in conflicts]
         lines.append(f"conflicts: {'; '.join(conflict_lines)}")
     return "\n".join(lines)
 
@@ -366,7 +364,7 @@ def _build_unresolved_watchlist(states: list[DailyState]) -> str:
         selected.append((newest_date, wording))
 
     selected.sort(key=lambda x: x[0], reverse=True)
-    items = [_truncate(w, 80) for _, w in selected[:2]]
+    items = [w.strip() for _, w in selected[:2]]
     if not items:
         return "Unresolved watchlist: (none)"
     return "Unresolved watchlist: " + " | ".join(items)

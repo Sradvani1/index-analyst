@@ -1,0 +1,16 @@
+{
+  "description": "No conflicts, all-neutral qualitative matrix",
+  "conflicting_evidence": [],
+  "matrix_signals": {
+    "Trend Regime": "neutral",
+    "Intraday Close Position": "within range",
+    "RSI / MFI State": "neutral",
+    "20-Day SMA Status": "stable",
+    "Bollinger Band State": "within bands",
+    "Credit Condition": "monitor",
+    "Breadth Condition": "stable",
+    "VIX Regime": "unknown"
+  },
+  "expected_attached": [],
+  "expected_reference_count": 15
+}

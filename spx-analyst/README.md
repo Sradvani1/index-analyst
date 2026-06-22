@@ -12,10 +12,12 @@ a markdown report plus structured JSON state.
 - [PR-1: Daily framework migration](docs/PR-1-spx-daily-framework-migration.md) — Step 0 precompute, schema rebuild, yfinance authority
 - [PR-2: Two-pass prompt overhaul](docs/PR-2-spx-two-pass-prompt-overhaul.md) — prompt/enforcement fidelity, ERP fix, Pass 2 validation gate, prompt caching
 - [PR-3: Memory rollup overhaul](docs/PR-3-memory-rollup-overhaul.md) — categorical posture snapshot, unconditional rolling rebuild, load observability
+- [PR-4: Pass 2 image optimization](docs/PR-4-pass2-image-optimization.md) — dynamic chart selection, Pass 2 downscaling, attached vs reference-only authority
+- [PR-4.1: Pass 2 stub-response fix](docs/PR-4.1-pass2-stub-response-fix.md) — `claude-opus-4-8` tools-free retry when Pass 2 returns a preamble stub
 
 ## How it works
 
-Each daily run has four stages:
+Each daily run has five stages:
 
 1. **Step 0 — Python precompute.** Fetches `^GSPC` (300d), `^VIX` (60d), and `^TNX`
    (25 sessions) via yfinance, combines manual `forward_eps` / `trailing_eps` from
@@ -24,19 +26,29 @@ Each daily run has four stages:
    active swing leg, a **Monte Carlo straddle guard** re-anchors the downside target
    to the nearest valid level strictly below spot so simulation targets always straddle
    close (see PR-1 doc).
-2. **Pass 1 — structured state.** Charts, external context, precomputed
-   `analysis_context`, framework, and optional prior posture snapshot are sent in one
-   multimodal request. The model emits a schema-valid `DailyState` JSON object,
-   focusing on qualitative chart reads and `structural_bias`. Seven decision-matrix
-   rows are `(engine-filled)` placeholders; the engine overwrites them next.
+2. **Pass 1 — structured state.** The **full** chart pack (all manifest entries), external
+   context, precomputed `analysis_context`, framework, and optional prior posture snapshot
+   are sent in one multimodal request at `SPX_IMAGE_MAX_DIMENSION` (default 1568). The model
+   emits a schema-valid `DailyState` JSON object, focusing on qualitative chart reads and
+   `structural_bias`. Seven decision-matrix rows are `(engine-filled)` placeholders; the
+   engine overwrites them next.
 3. **Post-Pass-1 enforcement.** `state_enforcement.py` applies precomputed numerics
    (`spx_close`, Monte Carlo block, seven owned matrix rows) before Pass 2 runs.
-4. **Pass 2 — markdown report.** The enforced state scaffolds a full report that
+4. **Pass 2 chart selection (PR-4).** `pass2_images.resolve_pass2_images()` runs on the
+   post-enforcement state: protected conflict `chart_refs`, matrix-driven adds for
+   non-neutral qualitative rows, then conservative redundancy pruning. See
+   [PR-4](docs/PR-4-pass2-image-optimization.md).
+5. **Pass 2 — markdown report.** Only **attached** charts are encoded (default max edge
+   1092 when `SPX_PASS2_IMAGE_OPTIMIZATION=true`). The prompt lists reference-only charts
+   by filename without sending their bytes. The enforced state scaffolds a full report that
    follows the Daily 7-Step Workflow, includes Evidence Reconciliation for listed
-   divergences, and ends with the 18-row Updated Decision Matrix. Pass 2 is
-   exposition-only: it must not contradict the validated state. When memory is
-   enabled, the same optional prior posture snapshot is included (continuity only —
-   not authoritative for today's numerics).
+   divergences, and ends with the 18-row Updated Decision Matrix. Pass 2 is exposition-only:
+   it must not contradict the validated state. When memory is enabled, the same optional
+   prior posture snapshot is included (continuity only — not authoritative for today's
+   numerics).
+
+Set `SPX_PASS2_IMAGE_OPTIMIZATION=false` to restore pre-PR-4 Pass 2 behavior (all charts,
+full resolution, legacy manifest prompt block).
 
 On every **successful** run, canonical state and report files are mirrored into
 `memory/daily_states/` and `memory/daily_reports/` (used by the web viewer).
@@ -46,6 +58,9 @@ Pass 1/Pass 2 only — archival and rolling rebuild always run on success.
 
 See [PR-3: Memory rollup overhaul](docs/PR-3-memory-rollup-overhaul.md) for the
 categorical signal buckets, action normalization table, and watchlist rules.
+
+See [PR-4: Pass 2 image optimization](docs/PR-4-pass2-image-optimization.md) for
+selector rules, flag-off semantics, and `run_log` pass2 audit fields.
 
 ## Install
 
@@ -67,7 +82,9 @@ Set these in `.env` (see `.env.example`):
 | `SPX_MODEL` | `claude-opus-4-20250514` | Claude model for both passes |
 | `SPX_PROMPT_CACHE_ENABLED` | `true` | Reuse framework + tool schema across passes |
 | `SPX_INCLUDE_MEMORY` | `false` | Inject prior posture snapshot into Pass 1/Pass 2 (rebuild always runs on success; rollup is categorical-only — no historical numerics) |
-| `SPX_IMAGE_MAX_DIMENSION` | `1568` | Long-edge resize for chart images (both passes) |
+| `SPX_IMAGE_MAX_DIMENSION` | `1568` | Long-edge resize for Pass 1 chart images (and Pass 2 when optimization off) |
+| `SPX_PASS2_IMAGE_OPTIMIZATION` | `true` | Dynamic Pass 2 chart selection + downscaling (see PR-4) |
+| `SPX_PASS2_IMAGE_MAX_DIMENSION` | `1092` | Long-edge resize for Pass 2 attached charts when optimization on (operator floor: 784) |
 | `SPX_MAX_REPORT_CHARS` | `24000` | Report length validation limit |
 | `SPX_MAX_OUTPUT_TOKENS` | `8000` | Max tokens per Claude response |
 | `SPX_RECENT_STATE_COUNT` | `6` | Recent states loaded when memory is enabled |
@@ -147,9 +164,10 @@ data/runs/2026-06-12/
 `setup-run` creates a **placeholder** 1-chart manifest. Replace it with the full
 15-chart pack and a complete `manifest.json` before running analysis.
 
-`manifest.json` lists charts with unique, contiguous `order` values; the engine
-sends images to the model in that order. `manifest.close` is validation-only —
-yfinance SPX close is the numeric source of truth.
+`manifest.json` lists charts with unique, contiguous `order` values; Pass 1 sends
+images to the model in that order. Pass 2 sends a subset in the same manifest order
+when optimization is enabled. `manifest.close` is validation-only — yfinance SPX close
+is the numeric source of truth.
 
 ## Outputs
 
@@ -160,7 +178,7 @@ output/2026-06-12/
   analysis_context.json      # mirror of data/runs/.../analysis_context.json
   request_snapshot.json      # reproducibility metadata per pass (no secrets)
   response_raw.json          # raw provider responses (state_pass + report_pass)
-  run_log.json               # timings, warnings, model, precompute enforcement; memory_load when SPX_INCLUDE_MEMORY=true
+  run_log.json               # timings, warnings, model, precompute enforcement; pass2_* audit fields; memory_load when SPX_INCLUDE_MEMORY=true
   validation_report.json     # schema, report structure, enforcement audit
 
 memory/daily_states/2026-06-12-state.json      # mirrored on successful run
@@ -204,7 +222,7 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
 
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime)
-docs/        PR-1, PR-2, and PR-3 implementation records; docs/archive/ for retired specs
+docs/        PR-1 through PR-4 implementation records; docs/archive/ for retired specs
 data/runs/   dated input folders (charts + manifest + external context)
 memory/      archived states/reports + rolling summary (rebuilt on every successful run)
 output/      per-run artifacts
@@ -223,10 +241,9 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Daily framework engine with yfinance precompute | PR-1 |
 | Two-pass prompt overhaul, ERP enforcement fix, Pass 2 state consistency validation, cross-pass prompt caching | PR-2 |
 | Memory rollup posture snapshot, categorical signals, rebuild decoupled from injection flag | PR-3 |
+| Pass 2 dynamic chart selection, downscaling, attached vs reference-only prompt authority | PR-4 |
+| Pass 2 stub-response retry for `claude-opus-4-8` | PR-4.1 |
 | Monte Carlo target straddle guard (downside re-anchor when leg fully retraced) | PR-1 doc + `structure.reanchor_downside_for_straddle()` |
-
-**Planned (not yet implemented):** Pass 2 dynamic chart selection and downscaling to
-reduce image token cost on the report pass.
 
 ## Memory migration (one-time)
 
@@ -251,6 +268,17 @@ not ignored.
 
 ## Legacy Perplexity migration
 
-`src/migrate_perplexity.py` imports historical Perplexity markdown into engine
-artifacts. It does **not** run Step 0 precompute or `apply_precomputed_fields`.
-Use it only for one-off archive imports; daily runs should use `python -m src.cli run`.
+Use `migrate-perplexity` to backfill valid `daily-2026-06` memory from historical
+Perplexity markdown when chart packs are unavailable. The pipeline runs Step 0
+precompute, `apply_precomputed_fields`, PR-3 posture snapshots, and rebuilds rolling
+memory after each session. See [docs/PR-3.1-perplexity-backfill.md](docs/PR-3.1-perplexity-backfill.md).
+
+```bash
+python -m src.cli migrate-perplexity \
+  --history ../perplexity_analysis_history.md \
+  --from 2026-06-01 \
+  --to 2026-06-08
+```
+
+Older `perplexity-migration` states in `memory/` are invalid for PR-3 — archive them
+before backfill. Daily chart-based runs use `python -m src.cli run`.

@@ -182,7 +182,7 @@ def test_action_normalization_table():
     assert _normalize_action("unknown gibberish") == "hold and monitor"
 
 
-def test_changed_tension_conflict_caps():
+def test_changed_tension_conflict_selection_full_text():
     long_item = "x" * 100
     long_tension = "t" * 200
     long_rule = "r" * 200
@@ -223,13 +223,16 @@ def test_changed_tension_conflict_caps():
     changed_line = [ln for ln in block.splitlines() if ln.startswith("changed:")][0]
     parts = changed_line.replace("changed: ", "").split("; ")
     assert len(parts) == 3
-    assert all(len(p) <= 60 for p in parts)
+    assert all(len(p) == 100 for p in parts)
+    assert "fourth dropped" not in changed_line
     tension_line = [ln for ln in block.splitlines() if ln.startswith("tension:")][0]
-    assert len(tension_line.removeprefix("tension: ")) <= 120
+    assert tension_line == f"tension: {long_tension}"
     conflict_line = [ln for ln in block.splitlines() if ln.startswith("conflicts:")][0]
     assert "DIV-1" in conflict_line
+    assert long_rule in conflict_line
     assert "DIV-2" in conflict_line
     assert "DIV-3" not in conflict_line
+    assert "…" not in block
 
 
 def test_regime_arc_held():
@@ -289,22 +292,23 @@ def test_watchlist_two_session_expiry():
     assert "Stale question" not in footer
 
 
-def test_watchlist_cap_80_chars():
+def test_watchlist_full_question_text():
     long_q = "Q" * 120
     states = [_state(date="2026-06-12", open_questions=[long_q, long_q + "2"])]
     footer = _build_unresolved_watchlist(states)
-    for part in footer.replace("Unresolved watchlist: ", "").split(" | "):
-        assert len(part) <= 80
+    assert long_q in footer
+    assert "…" not in footer
 
 
-def test_six_day_rollup_under_soft_ceiling():
+def test_six_day_rollup_under_typical_ceiling():
     dates = ["2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10"]
     states = [_state(date=d, open_questions=[f"Question {i}?"]) for i, d in enumerate(dates)]
     summary = build_recent_summary(states)
-    assert len(summary) <= 2500
+    # PR-3.2 Option B: no char truncation; typical 6-day synthetic rollup stays well below ~10k chars.
+    assert len(summary) <= 10_000
 
 
-def test_six_day_rollup_under_hard_ceiling():
+def test_six_day_rollup_under_stress_ceiling():
     states = []
     for i, date in enumerate(["2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10"]):
         states.append(
@@ -316,7 +320,7 @@ def test_six_day_rollup_under_hard_ceiling():
             )
         )
     summary = build_recent_summary(states)
-    assert len(summary) <= 3000
+    assert len(summary) <= 12_000
 
 
 def test_rebuild_rolling_summary_writes_files(settings):

@@ -3,6 +3,9 @@
 Parses standalone Full 7-Step sessions from an exported markdown history file,
 converts each to schema-valid DailyState JSON and a normalized analysis report,
 and writes canonical output/ + memory/ files.
+
+Backfill path (no chart packs): Step 0 precompute + apply_precomputed_fields +
+text-only Pass 1/2 with Perplexity markdown as qualitative evidence.
 """
 
 from __future__ import annotations
@@ -17,21 +20,48 @@ from pathlib import Path
 from . import files
 from .anthropic_client import AnthropicClient
 from .config import Settings, get_settings
-from .external_data import blank_context
-from .files import MANIFEST_FILENAME, EXTERNAL_CONTEXT_FILENAME, read_json
-from .memory import build_recent_summary, load_recent_states
+from .external_data import blank_context, load_external_context
+from .files import (
+    ANALYSIS_CONTEXT_FILENAME,
+    EXTERNAL_CONTEXT_FILENAME,
+    MANIFEST_FILENAME,
+    read_json,
+    scaffold_run_dir,
+    write_json,
+)
+from .memory import (
+    build_recent_summary,
+    load_recent_states_with_stats,
+    rebuild_rolling_summary,
+)
+from .precompute import run_precompute
 from .prompts import (
     DECISION_MATRIX_ROWS,
     EVIDENCE_RECONCILIATION_HEADING,
     HARD_CONSTRAINTS,
+    PRECOMPUTE_OWNED_MATRIX_ROWS,
+    PRE_STEP,
     WORKFLOW_STEPS,
     PromptBundle,
+    _analysis_context_block,
+    _optional_memory_block,
     load_system_role,
 )
-from .schemas import DailyManifest, DailyState, ExternalContext, ValidationReport
+from .schemas import (
+    AnalysisContext,
+    DailyManifest,
+    DailyState,
+    ExternalContext,
+    ValidationIssue,
+    ValidationReport,
+)
+from .state_enforcement import apply_precomputed_fields, audit_enforcement_issues
 from .validation import parse_daily_state, validate_report, validation_errors_text
 
 logger = logging.getLogger(__name__)
+
+FRAMEWORK_VERSION = "daily-2026-06"
+RUN_LOG_SOURCE = "perplexity_backfill"
 
 SESSION_HEADER_RE = re.compile(
     r"^#\s*📊\s*SPX Full 7-Step Analysis —\s*.+?,\s*"
@@ -87,6 +117,7 @@ class MigrationResult:
     state_validation: ValidationReport
     report_validation: ValidationReport
     output_dir: Path
+    analysis_context: AnalysisContext
     warnings: list[str] = field(default_factory=list)
 
 
@@ -181,16 +212,64 @@ def load_session_context(date: str, settings: Settings | None = None) -> Session
     )
 
 
-def _context_block(ctx: SessionContext, session: PerplexitySession) -> str:
+def _patch_manifest_close(run_dir: Path, session: PerplexitySession) -> None:
+    manifest_path = run_dir / MANIFEST_FILENAME
+    if not manifest_path.exists():
+        return
+    raw = read_json(manifest_path)
+    if raw.get("close", 0) == 0:
+        raw["close"] = session.spx_close
+        write_json(manifest_path, raw)
+
+
+def _prepare_session_precompute(
+    session: PerplexitySession,
+    settings: Settings,
+    *,
+    force_fetch: bool = False,
+) -> tuple[AnalysisContext, SessionContext]:
+    """Scaffold run dir, require EPS, run Step 0 precompute for the session date."""
+    run_dir = settings.runs_dir / session.date
+    scaffold_run_dir(run_dir, session.date)
+
+    ext_path = run_dir / EXTERNAL_CONTEXT_FILENAME
+    if not ext_path.exists():
+        write_json(ext_path, blank_context(session.date))
+
+    ext = load_external_context(session.date, run_dir, settings=settings)
+    if ext.context.forward_eps is None:
+        raise MigrationError(
+            f"{session.date}: set forward_eps in {ext_path} before backfill "
+            "(run setup-run and edit external_context.json)"
+        )
+
+    _patch_manifest_close(run_dir, session)
+    manifest = files.load_manifest(run_dir)
+    analysis_context = run_precompute(
+        session.date,
+        run_dir,
+        manifest,
+        ext.context,
+        settings=settings,
+        force_fetch=force_fetch,
+    )
+    write_json(run_dir / ANALYSIS_CONTEXT_FILENAME, analysis_context)
+
+    ctx = load_session_context(session.date, settings)
+    return analysis_context, ctx
+
+
+def _session_metadata_block(session: PerplexitySession, ctx: SessionContext) -> str:
     lines = [
         "## Session metadata",
         f"Date: {session.date}",
-        f"SPX close (from Perplexity header): {session.spx_close}",
-        "framework_version: perplexity-migration",
+        f"SPX close (Perplexity header, reference only): {session.spx_close}",
+        f"framework_version: {FRAMEWORK_VERSION}",
+        f"source: {RUN_LOG_SOURCE}",
     ]
     if ctx.manifest:
         lines.append(f"Manifest close: {ctx.manifest.close}")
-        lines.append("Chart filenames (use these in chart_refs when applicable):")
+        lines.append("Chart filenames (use in chart_refs when applicable):")
         for c in ctx.manifest.ordered_charts():
             lines.append(f"  - {c.file}: {c.label}")
     if ctx.external_context:
@@ -208,43 +287,46 @@ def build_migration_state_prompt(
     system_role: str,
     session: PerplexitySession,
     ctx: SessionContext,
+    analysis_context: AnalysisContext,
     recent_summary: str,
 ) -> PromptBundle:
     steps = "\n".join(f"{i + 1}. {s}" for i, s in enumerate(WORKFLOW_STEPS))
-    body = "\n\n".join(
-        [
-            _context_block(ctx, session),
-            "## Recent historical memory\n" + recent_summary,
-            (
-                "## Historical Perplexity analysis (source of truth)\n"
-                "Extract structured state ONLY from facts stated below. "
-                "Do NOT invent numbers, probabilities, or signals not present in the text. "
-                "Use null for any signal you cannot determine.\n\n"
-                f"{session.clean_markdown}"
-            ),
-            (
-                "## Task\n"
-                "Convert this historical Perplexity report into one `emit_daily_state` tool call.\n\n"
-                f"Required fields follow the DailyState schema and methodology steps:\n{steps}\n\n"
-                "Rules:\n"
-                f"- Set date to {session.date!r} and spx_close to {session.spx_close} "
-                "(override if manifest close differs only when Perplexity explicitly uses another close).\n"
-                "- Set framework_version to 'perplexity-migration'.\n"
-                "- structural_bias: infer from narrative (Early Bull, Mid Bull, Late Bull / Topping, Bear Market).\n"
-                "- monte_carlo: map Step 5 first-hit probabilities to prob_up_first_raw / prob_down_first_raw; "
-                "set adjusted fields equal when no rally-exhaustion adjustment is stated.\n"
-                "- monte_carlo.meets_threshold: true only if the dominant first-hit probability >= 0.65.\n"
-                "- decision_matrix.rows: 18 rows per framework; Recommended Action row signal in snake_case "
-                "(e.g. hold_and_monitor, prepare_reentry_at_7151).\n"
-                "- Enumerate genuine cross-layer tensions in conflicting_evidence with chart_refs "
-                "(manifest filenames when known, else descriptive labels from the report).\n"
-                "- Compare against recent sessions in what_changed_today.\n"
-                "- narrative_summary: 2-4 sentence single paragraph, plain text.\n\n"
-                + HARD_CONSTRAINTS
-            ),
-        ]
-    )
-    return PromptBundle(system_role=system_role, framework=framework, body=body)
+    pre = f"0. {PRE_STEP}\n" + steps
+    owned_rows = ", ".join(PRECOMPUTE_OWNED_MATRIX_ROWS)
+    memory = _optional_memory_block(recent_summary)
+    parts = [
+        _analysis_context_block(analysis_context),
+        _session_metadata_block(session, ctx),
+        (
+            "## Historical Perplexity analysis (qualitative evidence)\n"
+            "Extract qualitative state from facts stated below. "
+            "Do NOT invent signals or divergences not present in the text. "
+            "Use null for any signal you cannot determine.\n\n"
+            f"{session.clean_markdown}"
+        ),
+        (
+            "## Task\n"
+            "Convert this historical Perplexity report into one `emit_daily_state` tool call.\n\n"
+            f"Complete `{PRE_STEP}` first, then the Daily 7-Step Workflow in order:\n{pre}\n\n"
+            "Rules:\n"
+            f"- Set date to {session.date!r}.\n"
+            f"- Set framework_version to {FRAMEWORK_VERSION!r}.\n"
+            "- structural_bias: infer from narrative (Early Bull, Mid Bull, Late Bull / Topping, Bear Market).\n"
+            "- Emit schema-valid copies of spx_close and monte_carlo from analysis_context; "
+            "the engine overwrites them after Pass 1.\n"
+            f"- For precompute-owned matrix rows, use '(engine-filled)' placeholders: {owned_rows}.\n"
+            "- decision_matrix.rows: 18 rows per framework; Recommended Action row signal in snake_case "
+            "(e.g. hold_and_monitor, prepare_reentry_at_7151).\n"
+            "- Enumerate genuine cross-layer tensions in conflicting_evidence with chart_refs "
+            "(manifest filenames when known, else descriptive labels from the report).\n"
+            "- Compare against prior posture snapshot in what_changed_today.\n"
+            "- narrative_summary: 2-4 sentence single paragraph, plain text.\n\n"
+            + HARD_CONSTRAINTS
+        ),
+    ]
+    if memory:
+        parts.insert(0, memory)
+    return PromptBundle(system_role=system_role, framework=framework, body="\n\n".join(parts))
 
 
 def build_migration_report_prompt(
@@ -253,10 +335,12 @@ def build_migration_report_prompt(
     system_role: str,
     session: PerplexitySession,
     daily_state: DailyState,
+    analysis_context: AnalysisContext,
     recent_summary: str,
 ) -> PromptBundle:
     state_json = json.dumps(daily_state.model_dump(mode="json"), indent=2)
     steps = "\n".join(f"{i + 1}. {s}" for i, s in enumerate(WORKFLOW_STEPS))
+    pre = f"0. {PRE_STEP}\n" + steps
     action = daily_state.decision_matrix.recommended_action
     mixed = daily_state.signal_alignment.overall == "mixed"
     mixed_note = (
@@ -265,53 +349,54 @@ def build_migration_report_prompt(
         if mixed
         else ""
     )
-    body = "\n\n".join(
-        [
-            "## Recent historical memory\n" + recent_summary,
-            (
-                "## Validated daily state (immutable facts)\n"
-                f"```json\n{state_json}\n```"
-            ),
-            (
-                "## Historical Perplexity narrative (preserve analytical substance)\n"
-                f"{session.clean_markdown}"
-            ),
-            (
-                "## Task\n"
-                "Write the full normalized daily markdown analysis report for engine storage.\n\n"
-                "IMMUTABLE (do not recompute or contradict): numeric signals, signal_alignment, "
-                f"monte_carlo values, and decision_matrix.recommended_action ({action!r}).\n\n"
-                f"Use these exact workflow step headings in order:\n{steps}\n\n"
-                f"Within or immediately after the Technical & Sentiment Pulse step, include "
-                f"'## {EVIDENCE_RECONCILIATION_HEADING}' that restates primary_tension and "
-                "addresses each conflicting_evidence item.\n\n"
-                "In Narrative & Executive Summary, explain why today's evidence resolves to "
-                f"{action!r} given the 3-of-5 rule and Monte Carlo threshold.\n\n"
-                "The report MUST end with '## Updated Decision Matrix' as a markdown table "
-                f"with exactly these rows: {', '.join(DECISION_MATRIX_ROWS)}."
-                f"{mixed_note} "
-                "Preserve key levels, probabilities, and trade guidance from the Perplexity text. "
-                "Output only the markdown report."
-            ),
-        ]
+    memory = _optional_memory_block(recent_summary)
+    parts = [
+        _analysis_context_block(analysis_context),
+        f"## Validated daily state (immutable facts)\n```json\n{state_json}\n```",
+        (
+            "## Historical Perplexity narrative (preserve analytical substance)\n"
+            f"{session.clean_markdown}"
+        ),
+        (
+            "## Task\n"
+            "Write the full normalized daily markdown analysis report for engine storage.\n\n"
+            "This is a text-only Pass 2 (no chart images). Use the Perplexity narrative and "
+            "validated state for exposition — do not re-open charts.\n\n"
+            "IMMUTABLE (do not recompute or contradict): numeric signals, signal_alignment, "
+            f"monte_carlo values, and decision_matrix.recommended_action ({action!r}).\n\n"
+            f"Use these exact workflow step headings in order:\n{pre}\n\n"
+            f"Within or immediately after the Technical & Sentiment Pulse step, include "
+            f"'## {EVIDENCE_RECONCILIATION_HEADING}' that restates primary_tension and "
+            "addresses each conflicting_evidence item.\n\n"
+            "Step 5 must cite precomputed Monte Carlo from analysis_context (do not recompute).\n\n"
+            "In Narrative & Executive Summary, explain why today's evidence resolves to "
+            f"{action!r} given the 3-of-5 rule and Monte Carlo threshold.\n\n"
+            "The report MUST end with '## Updated Decision Matrix' as a markdown table "
+            f"with exactly these rows: {', '.join(DECISION_MATRIX_ROWS)}."
+            f"{mixed_note} "
+            "Preserve key levels, probabilities, and trade guidance from the Perplexity text. "
+            "Output only the markdown report."
+        ),
+    ]
+    if memory:
+        parts.insert(0, memory)
+    return PromptBundle(system_role=system_role, framework=framework, body="\n\n".join(parts))
+
+
+def _finalize_migrated_state(state: DailyState, session: PerplexitySession) -> DailyState:
+    return state.model_copy(
+        update={"date": session.date, "framework_version": FRAMEWORK_VERSION}
     )
-    return PromptBundle(system_role=system_role, framework=framework, body=body)
 
 
-def _enforce_close(state: DailyState, session: PerplexitySession, ctx: SessionContext) -> DailyState:
-    """Hard guardrail: header close is authoritative for migration."""
-    data = state.model_dump(mode="json")
-    data["date"] = session.date
-    data["spx_close"] = session.spx_close
-    data["framework_version"] = "perplexity-migration"
-    if ctx.manifest and abs(ctx.manifest.close - session.spx_close) > 0.02:
-        logger.warning(
-            "%s: manifest close %.2f differs from Perplexity %.2f; using Perplexity",
-            session.date,
-            ctx.manifest.close,
-            session.spx_close,
-        )
-    return DailyState.model_validate(data)
+def _merge_enforcement_audit(
+    report: ValidationReport,
+    enforce_warnings: list[str],
+) -> ValidationReport:
+    issues = list(report.issues)
+    for entry in audit_enforcement_issues(enforce_warnings):
+        issues.append(ValidationIssue(**entry))
+    return report.model_copy(update={"issues": issues})
 
 
 def migrate_session(
@@ -319,21 +404,49 @@ def migrate_session(
     *,
     settings: Settings | None = None,
     client: AnthropicClient | None = None,
+    force_fetch: bool = False,
 ) -> MigrationResult:
     settings = settings or get_settings()
     client = client or AnthropicClient(settings)
     framework = files.load_framework(settings)
     system_role = load_system_role(files.load_role(settings))
-    ctx = load_session_context(session.date, settings)
-    recent_states = load_recent_states(before_date=session.date, settings=settings)
-    recent_summary = build_recent_summary(recent_states)
     warnings: list[str] = []
+
+    analysis_context, ctx = _prepare_session_precompute(
+        session, settings, force_fetch=force_fetch
+    )
+    warnings.extend(analysis_context.market_data.precompute_warnings)
+
+    yfinance_close = analysis_context.market_data.spx_close
+    if abs(yfinance_close - session.spx_close) > 0.02:
+        msg = (
+            f"Perplexity header close {session.spx_close:.2f} differs from "
+            f"yfinance precompute {yfinance_close:.2f}; enforcement uses precompute"
+        )
+        logger.warning("%s: %s", session.date, msg)
+        warnings.append(msg)
+
+    recent_states, mem_stats = load_recent_states_with_stats(
+        before_date=session.date, settings=settings
+    )
+    recent_summary = build_recent_summary(recent_states)
+    memory_load = {
+        "requested": mem_stats.requested,
+        "loaded": mem_stats.loaded,
+        "skipped_invalid": mem_stats.skipped_invalid,
+        "skipped_before_date": mem_stats.skipped_before_date,
+    }
+    if mem_stats.skipped_invalid > 0:
+        warnings.append(
+            f"memory load skipped {mem_stats.skipped_invalid} invalid prior state file(s)"
+        )
 
     state_bundle = build_migration_state_prompt(
         framework=framework,
         system_role=system_role,
         session=session,
         ctx=ctx,
+        analysis_context=analysis_context,
         recent_summary=recent_summary,
     )
     state_call = client.run_text_structured_state(state_bundle)
@@ -352,13 +465,17 @@ def migrate_session(
             )
         warnings.append("state required one repair pass")
 
-    daily_state = _enforce_close(daily_state, session, ctx)
+    daily_state, enforce_warnings = apply_precomputed_fields(daily_state, analysis_context)
+    warnings.extend(enforce_warnings)
+    state_validation = _merge_enforcement_audit(state_validation, enforce_warnings)
+    daily_state = _finalize_migrated_state(daily_state, session)
 
     report_bundle = build_migration_report_prompt(
         framework=framework,
         system_role=system_role,
         session=session,
         daily_state=daily_state,
+        analysis_context=analysis_context,
         recent_summary=recent_summary,
     )
     report_call = client.run_text_markdown_report(report_bundle)
@@ -376,14 +493,20 @@ def migrate_session(
             + "; ".join(i.message for i in report_validation.issues)
         )
 
-    run_log = {
+    run_log: dict[str, object] = {
         "date": session.date,
-        "source": "perplexity_migration",
+        "source": RUN_LOG_SOURCE,
         "title_line": session.title_line,
         "perplexity_close": session.spx_close,
+        "yfinance_close": yfinance_close,
+        "memory_load": memory_load,
         "warnings": warnings,
         "state_validation_passed": state_validation.passed,
         "report_validation_passed": report_validation.passed,
+        "precompute_enforcement": {
+            "applied": True,
+            "warnings": enforce_warnings,
+        },
     }
 
     output_dir = files.save_outputs(
@@ -402,10 +525,15 @@ def migrate_session(
         validation_reports=[
             state_validation.model_dump(mode="json"),
             report_validation.model_dump(mode="json"),
+            {"target": "precompute_enforcement", "issues": audit_enforcement_issues(enforce_warnings)},
         ],
         mirror_to_memory=True,
         settings=settings,
     )
+    files.write_json(output_dir / "analysis_context.json", analysis_context)
+    files.write_json(settings.runs_dir / session.date / ANALYSIS_CONTEXT_FILENAME, analysis_context)
+
+    rebuild_rolling_summary(settings=settings)
 
     return MigrationResult(
         date=session.date,
@@ -414,6 +542,7 @@ def migrate_session(
         state_validation=state_validation,
         report_validation=report_validation,
         output_dir=output_dir,
+        analysis_context=analysis_context,
         warnings=warnings,
     )
 
@@ -425,6 +554,7 @@ def migrate_history(
     to_date: str | None = None,
     settings: Settings | None = None,
     client: AnthropicClient | None = None,
+    force_fetch: bool = False,
 ) -> list[MigrationResult]:
     sessions = filter_sessions(parse_history(history_path), from_date=from_date, to_date=to_date)
     if not sessions:
@@ -433,5 +563,12 @@ def migrate_history(
     results: list[MigrationResult] = []
     for session in sessions:
         logger.info("migrating %s (close %.2f)", session.date, session.spx_close)
-        results.append(migrate_session(session, settings=settings, client=client))
+        results.append(
+            migrate_session(
+                session,
+                settings=settings,
+                client=client,
+                force_fetch=force_fetch,
+            )
+        )
     return results

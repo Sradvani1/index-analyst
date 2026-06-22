@@ -1,0 +1,74 @@
+{
+  "date": "2026-06-02",
+  "market_data": {
+    "spx_close": 7609.77978515625,
+    "vix": 15.770000457763672,
+    "us10y": 4.454999923706055,
+    "as_of_date": "2026-06-02",
+    "pct_above_200dma": 11.2183,
+    "realized_vol_20d": 0.097804,
+    "sma_50": 7100.109,
+    "sma_200": 6842.2027,
+    "precompute_warnings": []
+  },
+  "valuation": {
+    "forward_pe": 21.5,
+    "trailing_pe": 34.59,
+    "forward_earnings_yield": 0.046519,
+    "erp": 0.001969,
+    "erp_trend": "stable",
+    "erp_reentry_floor_at_0_5pct": 7144.3
+  },
+  "structure": {
+    "active_swing_high_date": "2026-05-14",
+    "active_swing_high_price": 7517.1201171875,
+    "swing_high_confirmation": "five_sessions",
+    "active_swing_low_date": "2026-05-12",
+    "active_swing_low_price": 7338.5400390625,
+    "swing_low_confirmation": "above_50dma",
+    "fib_236": 7474.98,
+    "fib_382": 7448.9,
+    "fib_500": 7427.83,
+    "fib_618": 7406.76,
+    "liquidation_caution": 7291.61,
+    "liquidation_nervous": 7141.26,
+    "liquidation_margin_call": 6765.41,
+    "liquidation_cascade": 6389.55,
+    "upside_target": 7704.9,
+    "upside_target_rule": "pct_extension",
+    "downside_target": 7448.9,
+    "downside_target_rule": "fib_382"
+  },
+  "monte_carlo": {
+    "sigma": 0.097804,
+    "mu": 0.045,
+    "rally_exhaustion_score": "Low",
+    "exhaustion_discount": 0.0,
+    "upside_target": 7704.902032470703,
+    "downside_target": 7448.90252734375,
+    "upside_target_rule": "pct_extension",
+    "downside_target_rule": "fib_382",
+    "prob_up_first_raw": 0.6501,
+    "prob_down_first_raw": 0.3499,
+    "prob_up_first_adjusted": 0.6501,
+    "prob_down_first_adjusted": 0.3499,
+    "cascades": "If 7449 breaks, P(7428)=92%; If 7705 breaks, P(7801)=79%",
+    "median_days": "upside 9d / downside 16d",
+    "drift_path": "5d=7615.85; 10d=7621.93; 20d=7634.11; 30d=7646.30; 60d=7683.00",
+    "cash_drag_prob": 0.4582,
+    "threshold_evaluation": {
+      "65": {
+        "adjusted_prob_up_first": 0.6501,
+        "actionable": true
+      },
+      "70": {
+        "adjusted_prob_up_first": 0.6501,
+        "actionable": false
+      },
+      "75": {
+        "adjusted_prob_up_first": 0.6501,
+        "actionable": false
+      }
+    }
+  }
+}

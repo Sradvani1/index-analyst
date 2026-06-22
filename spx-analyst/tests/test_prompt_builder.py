@@ -127,6 +127,8 @@ def test_report_prompt_exposition_lock_and_divergence_ids(sample_state):
     body = bundle.body.lower()
     assert "not re-deciding" in body
     assert "by its id" in body
+    assert "do not call tools" in body
+    assert "emit_daily_state" in body
 
 
 def test_analysis_context_block_rounds_floats():
@@ -137,3 +139,69 @@ def test_analysis_context_block_rounds_floats():
     block = _analysis_context_block(ctx)
     assert "7266.990234375" not in block
     assert "7266.99" in block
+
+
+def test_report_prompt_pass2_attached_reference_block(sample_state):
+    manifest = DailyManifest.model_validate(
+        {
+            "date": "2026-06-12",
+            "index_symbol": "SPX",
+            "close": 7450.25,
+            "chart_count": 2,
+            "charts": [
+                {"order": 1, "file": "a.png", "label": "Attached chart", "category": "technical"},
+                {
+                    "order": 2,
+                    "file": "b.png",
+                    "label": "Reference chart",
+                    "category": "credit",
+                },
+            ],
+        }
+    )
+    attached = [manifest.charts[0]]
+    reference = [manifest.charts[1]]
+    bundle = build_report_prompt(
+        system_role=load_system_role("R"),
+        framework="FW",
+        daily_state=sample_state,
+        manifest=manifest,
+        external_context=_context(),
+        analysis_context=sample_analysis_context(),
+        recent_summary="prior summary",
+        pass2_attached=attached,
+        pass2_reference_only=reference,
+        pass2_optimization_enabled=True,
+    )
+    assert "Pass 2 chart pack" in bundle.body
+    assert "Attached images (1)" in bundle.body
+    assert "Reference only (not attached)" in bundle.body
+    assert "a.png" in bundle.body
+    assert "b.png" in bundle.body
+    assert "validated daily state is authoritative" in bundle.body.lower()
+    assert "Prior posture snapshot" in bundle.body
+    assert "prior summary" in bundle.body
+    assert "Today's chart pack (images attached in this order)" not in bundle.body
+    assert "Do NOT infer fresh numeric values" in bundle.body
+
+
+def test_report_prompt_pass2_body_order(sample_state):
+    manifest = _manifest()
+    bundle = build_report_prompt(
+        system_role=load_system_role("R"),
+        framework="FW",
+        daily_state=sample_state,
+        manifest=manifest,
+        external_context=_context(),
+        analysis_context=sample_analysis_context(),
+        recent_summary="snap",
+        pass2_attached=manifest.charts,
+        pass2_reference_only=[],
+        pass2_optimization_enabled=True,
+    )
+    body = bundle.body
+    assert body.index("Prior posture snapshot") < body.index("Precomputed analysis context")
+    assert body.index("Precomputed analysis context") < body.index("Pass 2 chart pack")
+    assert body.index("Pass 2 chart pack") < body.index("Validated daily state")
+    assert body.index("Validated daily state") < body.index("Conflict checklist")
+    assert body.index("Conflict checklist") < body.index("## Task")

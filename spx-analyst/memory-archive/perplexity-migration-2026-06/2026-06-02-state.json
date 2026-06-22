@@ -1,0 +1,141 @@
+{
+  "date": "2026-06-02",
+  "framework_version": "perplexity-migration",
+  "spx_close": 7609.78,
+  "schk_close": null,
+  "base_case": "Bull (melt-up intact but exhausting) — 7th consecutive ATH close, but the smallest daily gain of the streak; 30–60 day horizon still favors a grind to Wave 1 trim trigger at 7,696 (80.8% first per model) before a credit-driven mean-reversion becomes the dominant risk.",
+  "trend_regime": "Golden Cross intact: 50-day above 200-day, price above both. +10.6% premium to 50-day SMA and +15.1% premium to 200-day SMA — both at cycle highs (extended).",
+  "valuation_bucket": "20–22x Forward P/E (21.75x) — Cautious posture; Wave 1 trim trigger (22x / 7,696) only 86 pts (1.13%) away. ERP ~+0.097% near the fundamental ceiling.",
+  "signals": {
+    "pct_vs_50dma": 10.6,
+    "pct_vs_200dma": 15.1,
+    "bollinger_position": "Upper band ride — pressed against the upper rail for 14 consecutive sessions",
+    "rsi14": 70.0,
+    "mfi": null,
+    "vix": 15.0,
+    "vix_regime": "Neutral (below 50-day MA of ~20; no elevated-risk flag)",
+    "fear_greed": 57,
+    "fear_greed_zone": "Greed",
+    "put_call": 0.6,
+    "high_yield_spread": 1.45,
+    "monte_carlo_probability": 0.808
+  },
+  "what_changed_today": [
+    "7th consecutive ATH close at 7,609.78 (+9.82 / +0.13%) — smallest daily gain of the streak, a 35% shortfall vs the 15.1-pt streak average; momentum visibly decelerating.",
+    "RSI-14 closed at ~70 — the first ATH close below the overbought threshold this entire cycle, a fresh divergence crack.",
+    "Junk bond spread spiked sharply from ~1.33% to ~1.45% — now the widest since the April tariff shock; credit stress worsening while equities print new highs.",
+    "F&G fell to 57 from 59 (4th consecutive decline, down from 61 on May 26) even as SPX gained 90 pts over the window.",
+    "Wave 1 trim trigger proximity tightened from 96 pts to 86 pts; Monte Carlo P(W1 first) edged up to 80.8% from 79.6%; median days to Wave 1 ~4 (June 8–9).",
+    "Added explicit hard-stop logic: failed-breakout partial trim if SPX closes below 7,520 without executing Wave 1."
+  ],
+  "narrative_summary": "SPX printed its seventh consecutive all-time high at 7,609.78, but the +0.13% gain was the weakest of the streak and RSI closed below 70 on an ATH day for the first time this cycle — clear signs of exhaustion. The single most important development is the junk bond spread spiking to ~1.45%, its widest since the April tariff shock that preceded a ~17% drawdown, even as F&G falls for a 4th straight session and breadth/price-strength stay in Fear. Monte Carlo still strongly favors a melt-up to the 7,696 Wave 1 trim trigger (80.8% first, median ~4 sessions), so the disciplined stance is to HOLD with a live GTC trim at 7,696 and be actively prepared to execute on touch — not to add here. The credit/equity divergence is the non-price risk the GBM model cannot capture, and its eventual resolution typically favors VIX spiking to meet credit rather than credit compressing to meet complacency.",
+  "open_questions": [
+    "Will the junk bond spread divergence resolve via a credit-driven equity correction within the historical 10–15 session window, or compress back toward equity complacency?",
+    "Does SPX gap to or through 7,696 at Wednesday's open, forcing immediate Wave 1 execution?",
+    "Can McClellan breadth's 2-day modest improvement (~1,060) broaden enough to validate the new highs, or does Stock Price Strength stay stuck in Fear?",
+    "If SPX churns 7,550–7,640 for several sessions without touching Wave 1, does the setup decay toward the 7,520 failed-breakout stop?"
+  ],
+  "decision_matrix": {
+    "valuation": "Forward P/E 21.75x (cautious band); ERP ~+0.097% sub-0.10% — fundamental ceiling, trim bias",
+    "technicals": "Golden Cross intact but extended (+10.6% / +15.1% to SMAs); 14-session upper-band ride; RSI ~70 first ATH close below OB; MFI flat-declining divergence",
+    "sentiment": "F&G 57 Greed (4th decline); Put/Call ~0.60 complacency; VIX ~15 neutral; junk spreads ~1.45% Extreme Fear — credit screaming danger vs equity calm",
+    "risk": "Leverage moderate; VIX below 50-day MA so no elevated flag, but VIX-15 vs 1.45% credit spread is a contradictory, fragile setup",
+    "recommended_action": "hold_schk_execute_wave1_trim_on_touch_7696"
+  },
+  "signal_alignment": {
+    "trim_signals_met": 2,
+    "buy_signals_met": 0,
+    "overall": "mixed"
+  },
+  "confirming_evidence": [
+    "Monte Carlo strongly favors melt-up: P(Wave 1 7,696 first vs 38.2% Fib) 80.8% / 19.0%; P(Wave 1 within 60d) 87.2%; median ~4 sessions to June 8–9.",
+    "Golden Cross fully intact — 50d > 200d, price above both, trend regime bullish.",
+    "Wave 1 trigger only 86 pts (1.13%) away with the model assigning near-certain probability of reaching it within 60 days.",
+    "P(7,700 first vs 7,400) at 66.6% — above the 65% action threshold, supporting the trim-on-touch obligation.",
+    "McClellan breadth posted a 2nd day of modest improvement (~1,060), a small offset to the breadth-Fear reading."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "credit-vs-equity",
+      "layers": [
+        "sentiment",
+        "fundamental",
+        "technical"
+      ],
+      "bullish_read": "Equities at the 7th consecutive ATH with VIX pinned at a cycle-low ~15 — no equity-vol stress visible.",
+      "bearish_read": "Junk bond spread spiked to ~1.45%, the widest since the April tariff shock that preceded a ~17% SPX drop; credit market pricing corporate stress while stocks ignore it.",
+      "framework_rule": "Layer 3C — spreads widening while equity holds is a credit-market warning and trim bias; resolution historically favors VIX spiking to meet credit.",
+      "weight": "high",
+      "chart_refs": [
+        "junk_bond_spread_6mo",
+        "vix_daily"
+      ]
+    },
+    {
+      "id": "rsi-divergence",
+      "layers": [
+        "technical"
+      ],
+      "bullish_read": "Price made a new all-time high at 7,620.90 — uptrend structure unbroken.",
+      "bearish_read": "RSI-14 closed at ~70, below overbought for the first time on an ATH day this cycle, and MFI is flat-to-declining — classic bearish momentum/volume divergence at the highs.",
+      "framework_rule": "Layer 2C — bearish divergence (momentum/MFI lower high vs price higher high) is trim confirmation.",
+      "weight": "high",
+      "chart_refs": [
+        "rsi_1d",
+        "mfi_5d"
+      ]
+    },
+    {
+      "id": "sentiment-decay",
+      "layers": [
+        "sentiment"
+      ],
+      "bullish_read": "F&G still in Greed (57) with Market Momentum at Extreme Greed — risk appetite present.",
+      "bearish_read": "F&G fell 4 straight sessions (61→57) while SPX gained 90 pts; Put/Call flatlined at ~0.60 complacency; Stock Price Strength stuck in Fear 8 sessions — the crowd less excited at higher prices.",
+      "framework_rule": "Layer 3A — falling F&G into new price highs is a bearish sentiment divergence and trim-positioning signal.",
+      "weight": "medium",
+      "chart_refs": [
+        "cnn_fear_greed",
+        "stock_price_strength"
+      ]
+    },
+    {
+      "id": "erp-ceiling",
+      "layers": [
+        "fundamental"
+      ],
+      "bullish_read": "Earnings growth and Golden Cross support continued institutional dip-buying.",
+      "bearish_read": "ERP ~+0.097% — sub-0.10% for an 8th session, effectively negative on a real-return basis; the fundamental ceiling argues against adding aggressively.",
+      "framework_rule": "Layer 1A — ERP below 1.0%/near zero is a fundamental ceiling signal: trim bias, do not add aggressively.",
+      "weight": "medium",
+      "chart_refs": [
+        "erp_trend"
+      ]
+    },
+    {
+      "id": "monte-carlo-vs-nonprice",
+      "layers": [
+        "monte_carlo",
+        "sentiment",
+        "fundamental"
+      ],
+      "bullish_read": "GBM model assigns 80.8% to Wave 1 first — strong melt-up edge above threshold.",
+      "bearish_read": "The GBM cannot incorporate the junk-spread spike and 4-session F&G decline; these non-price signals argue the rally is a last gasp.",
+      "framework_rule": "Layer 4 / Risk Rule 5 — Monte Carlo edge is necessary but not sufficient; honor non-price divergences and do not panic-buy.",
+      "weight": "medium",
+      "chart_refs": [
+        "monte_carlo_paths",
+        "junk_bond_spread_6mo"
+      ]
+    }
+  ],
+  "primary_tension": "A strong Monte Carlo melt-up edge (80.8% to Wave 1 first, trigger 7,696 just 86 pts away, median ~4 sessions) versus a sharply worsening credit-market warning — junk spreads at ~1.45%, their widest since the April shock that preceded a ~17% drop — compounded by a stack of cycle-extreme exhaustion and divergence signals (RSI first ATH close below 70, MFI divergence, F&G falling 4 sessions, ERP near zero, VIX-15 complacency). The disciplined resolution is to hold and stand ready to execute Trim Wave 1 on touch, not to add.",
+  "monte_carlo": {
+    "prob_up_first": 0.808,
+    "prob_down_first": 0.19,
+    "conditional_cascade": "P(Wave 1 7,696 within 60d) 87.2%; P(7,700 first vs 7,400) 66.6%; P(38.2% Fib 7,151 within 60d) only 42.8% (below 50%); P(7,700 within 60d) 86.9%.",
+    "median_days": "~4 trading days to Wave 1 (≈June 8–9)",
+    "cash_drag_prob": 0.572,
+    "meets_threshold": true
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "description": "No conflicts, non-neutral Credit + VIX rows",
+  "conflicting_evidence": [],
+  "matrix_signals": {
+    "Trend Regime": "neutral",
+    "Intraday Close Position": "neutral",
+    "RSI / MFI State": "neutral",
+    "20-Day SMA Status": "neutral",
+    "Bollinger Band State": "neutral",
+    "Credit Condition": "widening spreads — caution",
+    "Breadth Condition": "neutral",
+    "VIX Regime": "elevated fear"
+  },
+  "expected_attached": [
+    "13_vix_volatility.png",
+    "15_junk_bond_spread.png"
+  ]
+}

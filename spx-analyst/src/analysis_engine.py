@@ -16,6 +16,7 @@ from .memory import (
     load_recent_states_with_stats,
     rebuild_rolling_summary,
 )
+from .pass2_images import Pass2ImagePlan, resolve_pass2_images
 from .precompute import run_precompute
 from .prompts import build_report_prompt, build_state_prompt, load_system_role
 from .schemas import AnalysisContext, DailyState, ValidationIssue, ValidationReport
@@ -130,6 +131,14 @@ def run_daily_analysis(
     warnings.extend(enforce_warnings)
     state_validation = _merge_enforcement_audit(state_validation, enforce_warnings)
 
+    pass2_plan = resolve_pass2_images(run_dir, manifest, daily_state, settings)
+    attached_names = {p.name for p in pass2_plan.attached}
+    pass2_attached_entries = [c for c in manifest.ordered_charts() if c.file in attached_names]
+    for ref in pass2_plan.unresolved_chart_refs:
+        warnings.append(ref.message)
+
+    pass2_audit = _pass2_audit_payload(settings, pass2_plan, pass1_chart_count=len(image_paths))
+
     report_bundle = build_report_prompt(
         system_role=system_role,
         framework=framework,
@@ -138,8 +147,13 @@ def run_daily_analysis(
         external_context=ext.context,
         analysis_context=analysis_context,
         recent_summary=recent_summary,
+        pass2_attached=pass2_attached_entries,
+        pass2_reference_only=pass2_plan.reference_only,
+        pass2_optimization_enabled=settings.pass2_image_optimization_enabled,
     )
-    report_call = client.run_markdown_report(report_bundle, image_paths)
+    report_call = client.run_markdown_report(
+        report_bundle, pass2_plan.attached, pass2_audit=pass2_audit
+    )
     report_md = report_call.text or ""
 
     report_validation = validate_report(
@@ -152,6 +166,17 @@ def run_daily_analysis(
         "finished": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "ok",
         "chart_count": len(image_paths),
+        "pass1_chart_count": len(image_paths),
+        "pass2_chart_count": len(pass2_plan.attached),
+        "pass2_image_optimization_enabled": settings.pass2_image_optimization_enabled,
+        "pass2_image_max_dimension": settings.pass2_image_max_dimension,
+        "pass2_charts_attached": [p.name for p in pass2_plan.attached],
+        "pass2_charts_omitted": [c.file for c in pass2_plan.reference_only],
+        "pass2_selection_reasons": pass2_plan.selection_reason,
+        "pass2_unresolved_chart_refs": [
+            {"original_ref": u.original_ref, "outcome": u.outcome, "message": u.message}
+            for u in pass2_plan.unresolved_chart_refs
+        ],
         "memory_included": settings.include_memory,
         "model": settings.model,
         "warnings": warnings,
@@ -207,6 +232,24 @@ def _merge_enforcement_audit(
     for entry in audit_enforcement_issues(enforce_warnings):
         issues.append(ValidationIssue(**entry))
     return report.model_copy(update={"issues": issues})
+
+
+def _pass2_audit_payload(
+    settings: Settings, plan: Pass2ImagePlan, *, pass1_chart_count: int
+) -> dict[str, object]:
+    return {
+        "pass1_chart_count": pass1_chart_count,
+        "pass2_chart_count": len(plan.attached),
+        "pass2_image_optimization_enabled": settings.pass2_image_optimization_enabled,
+        "pass2_image_max_dimension": settings.pass2_image_max_dimension,
+        "pass2_charts_attached": [p.name for p in plan.attached],
+        "pass2_charts_omitted": [c.file for c in plan.reference_only],
+        "pass2_selection_reasons": plan.selection_reason,
+        "pass2_unresolved_chart_refs": [
+            {"original_ref": u.original_ref, "outcome": u.outcome, "message": u.message}
+            for u in plan.unresolved_chart_refs
+        ],
+    }
 
 
 def _placeholder_state(date: str, ctx: AnalysisContext) -> DailyState:

@@ -1,0 +1,76 @@
+{
+  "date": "2026-06-05",
+  "market_data": {
+    "spx_close": 7383.740234375,
+    "vix": 21.510000228881836,
+    "us10y": 4.535999774932861,
+    "as_of_date": "2026-06-05",
+    "pct_above_200dma": 7.662,
+    "realized_vol_20d": 0.134876,
+    "sma_50": 7155.9582,
+    "sma_200": 6858.2598,
+    "precompute_warnings": [
+      "active leg fully retraced: close 7383.74 <= prior downside target 7477.29 (fib_500); re-anchored downside to 7239.85 (reanchor_liquidation) for Monte Carlo straddle validity"
+    ]
+  },
+  "valuation": {
+    "forward_pe": 20.86,
+    "trailing_pe": 33.56,
+    "forward_earnings_yield": 0.047943,
+    "erp": 0.002583,
+    "erp_trend": "stable",
+    "erp_reentry_floor_at_0_5pct": 7029.39
+  },
+  "structure": {
+    "active_swing_high_date": "2026-06-02",
+    "active_swing_high_price": 7620.89990234375,
+    "swing_high_confirmation": "pullback_3pct",
+    "active_swing_low_date": "2026-05-19",
+    "active_swing_low_price": 7333.68017578125,
+    "swing_low_confirmation": "above_50dma",
+    "fib_236": 7553.12,
+    "fib_382": 7511.18,
+    "fib_500": 7477.29,
+    "fib_618": 7443.4,
+    "liquidation_caution": 7392.27,
+    "liquidation_nervous": 7239.85,
+    "liquidation_margin_call": 6858.81,
+    "liquidation_cascade": 6477.76,
+    "upside_target": 7620.9,
+    "upside_target_rule": "active_swing_high",
+    "downside_target": 7239.85,
+    "downside_target_rule": "reanchor_liquidation"
+  },
+  "monte_carlo": {
+    "sigma": 0.134876,
+    "mu": 0.07,
+    "rally_exhaustion_score": "Low",
+    "exhaustion_discount": 0.0,
+    "upside_target": 7620.89990234375,
+    "downside_target": 7239.854907226562,
+    "upside_target_rule": "active_swing_high",
+    "downside_target_rule": "reanchor_liquidation",
+    "prob_up_first_raw": 0.4492,
+    "prob_down_first_raw": 0.5508,
+    "prob_up_first_adjusted": 0.4492,
+    "prob_down_first_adjusted": 0.5508,
+    "cascades": "If 7240 breaks, P(6859)=26%; If 7621 breaks, P(7716)=82%",
+    "median_days": "upside 17d / downside 10d",
+    "drift_path": "5d=7392.67; 10d=7401.61; 20d=7419.52; 30d=7437.47; 60d=7491.59",
+    "cash_drag_prob": 0.3479,
+    "threshold_evaluation": {
+      "65": {
+        "adjusted_prob_up_first": 0.4492,
+        "actionable": false
+      },
+      "70": {
+        "adjusted_prob_up_first": 0.4492,
+        "actionable": false
+      },
+      "75": {
+        "adjusted_prob_up_first": 0.4492,
+        "actionable": false
+      }
+    }
+  }
+}

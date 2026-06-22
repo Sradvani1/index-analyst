@@ -1,0 +1,140 @@
+{
+  "date": "2026-06-01",
+  "framework_version": "perplexity-migration",
+  "spx_close": 7599.96,
+  "schk_close": null,
+  "base_case": "Bull (melt-up intact) — 5th consecutive ATH close, but decelerating; 30–60 day horizon favors continued grind toward Wave 1 trim trigger at 7,696 before any meaningful pullback.",
+  "trend_regime": "Golden Cross intact: 50-day above 200-day, price above both. +10.5% premium to 50-day SMA and +15.0% premium to 200-day SMA — both at cycle highs (extended).",
+  "valuation_bucket": "20–22x Forward P/E (21.73x) — Cautious posture; only 96 pts (1.3%) below the 22x Wave 1 trim trigger at 7,696.",
+  "signals": {
+    "pct_vs_50dma": 10.5,
+    "pct_vs_200dma": 15.0,
+    "bollinger_position": "pulled slightly back inside upper rail after riding upper band 12 sessions",
+    "rsi14": 75.0,
+    "mfi": null,
+    "vix": 15.0,
+    "vix_regime": "low_complacency",
+    "fear_greed": 59,
+    "fear_greed_zone": "Greed",
+    "put_call": 0.6,
+    "high_yield_spread": 1.33,
+    "monte_carlo_probability": 0.796
+  },
+  "what_changed_today": [
+    "No prior sessions on record in memory; this is the baseline session.",
+    "5th consecutive ATH close, but daily gain decelerated to +0.26% (+19.90 pts) — smallest of the 5-session streak.",
+    "F&G fell to 59 (3rd consecutive decline at new ATH: 61 -> 60 -> 59) — textbook sentiment divergence.",
+    "VIX dropped to ~15, the lowest print of the entire May-June rally — peak complacency.",
+    "McClellan Breadth ticked up marginally from ~1,000 to ~1,020 — first microscopic breadth improvement in 7+ sessions.",
+    "Wave 1 trim trigger now only 96 pts (1.3%) away; intraday high 7,617 reached 21.78x forward P/E."
+  ],
+  "narrative_summary": "SPX printed its 5th consecutive all-time closing high at 7,599.96 but the +0.26% gain was the smallest of the streak, with a gap-down open, a weak close versus the 7,617 intraday high, and four hours of churn near round-number resistance — a market visibly running low on buyers. Every technical and sentiment gauge sits at a cycle extreme: forward P/E 21.73x just 96 pts below the 22x Wave 1 trim trigger (7,696), ERP pinned near +0.10% for a 7th session, VIX at a rally-low ~15, and Put/Call at ~0.60, all against a persistent backdrop of junk-bond Extreme Fear and weak breadth/price-strength internals. Monte Carlo still strongly favors the melt-up (79.6% Wave 1 first, median ~4 sessions to 7,700), so the disciplined stance is to HOLD with a live GTC trim at 7,696 and emphatically not add here. The single most important read is the sentiment divergence — the crowd is incrementally less excited at incrementally higher prices, the hallmark of a fully-invested market.",
+  "open_questions": [
+    "Does McClellan Breadth cross 1,100 mid-week (weakens pullback thesis) or roll back below 1,000 (intensifies trap-door risk)?",
+    "Will SPX reach 7,696 via clean grind or gap up through 7,650, triggering a manual Wave 1 execution?",
+    "How long can ERP near +0.10% and 7 sessions of junk-bond Extreme Fear coexist with new ATHs before credit divergence resolves?",
+    "Does the intraday RSI collapse (80 -> mid-40s -> ~75) signal early institutional distribution at the open?"
+  ],
+  "decision_matrix": {
+    "valuation": "Forward P/E 21.73x, ERP ~+0.10% (7th session near zero) — Caution/near ceiling; trim bias as Wave 1 (7,696) approaches.",
+    "technicals": "Trend bullish (50d>200d) but extended +10.5%/+15.0%; RSI ~75, MFI overbought, Bollinger pulled inside upper rail after 12 sessions riding it — overbought/exhaustion.",
+    "sentiment": "F&G 59 (Greed, 3rd decline at ATH), Put/Call ~0.60 complacent, VIX ~15 lowest of rally — complacency peak with bearish divergence.",
+    "risk": "Leverage/forced-selling risk low by VIX (<20) but complacency-reversal risk elevated; junk-bond Extreme Fear and weak breadth are latent systemic flags.",
+    "recommended_action": "hold_schk_wave1_trim_imminent"
+  },
+  "signal_alignment": {
+    "trim_signals_met": 2,
+    "buy_signals_met": 0,
+    "overall": "mixed"
+  },
+  "confirming_evidence": [
+    "Trend regime confirmed bullish: 50-day above 200-day, price above both, 5 consecutive ATH closes.",
+    "Monte Carlo strongly favors melt-up: 79.6% P(Wave 1 7,696 first) vs 20.1% downside; 86.3% P(Wave 1 hit within 60d); median ~4 sessions to 7,700.",
+    "VIX at ~15 (<20) keeps moving averages reliable and forced-selling risk low — full framework active.",
+    "MFI grinding higher and back in overbought confirms Monday's moderate up-volume was relatively clean."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "div-sentiment-price",
+      "layers": [
+        "price_action",
+        "sentiment"
+      ],
+      "bullish_read": "Price makes 5th consecutive new ATH — momentum and trend intact.",
+      "bearish_read": "F&G declines for 3rd straight session (61->60->59) at higher prices — crowd incrementally less excited; hallmark of a fully-invested market.",
+      "framework_rule": "Sentiment divergence at new highs is a trim-confirmation context; never act on sentiment alone — confirm with technical levels.",
+      "weight": "high",
+      "chart_refs": [
+        "CNN Fear & Greed component table (June 1 vs May 28)",
+        "SPX 5-day chart"
+      ]
+    },
+    {
+      "id": "div-credit-equity",
+      "layers": [
+        "sentiment",
+        "fundamental"
+      ],
+      "bullish_read": "Equity at all-time highs with VIX collapsing to 15 signals risk-on confidence.",
+      "bearish_read": "Junk Bond Demand at EXTREME FEAR (spread ~1.33%) for a 7th consecutive session while equity rallies — credit market refuses to confirm the melt-up.",
+      "framework_rule": "Spreads holding stress while price rallies is a credit-market warning — trim bias / reduce aggression.",
+      "weight": "high",
+      "chart_refs": [
+        "F&G Junk Bond Demand component",
+        "high-yield spread series"
+      ]
+    },
+    {
+      "id": "div-breadth-index",
+      "layers": [
+        "technical",
+        "sentiment"
+      ],
+      "bullish_read": "Index prints new ATHs and McClellan ticked up to ~1,020 — first marginal breadth improvement in 7+ sessions.",
+      "bearish_read": "Breadth (McClellan ~1,020) and Stock Price Strength (~2%, 7th session) remain in FEAR while the index recovers — narrow leadership.",
+      "framework_rule": "Breadth weakening/lagging while the index makes new highs raises pullback risk; watch for confirmation above 1,100 before discounting.",
+      "weight": "medium",
+      "chart_refs": [
+        "McClellan Breadth Index",
+        "Stock Price Strength component"
+      ]
+    },
+    {
+      "id": "div-montecarlo-threshold",
+      "layers": [
+        "monte_carlo",
+        "valuation"
+      ],
+      "bullish_read": "Primary first-hit P(Wave 1 7,696 first) is 79.6% — well above the 65% actionable threshold for the melt-up path.",
+      "bearish_read": "Secondary test P(7,700 first vs 7,400) is 64.3% — just below the 65% threshold, a caution flag against adding; valuation/ERP argue against deployment.",
+      "framework_rule": "Monte Carlo edge < 65% = insufficient; not a green light to add. Combined with ERP ~0.10%, do not add — hold only.",
+      "weight": "medium",
+      "chart_refs": [
+        "Step 5 Monte Carlo table"
+      ]
+    },
+    {
+      "id": "div-rsi-intraday",
+      "layers": [
+        "technical",
+        "price_action"
+      ],
+      "bullish_read": "RSI rebounded to ~75 into the close — buyers stepped back in.",
+      "bearish_read": "RSI collapsed intraday from ~80 to mid-40s on an aggressive gap-down open — possible early institutional distribution; close was weak vs 7,617 intraday high.",
+      "framework_rule": "Bearish intraday momentum swings near resistance support trim-readiness, not adds.",
+      "weight": "low",
+      "chart_refs": [
+        "SPX 1-day chart RSI"
+      ]
+    }
+  ],
+  "primary_tension": "A strong Monte Carlo melt-up edge (79.6% to Wave 1 first, trim trigger 7,696 only 96 pts away) versus a stack of cycle-extreme exhaustion and divergence signals — F&G falling at new ATHs, junk-bond Extreme Fear, weak breadth, ERP near zero, and VIX-15 complacency — which together argue the rally is running out of buyers.",
+  "monte_carlo": {
+    "prob_up_first": 0.796,
+    "prob_down_first": 0.201,
+    "conditional_cascade": "P(Wave 1 7,696 hit within 60d) = 86.3%; P(7,700 hit within 60d) = 85.9%; secondary P(7,700 first vs 7,400) = 64.3% (just below threshold); P(38.2% Fib 7,149 hit within 60d) = 43.2%.",
+    "median_days": "~4 trading sessions to 7,700 (~June 5-6)",
+    "cash_drag_prob": 0.568,
+    "meets_threshold": true
+  }
+}

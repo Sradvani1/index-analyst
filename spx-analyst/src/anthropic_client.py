@@ -31,6 +31,14 @@ logger = logging.getLogger(__name__)
 
 STATE_TOOL_NAME = "emit_daily_state"
 
+# Pass 2 stub preambles observed on claude-opus-4-8 when tools are present with
+# tool_choice=none — model announces emit_daily_state instead of writing markdown.
+_PASS2_STUB_PHRASES = (
+    "emit the structured daily state",
+    "emit structured daily state",
+    "emit_daily_state",
+)
+
 _TRANSIENT_ERRORS = (
     anthropic.APIConnectionError,
     anthropic.RateLimitError,
@@ -72,17 +80,26 @@ def _system_blocks(bundle: PromptBundle, cache_enabled: bool) -> list[dict[str, 
 
 
 def _state_tool() -> dict[str, Any]:
-    """The emit_daily_state tool, built identically for both passes.
-
-    Both passes must send byte-identical tool definitions so the cached
-    tools+system prefix (framework) is reused on Pass 2. Pass 2 sets
-    tool_choice="none" so it still returns free-form markdown.
-    """
+    """The emit_daily_state tool for Pass 1 (and optional Pass 2 cache prefix)."""
     return {
         "name": STATE_TOOL_NAME,
         "description": "Emit the structured daily analysis state for the session.",
         "input_schema": DailyState.model_json_schema(),
     }
+
+
+def _is_pass2_stub_response(text: str) -> bool:
+    """True when Pass 2 returned a preamble instead of the full markdown report."""
+    if len(text) >= 3000:
+        return False
+    if text.startswith("# SPX") or "## Updated Decision Matrix" in text:
+        return False
+    if any(marker in text for marker in ("## 0.", "## 1.", "## Structural Regime")):
+        return False
+    lower = text.lower()
+    if any(phrase in lower for phrase in _PASS2_STUB_PHRASES):
+        return True
+    return len(text) < 500 and "## " not in text
 
 
 def _user_content(bundle: PromptBundle, image_paths: list[Path], max_dim: int) -> list[dict[str, Any]]:
@@ -101,9 +118,10 @@ def _snapshot(
     body_text: str,
     image_paths: list[Path],
     tool_name: str | None,
+    pass2_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Reproducibility metadata. Excludes secrets and raw image bytes."""
-    return {
+    snap: dict[str, Any] = {
         "model": model,
         "system_role_chars": len(system_blocks[0]["text"]),
         "framework_chars": len(system_blocks[1]["text"]),
@@ -114,6 +132,9 @@ def _snapshot(
         "image_count": len(image_paths),
         "forced_tool": tool_name,
     }
+    if pass2_audit:
+        snap.update(pass2_audit)
+    return snap
 
 
 class AnthropicClient:
@@ -190,23 +211,64 @@ class AnthropicClient:
             request_snapshot={"model": self.settings.model, "mode": "repair"},
         )
 
-    def run_markdown_report(self, bundle: PromptBundle, image_paths: list[Path]) -> CallResult:
+    def run_markdown_report(
+        self,
+        bundle: PromptBundle,
+        image_paths: list[Path],
+        *,
+        pass2_audit: dict[str, Any] | None = None,
+    ) -> CallResult:
         """Pass 2: free-form markdown report.
 
-        Sends the same tools as Pass 1 (with tool_choice="none") so the cached
-        tools+system prefix is reused; the model still returns markdown text.
+        First attempt sends the same tools as Pass 1 with tool_choice=none so the
+        tools+system cache prefix from Pass 1 can be reused. Some models (notably
+        claude-opus-4-8) respond with a short stub preamble instead of markdown;
+        when detected, one retry omits tools entirely.
         """
         system_blocks = _system_blocks(bundle, self.settings.prompt_cache_enabled)
-        content = _user_content(bundle, image_paths, self.settings.image_max_dimension)
+        max_dim = (
+            self.settings.pass2_image_max_dimension
+            if self.settings.pass2_image_optimization_enabled
+            else self.settings.image_max_dimension
+        )
+        content = _user_content(bundle, image_paths, max_dim)
+        messages = [{"role": "user", "content": content}]
+
         response = self._create(
             model=self.settings.model,
             max_tokens=self.settings.max_output_tokens,
             system=system_blocks,
             tools=[_state_tool()],
             tool_choice={"type": "none"},
-            messages=[{"role": "user", "content": content}],
+            messages=messages,
         )
         text = _extract_text(response)
+        stub_retry = False
+        tools_in_request = True
+
+        if _is_pass2_stub_response(text):
+            logger.warning(
+                "Pass 2 stub response (%d chars); retrying without tools",
+                len(text),
+            )
+            stub_retry = True
+            tools_in_request = False
+            response = self._create(
+                model=self.settings.model,
+                max_tokens=self.settings.max_output_tokens,
+                system=system_blocks,
+                messages=messages,
+            )
+            text = _extract_text(response)
+            if _is_pass2_stub_response(text):
+                raise AnthropicError(
+                    f"Pass 2 returned stub markdown after retry ({len(text)} chars)"
+                )
+
+        audit = dict(pass2_audit or {})
+        audit["pass2_image_max_dimension_used"] = max_dim
+        audit["pass2_tools_in_request"] = tools_in_request
+        audit["pass2_stub_retry"] = stub_retry
         return CallResult(
             text=text,
             tool_input=None,
@@ -217,6 +279,7 @@ class AnthropicClient:
                 body_text=bundle.body,
                 image_paths=image_paths,
                 tool_name=None,
+                pass2_audit=audit,
             ),
         )
 

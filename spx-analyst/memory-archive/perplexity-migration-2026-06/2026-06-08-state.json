@@ -1,0 +1,131 @@
+{
+  "date": "2026-06-08",
+  "framework_version": "perplexity-migration",
+  "spx_close": 7405.73,
+  "schk_close": null,
+  "base_case": "Bear/corrective (30–60 day horizon) — confirmed institutional-distribution correction from the June 2 ATH remains intact and not yet bottomed. Golden Cross regime technically holds (50d > 200d, price +7.2% above 50-day), but the path of least resistance is lower toward the 23.6% Fib (7,330) and primary re-entry at the 38.2% Fib (7,151), with maximum-conviction add at the 61.8% Fib/SMA-50 convergence near 6,860.",
+  "trend_regime": "Golden Cross intact: 50-day above 200-day, price above both. +7.2% premium to 50-day SMA (compressed 3.4% from +10.6% on June 2) and +11.8% premium to 200-day SMA. VIX at the 20 threshold makes moving averages explicitly less reliable.",
+  "valuation_bucket": "20–22x Forward P/E (21.17x) — cautious dip-buying posture; buy only on Fib + SMA + sentiment confluence. ERP improved to +0.223% but still historically thin.",
+  "signals": {
+    "pct_vs_50dma": 7.2,
+    "pct_vs_200dma": 11.8,
+    "bollinger_position": "within band — corrective pullback from upper-band pierce on June 2",
+    "rsi14": 35.0,
+    "mfi": null,
+    "vix": 20.0,
+    "vix_regime": "Elevated (VIX = 20, risk threshold active)",
+    "fear_greed": 40,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.68,
+    "high_yield_spread": 1.45,
+    "monte_carlo_probability": 0.512
+  },
+  "what_changed_today": [
+    "Nominal +0.30% green close (7,405.73) masks a 2nd consecutive distribution day: opened near high (7,466), sold off all day, closed in bottom 15% of range — same structure as June 5.",
+    "McClellan breadth (Stock Price Breadth) downgraded from Fear to EXTREME FEAR (~990, below 1,000) — worst breadth since the May correction; internals deteriorating faster than price.",
+    "Put/Call ratio rose from ~0.60 to ~0.68 — first constructive (contrarian) signal in 10 sessions; bears beginning to hedge, often appears 2–5 sessions before a local bottom.",
+    "F&G fell to 40 (Fear) from 42 — now −21 points from the May 26 peak of 61 over 9 sessions, the most rapid sustained collapse since October 2025.",
+    "ERP improved to +0.223% (from +0.097% cycle low on June 2) as Forward P/E compressed to 21.17x; valuation trend improving but still thin.",
+    "Monte Carlo primary first-hit improved marginally to 51.2% upside / 48.5% downside (from 47.8% on June 5) due to lower starting price — still decisively below the 65% action threshold.",
+    "6-month chart confirms SMA-50 now at ~6,863, within 3 points of the 61.8% Fib (6,860) — dual technical support convergence is the maximum-conviction re-entry zone.",
+    "23.6% Fib (7,330) now only 76 pts / −1.0% away — one bad open from a test; P(23.6% Fib in 60d) = 83.1%."
+  ],
+  "narrative_summary": "The June 2 ATH correction remains intact and has not yet bottomed: today's nominal +0.30% green close hides a second consecutive open-high-to-close-near-low distribution day, and the McClellan breadth index was downgraded to Extreme Fear as internals deteriorate faster than price. With Wave 1 (7,696) never executed, the position holds full SCHK exposure into the correction; the Monte Carlo edge (51.2% upside-first) stays below the 65% threshold and VIX sits at the 20 risk flag, so the disciplined stance is hold and monitor — no trim, no re-entry yet. The single constructive development is the Put/Call ratio's first uptick in 10 sessions (~0.60 → ~0.68), historically an early bottoming watch signal, but breadth capitulation without the VIX spike (25–30) seen at prior cycle bottoms means this is a watch signal, not yet an action signal. Immediate tripwire is the 23.6% Fib at 7,330 (−1.0%): an intraday print below warrants the first 25% re-entry tranche, with the 38.2% Fib at 7,151 as the primary re-entry zone.",
+  "open_questions": [
+    "Does the 23.6% Fib at 7,330 hold as support this week, or does a bad open break it toward 7,151?",
+    "Will the VIX spike to the 25–30 capitulation range that marked every prior cycle bottom (April, October 2025), or will this correction be shallower?",
+    "Is the Put/Call uptick to ~0.68 the start of genuine contrarian hedging that precedes a local bottom, or a one-session blip?",
+    "Will junk-bond spreads (5th consecutive day at 1.45%+ Extreme Fear) compress, or resolve via a VIX spike to meet credit stress?",
+    "Does McClellan breadth at Extreme Fear stabilize/uptick (a re-entry checklist item) or continue deteriorating?"
+  ],
+  "decision_matrix": {
+    "valuation": "Forward P/E 21.17x (improving from 21.75x); ERP +0.223% — caution zone, still historically thin. Cautious dip-buying posture.",
+    "technicals": "Golden Cross intact but price +7.2% above 50-day and compressing; 2nd consecutive distribution day; RSI ~35 declining toward oversold; 23.6% Fib (7,330) only 76 pts away.",
+    "sentiment": "F&G 40 (Fear, −21 from May 26 peak); McClellan breadth downgraded to Extreme Fear; junk spreads Extreme Fear 5th day; Put/Call ~0.68 first constructive uptick; VIX ~20 elevated flag.",
+    "risk": "Elevated — VIX at the 20 risk threshold (moving averages less reliable, forced-selling risk rises); breadth at Extreme Fear but no capitulation VIX spike yet.",
+    "recommended_action": "hold_schk_monitor_reentry_zone_approaching"
+  },
+  "signal_alignment": {
+    "trim_signals_met": 0,
+    "buy_signals_met": 1,
+    "overall": "mixed"
+  },
+  "confirming_evidence": [
+    "Golden Cross regime technically intact: 50d > 200d, price above both (+7.2% / +11.8%).",
+    "Second consecutive open-high-to-close-near-low distribution day confirms the corrective structure from the June 2 ATH.",
+    "McClellan breadth downgraded to Extreme Fear (~990) — worst since May correction; breadth erosion confirms institutional distribution.",
+    "F&G collapsed to 40 (Fear), −21 in 9 sessions; Safe Haven and Stock Price Strength in Fear; junk spreads Extreme Fear 5th straight day.",
+    "Monte Carlo: P(ATH 7,621 first vs 23.6% Fib 7,330) only 34.9%/65.1% — model favors 23.6% Fib touched first; P(23.6% Fib in 60d) 83.1%.",
+    "RSI fallen from ~80 (June 2) to ~35 and still declining; momentum decisively rolled over.",
+    "Wave 1 distance now +290 pts (+3.91%) — melt-up unlikely near-term."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "div-pc-breadth",
+      "layers": [
+        "sentiment",
+        "sentiment"
+      ],
+      "bullish_read": "Put/Call ratio rose from ~0.60 to ~0.68 — first constructive hedging signal in 10 sessions, historically appears 2–5 sessions before a local bottom (contrarian buy precursor).",
+      "bearish_read": "McClellan breadth simultaneously downgraded to Extreme Fear (~990) and Stock Price Strength weakening — internals deteriorating, no confirmed bottom yet.",
+      "framework_rule": "Sentiment must be confirmed by technical levels; a single contrarian uptick is a watch signal, not an action signal. Mixed data = hold and monitor.",
+      "weight": "medium",
+      "chart_refs": [
+        "cnn_fear_greed_components",
+        "mcclellan_breadth_chart"
+      ]
+    },
+    {
+      "id": "div-trend-vs-distribution",
+      "layers": [
+        "technicals",
+        "sentiment"
+      ],
+      "bullish_read": "Golden Cross intact, price still +7.2% above 50-day, Market Momentum in Greed (SPX above 125-day MA), long-term P(Wave 1 in 60d) 68.3%.",
+      "bearish_read": "Two consecutive distribution days, breadth Extreme Fear, F&G in Fear, junk Extreme Fear 5th day — every internal layer flipped bearish while price holds in upper half of corrective zone.",
+      "framework_rule": "VIX > 20 makes moving averages less reliable; do not lean on intact SMA regime alone. Hold core, await Fib support definition.",
+      "weight": "high",
+      "chart_refs": [
+        "spx_6month_chart",
+        "spx_5day_chart"
+      ]
+    },
+    {
+      "id": "div-valuation-vs-price",
+      "layers": [
+        "fundamental",
+        "technicals"
+      ],
+      "bullish_read": "Forward P/E compressed to 21.17x and ERP improved to +0.223% — valuation trend moving in the right direction for dip-buyers.",
+      "bearish_read": "ERP still historically thin; needs pullback to 7,151 (~0.55% ERP) or 7,005 (~0.70% ERP) to represent compelling value — current level not yet a buy.",
+      "framework_rule": "20–22x Forward P/E = cautious; buy only on Fib + SMA + sentiment confluence, which is not yet present.",
+      "weight": "medium",
+      "chart_refs": [
+        "valuation_erp_table"
+      ]
+    },
+    {
+      "id": "div-mc-primary-vs-secondary",
+      "layers": [
+        "monte_carlo",
+        "monte_carlo"
+      ],
+      "bullish_read": "Primary first-hit improved to 51.2% upside (Wave 1) vs 48.5% downside; P(7,500 in 60d) 86.2% suggests near-term recovery likely at some point.",
+      "bearish_read": "P(ATH 7,621 first vs 23.6% Fib 7,330) is only 34.9%/65.1% and P(23.6% Fib in 60d) 83.1% — model strongly favors a downside test first; all primary edges remain below the 65% action threshold.",
+      "framework_rule": "Monte Carlo < 65% = insufficient edge; flag monitor-only, do not recommend action.",
+      "weight": "high",
+      "chart_refs": [
+        "monte_carlo_table"
+      ]
+    }
+  ],
+  "primary_tension": "A marginally improving setup — first Put/Call uptick in 10 sessions, ERP rising to +0.223%, lower Forward P/E, and a Monte Carlo edge nudging back toward 50/50 — versus a still-deepening institutional distribution: a 2nd consecutive close-near-low distribution day, McClellan breadth downgraded to Extreme Fear, junk spreads at April-shock levels for a 5th session, F&G in Fear, and a model that still favors the 23.6% Fib being touched first (65.1%). With every primary edge below 65% and VIX at the 20 risk flag, the resolution is capital preservation: hold full core, define re-entry by Fib support, and wait for the VIX-spike/breadth-capitulation bottom signature rather than forcing a trade.",
+  "monte_carlo": {
+    "prob_up_first": 0.512,
+    "prob_down_first": 0.485,
+    "conditional_cascade": "P(ATH 7,621 first vs 23.6% Fib 7,330) = 34.9%/65.1% (model favors 23.6% Fib first). P(7,500 first vs 7,300) = 53.7%/46.3%. P(23.6% Fib 7,330 in 60d) = 83.1%; P(38.2% Fib 7,151 in 60d) = 62.2%; P(50% Fib 7,005 in 60d) = 47.2%; P(Wave 1 7,696 in 60d) = 68.3%; P(7,500 in 60d) = 86.2%.",
+    "median_days": "Not explicitly stated; 23.6% Fib (7,330) flagged as easily reached as soon as Tuesday given it is only −1.0% / 76 pts away.",
+    "cash_drag_prob": 0.169,
+    "meets_threshold": false
+  }
+}

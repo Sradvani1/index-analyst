@@ -1,0 +1,129 @@
+{
+  "date": "2026-06-05",
+  "framework_version": "perplexity-migration",
+  "spx_close": 7383.74,
+  "schk_close": null,
+  "base_case": "Bear/corrective (30–60 day horizon) — the melt-up thesis has failed; a confirmed institutional-distribution correction is underway from the 7,620 intraday ATH. Golden Cross regime remains technically intact (50d > 200d, price above both), but the path of least resistance is now lower toward the 23.6% Fib (7,330) and primary re-entry at the 38.2% Fib (7,151).",
+  "trend_regime": "Golden Cross intact: 50-day above 200-day, price still above both. +7.0% premium to 50-day SMA (rapidly compressed from +10.6% on Jun 2) and +11.5% premium to 200-day SMA. VIX at the 20 threshold makes moving averages explicitly less reliable.",
+  "valuation_bucket": "20–22x (Cautious) — Forward P/E 21.11x (improved from 21.75x on the selloff); ERP +0.237%, still deeply inadequate (caution zone, below 1%).",
+  "signals": {
+    "pct_vs_50dma": 7.0,
+    "pct_vs_200dma": 11.5,
+    "bollinger_position": "within band (rolling over from upper)",
+    "rsi14": 65.0,
+    "mfi": null,
+    "vix": 20.0,
+    "vix_regime": "elevated",
+    "fear_greed": 42,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.6,
+    "high_yield_spread": null,
+    "monte_carlo_probability": 51.9
+  },
+  "what_changed_today": [
+    "SPX fell −200.57 pts (−2.64%) to 7,383.74 — the largest single-day loss since the April tariff shock, vs a quiet −25 pt drift on June 4.",
+    "Relentless open-to-close distribution: high was the open (7,541.81), close near LOD (7,368.63), no intraday bounce — textbook institutional selling.",
+    "Caution Zone (−3% from ATH, 7,392) breached on a closing basis for the first time; intraday low (7,368) briefly violated the 23.6% Fib at 7,330.",
+    "VIX spiked +5 pts from ~15 to ~20 — now AT the methodology's elevated-risk threshold (was complacent ~15 for prior four sessions).",
+    "F&G collapsed 13 points in one session (55 → 42, Fear) — the fastest single-session deterioration of the cycle; Safe Haven downgraded two tiers to Fear (bonds outperforming).",
+    "Monte Carlo INVERTED: P(Wave 1 7,696 first vs 38.2% Fib 7,151) fell from 77.3% to 47.8% — model now favors downside first; edge below the 65% threshold.",
+    "Action shifted from 'hold + execute Wave 1 trim on touch / GTC live' to 'cancel Wave 1 GTC limit, hold, activate defensive tripwires' — Wave 1 at 7,696 was never executed.",
+    "50-day SMA premium compressed sharply from +10.6% (Jun 2) to +7.0%; 6-month multi-month bearish RSI divergence has now triggered."
+  ],
+  "narrative_summary": "The ATH reversal is now confirmed: SPX fell −2.64% to 7,383.74 in a relentless open-to-close distribution day, the largest loss since the April shock, completing a clean three-session top from the 7,620 ATH. Every cross-layer warning the framework flagged over prior sessions has now fired — F&G collapsed 13 points to Fear, Safe Haven flipped to Fear as bonds outperform, VIX spiked to the 20 risk threshold, and the Monte Carlo first-hit bias inverted to favor downside (47.8% upside / 51.9% downside), breaching the 65% action threshold. Because Wave 1 (7,696) was never executed, the position is holding full SCHK exposure into a confirmed correction, so the disciplined stance is to cancel the now-stale Wave 1 GTC limit, hold the core position (Golden Cross intact), and shift to capital-preservation tripwires — a 10–15% defensive trim only on a close below 7,330, with the 38.2% Fib at 7,151 set as the primary re-entry zone. This is not yet a buying opportunity; discipline means waiting for the Fib support benchmarks and a clean confirmation close back above 7,550 rather than chasing.",
+  "open_questions": [
+    "Does the 23.6% Fib at 7,330 hold on a closing basis, or does a weekend macro gap-down breach it and open the path to 7,151?",
+    "Will Put/Call (still ~0.60, complacent) finally expand into hedging — a sign the correction has more room — or compress as fear peaks?",
+    "Does junk-bond Extreme Fear (4th day at April-shock spreads) resolve via a VIX spike to meet credit, or does credit compress to meet equity?",
+    "Will VIX push decisively above 20–22 (deeper elevated/crisis risk) or fall back through 22, which would be a powerful re-entry trigger?",
+    "Is the multi-month bearish RSI divergence signaling a shallow 23.6% pullback or a deeper move toward the 50% Fib at 7,005?"
+  ],
+  "decision_matrix": {
+    "valuation": "Forward P/E 21.11x (Cautious 20–22x bucket); ERP +0.237% — improved on selloff but still well below 1% (thin/ceiling).",
+    "technicals": "Confirmed distribution: close near LOD, Caution Zone (7,392) breached, 23.6% Fib (7,330) only 53 pts below; RSI ~65 breaking down, MFI rollover, multi-month bearish RSI divergence triggered.",
+    "sentiment": "F&G 42 (Fear, −13 in one session); Safe Haven flipped to Fear; Put/Call still complacent ~0.60; VIX ~20 — elevated-risk flag active, MAs less reliable.",
+    "risk": "Elevated — VIX at threshold, forced-selling risk rising, junk-bond Extreme Fear persistent (4th day); liquidation zones: −10% margin wave 6,859, −15% cascade 6,478.",
+    "recommended_action": "hold_schk_cancel_wave1_gtc_activate_defensive_tripwires"
+  },
+  "signal_alignment": {
+    "trim_signals_met": 0,
+    "buy_signals_met": 1,
+    "overall": "mixed"
+  },
+  "confirming_evidence": [
+    "Relentless open-to-close distribution day closing near LOD (7,368) confirms institutional selling — no capitulation spike, no reversal.",
+    "Caution Zone at 7,392 (−3% from ATH) breached on a closing basis for the first time this cycle.",
+    "F&G collapsed 13 points to 42 (Fear) and Safe Haven downgraded two tiers to Fear — active capital rotation out of equities.",
+    "VIX spiked to ~20, meeting the methodology's elevated-risk flag; moving averages explicitly less reliable.",
+    "Monte Carlo first-hit bias inverted to favor downside (47.8% up / 51.9% down) and edge is below 65% — no bullish action supported.",
+    "Multi-month (6-month) bearish RSI divergence triggered alongside a decisive 1-month MFI rollover — institutional money flow reversing.",
+    "Junk-bond Extreme Fear persisting at April-shock spread levels for a 4th day — credit stress not abating."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "regime_vs_price_action",
+      "layers": [
+        "technical_trend",
+        "price_action"
+      ],
+      "bullish_read": "Golden Cross remains intact — 50d above 200d and price still +7.0% above the 50-day and +11.5% above the 200-day; regime has not broken.",
+      "bearish_read": "Price is in a confirmed three-session distribution top, closed at the LOD, breached the Caution Zone, and is only 53 pts above the 23.6% Fib — the regime is intact only by lagging-MA construction.",
+      "framework_rule": "VIX > 20 = moving averages less reliable; mixed/ambiguous regime-vs-action data means hold and monitor, do not force a trade.",
+      "weight": "high",
+      "chart_refs": [
+        "1-day chart (open-to-close staircase)",
+        "6-month SMA regime chart"
+      ]
+    },
+    {
+      "id": "putcall_vs_fg_vix",
+      "layers": [
+        "sentiment"
+      ],
+      "bullish_read": "Put/Call still ~0.60 (Extreme Greed) — no panic hedging yet; not a washed-out, contrarian buyable bottom.",
+      "bearish_read": "Same complacency means bears are not yet hedging, so the correction likely deepens before a tradable low forms; F&G (42) and Safe Haven (Fear) have already flipped while Put/Call lags.",
+      "framework_rule": "Sentiment must be confirmed by technical levels; never act on sentiment alone — falling P/C complacency into a breakdown argues for patience, not deployment.",
+      "weight": "medium",
+      "chart_refs": [
+        "CNN Fear & Greed component table",
+        "put/call ratio reading"
+      ]
+    },
+    {
+      "id": "valuation_improving_vs_inadequate",
+      "layers": [
+        "fundamental",
+        "valuation"
+      ],
+      "bullish_read": "Selloff improved ERP from +0.097% to +0.237% and Forward P/E from 21.75x to 21.11x — valuation is getting cheaper.",
+      "bearish_read": "ERP +0.237% is still deeply inadequate; a 2% fair-value ERP implies ~6,360 (~14% lower), so fundamentals provide no near-term floor.",
+      "framework_rule": "ERP below 1% = caution zone, reduce aggression; do not add aggressively on thin risk premium.",
+      "weight": "medium",
+      "chart_refs": [
+        "ERP/valuation table"
+      ]
+    },
+    {
+      "id": "mc_cashdrag_vs_downside",
+      "layers": [
+        "monte_carlo"
+      ],
+      "bullish_read": "P(38.2% Fib 7,151 never hit in 60d) ~35% and P(50% Fib never hit) ~51% — meaningful chance the deeper re-entry zones are never reached, cost of waiting in cash.",
+      "bearish_read": "P(23.6% Fib 7,330 hit) 85.7% and P(38.2% Fib 7,151 hit) 64.7% — downside levels are now more likely than not, and the primary first-hit contest inverted below 50%.",
+      "framework_rule": "Monte Carlo edge < 65% = insufficient; flag monitor-only / no action — neither aggressive buying nor trimming is supported.",
+      "weight": "high",
+      "chart_refs": [
+        "Step 5 Monte Carlo first-hit and conditional table"
+      ]
+    }
+  ],
+  "primary_tension": "A still-technically-intact Golden Cross regime (50d > 200d, price +7% above the 50-day) and an improving-but-thin valuation versus a fully-confirmed institutional distribution correction in which every sentiment and probability layer has flipped bearish in a single session — F&G crashing to Fear, Safe Haven rotating to bonds, VIX hitting the 20 risk threshold, junk-bond Extreme Fear persisting, and the Monte Carlo first-hit bias inverting below the 65% action threshold. With Wave 1 never executed, the resolution is capital preservation: hold full core, cancel the stale upside limit, and wait for Fib support to define re-entry rather than force any trade.",
+  "monte_carlo": {
+    "prob_up_first": 0.478,
+    "prob_down_first": 0.519,
+    "conditional_cascade": "P(23.6% Fib 7,330 hit within 60d) 85.7% (near-certain); given that, P(38.2% Fib 7,151 hit within 60d) 64.7%; P(50.0% Fib 7,005 hit within 60d) 49.2% (coin-flip). Near-term P(7,500 first vs 7,300) 46.8%/53.2% — bias down.",
+    "median_days": "23.6% Fib (7,330) within days on a single red open (~0.7% away); 38.2% Fib (7,151) over ~3–10 sessions per scenario table",
+    "cash_drag_prob": 0.353,
+    "meets_threshold": false
+  }
+}

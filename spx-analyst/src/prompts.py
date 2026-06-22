@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from .schemas import AnalysisContext, DailyManifest, DailyState, ExternalContext
+from .schemas import AnalysisContext, ChartEntry, DailyManifest, DailyState, ExternalContext
 
 PRE_STEP = "Structural Regime Classification"
 
@@ -124,6 +124,46 @@ def _manifest_block(manifest: DailyManifest) -> str:
     return "\n".join(lines)
 
 
+def _pass2_manifest_block(
+    attached: list[ChartEntry],
+    reference_only: list[ChartEntry],
+    manifest: DailyManifest,
+) -> str:
+    lines = [
+        "## Pass 2 chart pack",
+        f"Date: {manifest.date} | Index: {manifest.index_symbol} | "
+        f"Reference close (validation only): {manifest.close}",
+        "",
+    ]
+    if attached:
+        lines.append(f"Attached images ({len(attached)}) — inspectable evidence:")
+        for i, c in enumerate(attached, start=1):
+            tf = f" [{c.timeframe}]" if c.timeframe else ""
+            lines.append(f"  {i}. {c.label}{tf} ({c.file})")
+    else:
+        lines.append("Attached images (0) — no chart images are attached for this pass.")
+
+    lines.append("")
+    if reference_only:
+        lines.append("Reference only (not attached) — filename visible, not visually inspectable:")
+        for c in reference_only:
+            tf = f" [{c.timeframe}]" if c.timeframe else ""
+            lines.append(f"  - {c.label}{tf} ({c.file})")
+    else:
+        lines.append("Reference only (not attached): (none)")
+
+    lines.extend(
+        [
+            "",
+            "Authority: Attached images may be used for descriptive detail and conflict reconciliation.",
+            "Reference-only charts may be cited by filename and explained using validated state only.",
+            "Do NOT infer fresh numeric values, new divergences, or pixel-level observations from "
+            "reference-only charts.",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _optional_memory_block(recent_summary: str | None) -> str:
     if not recent_summary:
         return ""
@@ -205,6 +245,9 @@ def build_report_prompt(
     external_context: ExternalContext,
     analysis_context: AnalysisContext,
     recent_summary: str | None = None,
+    pass2_attached: list[ChartEntry] | None = None,
+    pass2_reference_only: list[ChartEntry] | None = None,
+    pass2_optimization_enabled: bool = True,
 ) -> PromptBundle:
     state_json = json.dumps(daily_state.model_dump(mode="json"), indent=2)
     steps = "\n".join(f"{i + 1}. {s}" for i, s in enumerate(WORKFLOW_STEPS))
@@ -218,10 +261,15 @@ def build_report_prompt(
         else ""
     )
 
+    if pass2_optimization_enabled and pass2_attached is not None and pass2_reference_only is not None:
+        chart_block = _pass2_manifest_block(pass2_attached, pass2_reference_only, manifest)
+    else:
+        chart_block = _manifest_block(manifest)
+
     parts = [
         _analysis_context_block(analysis_context),
         _external_block(external_context),
-        _manifest_block(manifest),
+        chart_block,
         f"## Validated daily state (immutable)\n```json\n{state_json}\n```",
         _conflict_block(daily_state),
     ]
@@ -229,8 +277,23 @@ def build_report_prompt(
     if mem:
         parts.insert(0, mem)
 
+    pass2_task_extra = ""
+    if pass2_optimization_enabled and pass2_attached is not None:
+        pass2_task_extra = (
+            "\n\nPass 2 chart authority:\n"
+            "- Attached images: reconciliation and descriptive detail for listed conflicts only where cited.\n"
+            "- Reference-only charts: workflow citations from validated state / conflict checklist text only.\n"
+            "- Do not contradict validated state.\n"
+            "- Prior-run posture block (if present): continuity only — not today's chart evidence.\n"
+            "- When attached-image impressions, prompt wording, and validated daily state differ, "
+            "validated daily state is authoritative."
+        )
+
     parts.append(
         "## Task\n"
+        "Pass 1 already completed in a separate API call — structured state was emitted via "
+        "`emit_daily_state`. Do NOT call tools or emit JSON in this pass. Your entire response "
+        "must be the complete markdown report only.\n\n"
         "Write the full daily markdown report for an already-decided posture. The validated state is "
         "final: do not introduce or imply signal readings that contradict its structural_bias, "
         "signal_alignment, decision_matrix, or recommended action. Your job is exposition and "
@@ -245,5 +308,6 @@ def build_report_prompt(
         "Step 5 must cite precomputed Monte Carlo from analysis_context (do not recompute).\n\n"
         f"End with `## Updated Decision Matrix` table rows: {', '.join(DECISION_MATRIX_ROWS)}."
         f"{mixed_note}"
+        f"{pass2_task_extra}"
     )
     return PromptBundle(system_role=system_role, framework=framework, body="\n\n".join(parts))

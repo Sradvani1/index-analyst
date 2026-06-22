@@ -1,0 +1,140 @@
+{
+  "date": "2026-06-04",
+  "framework_version": "perplexity-migration",
+  "spx_close": 7584.31,
+  "schk_close": null,
+  "base_case": "Bull (melt-up intact but cracking) — Golden Cross regime holds with price above both SMAs, but the 7-session ATH streak broke today on a gap-down/failed-recovery distribution day; 30–60 day horizon now carries a meaningful (30%) corrective-break risk toward the 23.6% Fib at 7,330.",
+  "trend_regime": "Golden Cross intact: 50-day above 200-day, price above both. +10.1% premium to 50-day SMA and +14.6% premium to 200-day SMA — still extended, but premiums compressed slightly as price pulled back from the ATH.",
+  "valuation_bucket": "20–22x (Cautious) — Forward P/E 21.68x; buy only on Fib + SMA + sentiment confluence. ERP ~+0.112% remains functionally zero (ceiling-adjacent).",
+  "signals": {
+    "pct_vs_50dma": 10.1,
+    "pct_vs_200dma": 14.6,
+    "bollinger_position": "within band — price pulled away from upper band for the first time",
+    "rsi14": 63.0,
+    "mfi": null,
+    "vix": 15.0,
+    "vix_regime": "low / below 20 — no elevated risk flag",
+    "fear_greed": 55,
+    "fear_greed_zone": "Greed",
+    "put_call": 0.6,
+    "high_yield_spread": 1.45,
+    "monte_carlo_probability": 0.773
+  },
+  "what_changed_today": [
+    "ATH streak BROKEN — first non-ATH close since the 7-session run began; close 7,584.31 sits 36.6 pts below the June 2 cycle high of 7,620.90.",
+    "Distribution day: gap-down open to 7,516 (−93 pts), widest intraday range of the stretch (81.6 pts), and a green close that still failed to reclaim the June 2 close by 25 pts.",
+    "RSI fell sharply — sub-30 on the gap-down open, recovered only to ~62–65 at close, well below the 70+ that characterized ATH sessions; 5-day RSI now shows a clear lower peak.",
+    "MFI now forms three consecutive declining peaks vs flat/rising price — a classic triple bearish divergence (mid-May to today).",
+    "F&G fell to 55 (5th consecutive decline, −6 from May 26 peak of 61) even as SPX gained 65 pts net over the stretch.",
+    "Monte Carlo P(7,700 first vs 7,400) degraded from 66.6% to 60.6% — now BELOW the 65% threshold on this secondary contest.",
+    "New flag: P(23.6% Fib 7,330 visited within 60d) = 63.0% — 7,330 is now a more-likely-than-not destination.",
+    "Junk bond spread holds 1.45% for a 3rd consecutive day — sustained Extreme Fear credit warning, no longer a one-day anomaly.",
+    "New defensive tripwire added: close below 7,400 (without prior Wave 1) triggers a 10–15% partial defensive trim."
+  ],
+  "narrative_summary": "The distribution signals have arrived: SPX broke its 7-session ATH streak with a gap-down open to 7,516, an 81-point range, and a green close that still failed to reclaim the prior close — the textbook signature of an exhausted rally. Every qualitative gauge has moved bearish for five straight sessions (F&G falling to 55, junk spreads pinned at 1.45%, breadth flat, RSI/MFI decelerating into a triple bearish divergence), while the primary Monte Carlo edge to Wave 1 stays strong at 77.3% but the secondary 7,700-vs-7,400 contest has degraded to 60.6%, below threshold. The methodology keeps the position long for now — Golden Cross intact, VIX ~15, Wave 1 not reached — so the disciplined stance is HOLD with the GTC trim at 7,696 live and a new defensive tripwire: a close below 7,400 triggers a 10–15% partial trim. The ATH at 7,620 is now resistance rather than a floor, and the unresolved credit/equity divergence remains the dominant non-technical risk.",
+  "open_questions": [
+    "Does the junk bond spread post a 4th consecutive session at 1.45%+, escalating from warning to alarm?",
+    "Does SPX reclaim 7,620 on a clean close (bull case) or confirm the ATH as a cycle peak by breaking 7,400 (bear case)?",
+    "Will the open hold above today's 7,516 intraday low, or gap lower into a continuation breakdown?",
+    "Does the 7,700-vs-7,400 Monte Carlo edge fall further below 65%, removing strong-conviction-long support?",
+    "Can RSI/MFI repair the bearish divergence, or do declining peaks confirm institutional distribution?"
+  ],
+  "decision_matrix": {
+    "valuation": "Forward P/E 21.68x (Cautious 20–22x bucket); ERP ~+0.112% functionally zero — ceiling-adjacent",
+    "technicals": "Golden Cross intact, price above both SMAs (+10.1% / +14.6%); but ATH streak broken, distribution day, RSI ~63 off overbought, triple bearish MFI divergence",
+    "sentiment": "F&G 55 (Greed, 5th decline), Put/Call ~0.60 max complacency, breadth/strength in Fear, junk spreads Extreme Fear at 1.45%, VIX ~15",
+    "risk": "Leverage moderate; VIX below 20 (no elevated flag); near-term tripwire is 23.6% Fib at 7,330 (−3.4%), with 63% probability of being visited within 60 days",
+    "recommended_action": "hold_schk_wave1_gtc_live_add_7400_defensive_trim_trigger"
+  },
+  "signal_alignment": {
+    "trim_signals_met": 1,
+    "buy_signals_met": 0,
+    "overall": "mixed"
+  },
+  "confirming_evidence": [
+    "Trend regime intact: 50-day above 200-day, price above both SMAs (Golden Cross holds).",
+    "VIX ~15, below the 20 elevated-risk threshold — sole clean green signal; moving averages remain reliable.",
+    "Market Momentum component still Extreme Greed (SPX above 125-day MA) — primary trend not broken.",
+    "Primary Monte Carlo first-hit edge to Wave 1 (7,696) vs 38.2% Fib (7,151) = 77.3%, above the 65% threshold.",
+    "P(reclaim ATH 7,621 first vs 7,400) = 72.7% — upside still statistically favored near-term."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "div-price-sentiment",
+      "layers": [
+        "technical",
+        "sentiment"
+      ],
+      "bullish_read": "SPX gained 65 pts net over the stretch and still printed a green close; trend regime intact.",
+      "bearish_read": "F&G fell from 61 (May 26) to 55 (June 4), a 5th consecutive decline, while price rose — one of the strongest negative price/sentiment divergences of the post-April rally; crowd less excited at higher prices.",
+      "framework_rule": "Sentiment must confirm price; a falling F&G into rising/flat price is a fully-invested-market exhaustion signal — do not add.",
+      "weight": "high",
+      "chart_refs": [
+        "cnn_fear_greed_june4",
+        "spx_1month_chart"
+      ]
+    },
+    {
+      "id": "div-credit-equity",
+      "layers": [
+        "sentiment",
+        "fundamental"
+      ],
+      "bullish_read": "Equities holding near ATH; VIX calm at ~15.",
+      "bearish_read": "Junk bond spread pinned at 1.45% (Extreme Fear) for a 3rd consecutive day — April-shock levels that previously preceded a ~17% drawdown — while equity holds.",
+      "framework_rule": "Spreads widening/holding stress while equity holds = credit market warning, institutional risk-off beginning; trim bias.",
+      "weight": "high",
+      "chart_refs": [
+        "junk_bond_spread_chart"
+      ]
+    },
+    {
+      "id": "div-mfi-price",
+      "layers": [
+        "technical"
+      ],
+      "bullish_read": "Price made new highs into June 2 and recovered intraday today.",
+      "bearish_read": "3-month MFI shows three consecutive declining peaks against flat/rising price — a classic triple bearish divergence confirming weakening institutional money flow.",
+      "framework_rule": "MFI lower-high vs price higher-high is a trim-confirmation divergence; do not buy against weakening flow.",
+      "weight": "high",
+      "chart_refs": [
+        "mfi_3month_chart"
+      ]
+    },
+    {
+      "id": "div-mc-secondary",
+      "layers": [
+        "monte_carlo"
+      ],
+      "bullish_read": "Primary Wave 1 first-hit edge remains 77.3%, comfortably above threshold.",
+      "bearish_read": "Secondary 7,700-vs-7,400 contest degraded from 66.6% to 60.6% — below the 65% minimum — and P(23.6% Fib 7,330 in 60d) is now 63%.",
+      "framework_rule": "Monte Carlo edge < 65% is insufficient — flag the secondary contest as monitor-only; conviction-long support is eroding.",
+      "weight": "medium",
+      "chart_refs": [
+        "monte_carlo_60day"
+      ]
+    },
+    {
+      "id": "div-price-structure",
+      "layers": [
+        "technical"
+      ],
+      "bullish_read": "Headline close was +0.41% green and price recovered the full intraday range.",
+      "bearish_read": "Gap-down open to 7,516 (−93 pts), widest range of the stretch (81.6 pts), failed to reclaim June 2 close, and ATH streak broken — distribution day masquerading as a green close.",
+      "framework_rule": "Distribution behavior after an exhausted rally shifts the burden of proof to bulls; the prior ATH at 7,620 is now resistance, not a floor.",
+      "weight": "medium",
+      "chart_refs": [
+        "spx_1day_intraday_june4"
+      ]
+    }
+  ],
+  "primary_tension": "A still-strong primary Monte Carlo melt-up edge (77.3% to Wave 1 at 7,696 first, only +1.47% away) versus a broad, five-session-deep stack of distribution and divergence signals — broken ATH streak, gap-down/failed-recovery distribution day, triple bearish MFI divergence, falling F&G into higher prices, persistent junk-bond Extreme Fear at April-shock levels, and a secondary MC contest (7,700 vs 7,400) that has degraded below the 65% threshold. The resolution typically favors VIX spiking to meet credit stress rather than credit compressing to meet equity complacency.",
+  "monte_carlo": {
+    "prob_up_first": 0.773,
+    "prob_down_first": 0.225,
+    "conditional_cascade": "P(7,700 first vs 7,400) degraded to 60.6% (below 65% threshold); P(reclaim ATH 7,621 first vs 7,400) 72.7%/27.3%; P(38.2% Fib 7,151 hit within 60d) 45.0% (rising); P(23.6% Fib 7,330 hit within 60d) 63.0% — new flag, more-likely-than-not visit.",
+    "median_days": "Wave 1 at 7,696 reachable within ~1-3 sessions on a rebound; 23.6% Fib 7,330 plausible in 1-3 sessions on a 2.5% follow-through down day.",
+    "cash_drag_prob": 0.55,
+    "meets_threshold": true
+  }
+}

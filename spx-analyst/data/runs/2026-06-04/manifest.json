@@ -1,0 +1,14 @@
+{
+  "date": "2026-06-04",
+  "index_symbol": "SPX",
+  "close": 7584.31,
+  "chart_count": 1,
+  "charts": [
+    {
+      "order": 1,
+      "file": "00_placeholder.png",
+      "label": "Placeholder (replace with chart pack)",
+      "category": "technical"
+    }
+  ]
+}

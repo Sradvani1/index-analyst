@@ -138,6 +138,43 @@ def validate(
         raise typer.Exit(code=1)
 
 
+@app.command("migrate-perplexity")
+def migrate_perplexity(
+    history: Path = typer.Option(..., "--history", help="Path to perplexity_analysis_history.md."),
+    from_date: str = typer.Option(None, "--from", help="Start date YYYY-MM-DD (inclusive)."),
+    to_date: str = typer.Option(None, "--to", help="End date YYYY-MM-DD (inclusive)."),
+    force_fetch: bool = typer.Option(False, help="Force fresh yfinance fetch for precompute."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Backfill memory from Perplexity markdown (text-only; no chart packs required)."""
+    _setup_logging(verbose)
+    from .migrate_perplexity import MigrationError, migrate_history
+
+    if not history.is_file():
+        typer.secho(f"History file not found: {history}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    try:
+        results = migrate_history(
+            history,
+            from_date=from_date,
+            to_date=to_date,
+            force_fetch=force_fetch,
+        )
+    except MigrationError as exc:
+        typer.secho(f"Migration failed: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    typer.secho(f"Migrated {len(results)} session(s)", fg=typer.colors.GREEN)
+    for result in results:
+        typer.echo(
+            f"  {result.date}: {result.daily_state.decision_matrix.recommended_action} "
+            f"-> {result.output_dir}"
+        )
+        if result.warnings:
+            typer.echo(f"    {len(result.warnings)} warning(s); see run_log.json")
+
+
 @app.command("rebuild-summary")
 def rebuild_summary(
     days: int = typer.Option(6, help="Number of recent states to include."),
