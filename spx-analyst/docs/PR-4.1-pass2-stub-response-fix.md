@@ -1,7 +1,7 @@
 # PR-4.1: Pass 2 stub-response fix (claude-opus-4-8)
 
 **Status:** Implemented  
-**Follows:** [PR-4](PR-4-pass2-image-optimization.md) live A/B (`output/ab-test/RESULTS.md`)
+**Follows:** [PR-4](PR-4-pass2-image-optimization.md) · [Live A/B results](PR-4-live-ab-results.md)
 
 ## Problem
 
@@ -58,4 +58,11 @@ python -m src.cli run --date 2026-06-10
 | Report size | ~80 chars | 17,234 chars |
 | Pass 2 output tokens | 25 | 6,891 |
 | `pass2_stub_retry` | n/a | `false` (prompt fix sufficient this run; retry path tested in unit tests) |
+| `pass2_tools_in_request` | n/a | `true` |
 | Pass 2 charts attached | 11 | 9 |
+
+Validate fixed output:
+
+```bash
+SPX_OUTPUT_DIR=output/ab-test/on-fixed python -m src.cli validate --date 2026-06-10
+```

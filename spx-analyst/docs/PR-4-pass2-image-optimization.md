@@ -1,9 +1,10 @@
 # PR-4: Pass 2 dynamic image selection and downscaling
 
-**Status:** Implemented (live A/B on 2026-06-10 complete — see [A/B results](../output/ab-test/RESULTS.md))  
+**Status:** Implemented ([PR-4.1](PR-4.1-pass2-stub-response-fix.md) complete)  
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-1](PR-1-spx-daily-framework-migration.md) · [PR-2](PR-2-spx-two-pass-prompt-overhaul.md) · [PR-3](PR-3-memory-rollup-overhaul.md)  
-**Design plan:** [`.cursor/plans/pass_2_image_optimization_b11cc4d9.plan.md`](../../.cursor/plans/pass_2_image_optimization_b11cc4d9.plan.md) (aligned to this record)
+**Design plan:** [`.cursor/plans/pass_2_image_optimization_b11cc4d9.plan.md`](../../.cursor/plans/pass_2_image_optimization_b11cc4d9.plan.md) (aligned to this record)  
+**Live A/B:** [PR-4-live-ab-results.md](PR-4-live-ab-results.md)
 
 ## Summary
 
@@ -153,7 +154,7 @@ PR-3 fields (`memory_included`, `memory_load`) unchanged.
 
 ### `request_snapshot.json` → `report_pass`
 
-Same `pass2_*` fields as above, plus `pass2_image_max_dimension_used` (actual encode dimension).
+Same `pass2_*` fields as above, plus `pass2_image_max_dimension_used`, `pass2_tools_in_request`, and `pass2_stub_retry` (see [PR-4.1](PR-4.1-pass2-stub-response-fix.md)).
 
 ## PR-3 interaction
 
@@ -181,14 +182,14 @@ Same `pass2_*` fields as above, plus `pass2_image_max_dimension_used` (actual en
 ## Testing
 
 ```bash
-pytest   # 125 tests; includes test_pass2_images, test_engine pass2 paths, test_memory_rollup coexistence
+pytest   # 135 tests; includes test_pass2_images, test_anthropic_pass2_stub, test_engine pass2 paths, test_memory_rollup coexistence
 ```
 
 Golden fixtures: `tests/fixtures/pass2_images/conflict_heavy.json`, `neutral_zero_chart.json`, `matrix_add.json`.
 
 ### Live A/B — 2026-06-10 (2026-06-21)
 
-Full results: [`output/ab-test/RESULTS.md`](../output/ab-test/RESULTS.md)
+Full results: [PR-4-live-ab-results.md](PR-4-live-ab-results.md)
 
 | Metric | OFF (`SPX_PASS2_IMAGE_OPTIMIZATION=false`) | ON (default) |
 |--------|--------------------------------------------|--------------|
@@ -199,9 +200,11 @@ Full results: [`output/ab-test/RESULTS.md`](../output/ab-test/RESULTS.md)
 | Total input tokens | 55,434 | **41,481 (−25%)** |
 | `daily_state` validation | PASS | PASS |
 
-**`validate_report` on live reruns:** both arms failed the **report** gate because Pass 2 returned a 25-token stub preamble (model did not emit the markdown body). This affected OFF and ON equally — not a PR-4 regression. The established baseline at `output/2026-06-10/` still **passes** `validate_report` (`python -m src.cli validate --date 2026-06-10`).
+Initial live reruns returned a Pass 2 stub preamble on `claude-opus-4-8` (both arms). Fixed in [PR-4.1](PR-4.1-pass2-stub-response-fix.md); post-fix run passes `validate_report`:
 
-**Follow-up:** [PR-4.1](PR-4.1-pass2-stub-response-fix.md) — Pass 2 stub-response fix for `claude-opus-4-8` (stub detection + tools-free retry).
+```bash
+SPX_OUTPUT_DIR=output/ab-test/on-fixed python -m src.cli validate --date 2026-06-10
+```
 
 ## Acceptance criteria
 
@@ -211,7 +214,7 @@ Full results: [`output/ab-test/RESULTS.md`](../output/ab-test/RESULTS.md)
 - [x] Pass 2 never omits a resolved conflict `chart_ref`
 - [x] Pass 2 completes with zero attached charts
 - [x] Mixed-signal days attach fewer than 15 charts when optimization on (live: 11/15 on 2026-06-10)
-- [x] 2026-06-10 baseline report passes `validate_report` (`output/2026-06-10/`); live A/B report gate blocked by Pass 2 model stub (see A/B results — not PR-4-specific)
+- [x] 2026-06-10 passes `validate_report` with optimization ON after [PR-4.1](PR-4.1-pass2-stub-response-fix.md) (`output/ab-test/on-fixed/`; see [live A/B](PR-4-live-ab-results.md))
 
 **Architecture**
 

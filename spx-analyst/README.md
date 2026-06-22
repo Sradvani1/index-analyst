@@ -60,7 +60,8 @@ See [PR-3: Memory rollup overhaul](docs/PR-3-memory-rollup-overhaul.md) for the
 categorical signal buckets, action normalization table, and watchlist rules.
 
 See [PR-4: Pass 2 image optimization](docs/PR-4-pass2-image-optimization.md) for
-selector rules, flag-off semantics, and `run_log` pass2 audit fields.
+selector rules, flag-off semantics, and `run_log` pass2 audit fields. Pass 2 stub handling:
+[PR-4.1](docs/PR-4.1-pass2-stub-response-fix.md). Live token A/B: [PR-4-live-ab-results.md](docs/PR-4-live-ab-results.md).
 
 ## Install
 
@@ -83,7 +84,7 @@ Set these in `.env` (see `.env.example`):
 | `SPX_PROMPT_CACHE_ENABLED` | `true` | Reuse framework + tool schema across passes |
 | `SPX_INCLUDE_MEMORY` | `false` | Inject prior posture snapshot into Pass 1/Pass 2 (rebuild always runs on success; rollup is categorical-only — no historical numerics) |
 | `SPX_IMAGE_MAX_DIMENSION` | `1568` | Long-edge resize for Pass 1 chart images (and Pass 2 when optimization off) |
-| `SPX_PASS2_IMAGE_OPTIMIZATION` | `true` | Dynamic Pass 2 chart selection + downscaling (see PR-4) |
+| `SPX_PASS2_IMAGE_OPTIMIZATION` | `true` | Dynamic Pass 2 chart selection + downscaling ([PR-4](docs/PR-4-pass2-image-optimization.md)) |
 | `SPX_PASS2_IMAGE_MAX_DIMENSION` | `1092` | Long-edge resize for Pass 2 attached charts when optimization on (operator floor: 784) |
 | `SPX_MAX_REPORT_CHARS` | `24000` | Report length validation limit |
 | `SPX_MAX_OUTPUT_TOKENS` | `8000` | Max tokens per Claude response |
@@ -222,7 +223,7 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
 
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime)
-docs/        PR-1 through PR-4 implementation records; docs/archive/ for retired specs
+docs/        PR-1 through PR-4.1 implementation records; docs/archive/ for retired specs
 data/runs/   dated input folders (charts + manifest + external context)
 memory/      archived states/reports + rolling summary (rebuilt on every successful run)
 output/      per-run artifacts

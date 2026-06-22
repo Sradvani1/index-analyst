@@ -166,3 +166,8 @@ When memory is enabled but the archive is empty, the block is still injected wit
 - `src/prompts.py` — posture snapshot header
 - `tests/test_memory_rollup.py`, `test_prompt_builder.py`, `test_engine.py`
 - `README.md` — operator contract
+
+## Related
+
+- [PR-4: Pass 2 image optimization](PR-4-pass2-image-optimization.md) — Pass 2 chart subset; posture snapshot contract unchanged
+- [PR-4.1: Pass 2 stub-response fix](PR-4.1-pass2-stub-response-fix.md) — `claude-opus-4-8` Pass 2 markdown delivery

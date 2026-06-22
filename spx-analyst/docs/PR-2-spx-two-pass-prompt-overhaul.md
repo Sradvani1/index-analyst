@@ -227,9 +227,7 @@ days (clarification 1).
 
 ## Out of scope / follow-ups
 
-- **Pass 2 reduced chart subset** — the only real lever for image tokens (caching cannot
-  reuse images across the two passes). Tracked as the next PR; Pass 2 already has the
-  validated state + conflict checklist and needs charts only for descriptive/reconciliation
-  detail.
+- **Pass 2 reduced chart subset** — shipped in [PR-4](PR-4-pass2-image-optimization.md); Pass 2 chart authority and downscaling documented there.
+- **Pass 2 stub responses on `claude-opus-4-8`** — fixed in [PR-4.1](PR-4.1-pass2-stub-response-fix.md) (tools-free retry when preamble detected).
 - Editing the framework markdown (handled via the wrapper preamble).
 - Any `DailyState` / schema change.
