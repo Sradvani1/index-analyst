@@ -31,9 +31,13 @@ Each daily run has five stages:
 2. **Pass 1 — structured state.** The **full** chart pack (all manifest entries), resolved
    EPS inputs, precomputed `analysis_context`, framework, and optional prior posture snapshot
    are sent in one multimodal request at `SPX_IMAGE_MAX_DIMENSION` (default 1568). The model
-   emits a schema-valid `DailyState` JSON object, focusing on qualitative chart reads and
-   `structural_bias`. Seven decision-matrix rows are `(engine-filled)` placeholders; the
-   engine overwrites them next.
+   emits a `DailyState` JSON object via `emit_daily_state`, focusing on qualitative chart reads
+   and `structural_bias`. The prompt and tool schema enforce a strict `signals` contract (no
+   `*_detail`, `*_note`, or extra `*_zone` fields). Before validation, `state_normalize.py`
+   coalesces only **allowlisted** known drift (e.g. `vix_regime_detail` → `vix_regime`); unknown
+   extras fail closed and may trigger a one-shot repair fallback. Seven decision-matrix rows are
+   `(engine-filled)` placeholders; the engine overwrites them next. See
+   [PR-6](docs/PR-6-pass1-schema-discipline.md).
 3. **Post-Pass-1 enforcement.** `state_enforcement.py` applies precomputed numerics
    (`spx_close`, Monte Carlo block, seven owned matrix rows) before Pass 2 runs.
 4. **Pass 2 chart selection (PR-4).** `pass2_images.resolve_pass2_images()` runs on the
@@ -67,6 +71,11 @@ selector rules, flag-off semantics, and `run_log` pass2 audit fields. Pass 2 stu
 
 See [PR-5: EPS master history](docs/PR-5-eps-master-history.md) for the append-only
 `eps_history.json` workflow, `show-eps`, resolution rules, and `run_log.eps_resolution`.
+
+See [PR-6: Pass 1 schema discipline](docs/PR-6-pass1-schema-discipline.md) for the
+`signals` contract, allowlisted coalescer rules, `run_log.pass1_schema_status`, and
+traceable `response_raw` payloads (`state_pass_original`, `state_pass_normalized`,
+`repair_pass`).
 
 ## Install
 
@@ -188,8 +197,8 @@ output/2026-06-12/
   2026-06-12-state.json      # canonical machine state (post-enforcement)
   analysis_context.json      # mirror of data/runs/.../analysis_context.json
   request_snapshot.json      # reproducibility metadata per pass (no secrets)
-  response_raw.json          # raw provider responses (state_pass + report_pass)
-  run_log.json               # timings, warnings, eps_resolution, model, precompute enforcement; pass2_* audit fields; memory_load when SPX_INCLUDE_MEMORY=true
+  response_raw.json          # raw provider responses; state_pass + report_pass; state_pass_original always; state_pass_normalized / repair_pass when applicable (PR-6)
+  run_log.json               # timings, warnings, eps_resolution, pass1_schema_status (PR-6), model, precompute enforcement; pass2_* audit fields; memory_load when SPX_INCLUDE_MEMORY=true
   validation_report.json     # schema, report structure, enforcement audit
 
 memory/daily_states/2026-06-12-state.json      # mirrored on successful run
@@ -284,8 +293,10 @@ date before running. See [PR-5](docs/PR-5-eps-master-history.md).
 
 Use `migrate-perplexity` to backfill valid `daily-2026-06` memory from historical
 Perplexity markdown when chart packs are unavailable. The pipeline runs Step 0
-precompute, `apply_precomputed_fields`, PR-3 posture snapshots, and rebuilds rolling
-memory after each session. See [docs/PR-3.1-perplexity-backfill.md](docs/PR-3.1-perplexity-backfill.md).
+precompute, Pass 1 with the same allowlisted signals coalescer and `pass1_schema_status`
+audit as chart runs ([PR-6](docs/PR-6-pass1-schema-discipline.md)), `apply_precomputed_fields`,
+PR-3 posture snapshots, and rebuilds rolling memory after each session. See
+[docs/PR-3.1-perplexity-backfill.md](docs/PR-3.1-perplexity-backfill.md).
 
 ```bash
 python -m src.cli migrate-perplexity \
