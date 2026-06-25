@@ -159,6 +159,37 @@ export function splitSections(markdown: string): SplitReport {
   return { preamble: preambleLines.join("\n").trim(), sections };
 }
 
+const POSTURE_SECTION = /today's posture/i;
+
+/** Sections shown in the run viewer — drops header snapshot / hero fields above Today's Posture. */
+export function viewerSections(markdown: string): ReportSection[] {
+  const { sections } = splitSections(markdown);
+  const start = sections.findIndex((section) => POSTURE_SECTION.test(section.title));
+  return start === -1 ? sections : sections.slice(start);
+}
+
+const SECTION_TAB_LABELS: Array<{ match: RegExp; label: string }> = [
+  { match: /today's posture/i, label: "Posture" },
+  { match: /market regime/i, label: "Regime" },
+  { match: /price and trend/i, label: "Price & Trend" },
+  { match: /technicals and sentiment/i, label: "Technicals" },
+  { match: /valuation and erp/i, label: "Valuation" },
+  { match: /risk and monte carlo/i, label: "Risk / MC" },
+  { match: /tactical levels/i, label: "Tactical" },
+  { match: /evidence (and tensions|reconciliation)/i, label: "Evidence" },
+  { match: /decision matrix/i, label: "Matrix" },
+];
+
+/** Short tab label for a report section heading. */
+export function sectionTabLabel(title: string): string {
+  for (const { match, label } of SECTION_TAB_LABELS) {
+    if (match.test(title)) {
+      return label;
+    }
+  }
+  return title;
+}
+
 function parseTableRow(line: string): string[] | null {
   const trimmed = line.trim();
   if (!trimmed.startsWith("|")) {

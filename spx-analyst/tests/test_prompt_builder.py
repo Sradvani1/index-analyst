@@ -1,7 +1,7 @@
 from src.prompts import (
-    DECISION_MATRIX_ROWS,
-    PRE_STEP,
-    WORKFLOW_STEPS,
+    EVIDENCE_AND_TENSIONS_HEADING,
+    INVESTOR_REPORT_SECTIONS,
+    PASS2_PROSE_SECTIONS,
     _analysis_context_block,
     build_report_prompt,
     build_state_prompt,
@@ -52,6 +52,19 @@ def test_state_prompt_contains_blocks(sample_state):
     assert "signals` contract" in bundle.body
     assert "vix_regime_detail" in bundle.body
     assert "put_call_zone" in bundle.body
+    assert "`what_changed_today` contract" in bundle.body
+    assert "Must be a JSON array of 3–5 strings" in bundle.body
+    assert "conflicting_evidence" in bundle.body
+    assert "rsi_divergence" in bundle.body
+
+
+def test_daily_state_schema_includes_list_field_descriptions():
+    from src.schemas import DailyState
+
+    props = DailyState.model_json_schema()["properties"]
+    for field in ("what_changed_today", "open_questions"):
+        assert "description" in props[field]
+        assert props[field]["description"]
 
 
 def test_signal_set_schema_includes_field_descriptions():
@@ -83,7 +96,7 @@ def test_memory_block_absent_when_none(sample_state):
         assert "Optional prior-run narrative context" not in bundle.body
 
 
-def test_report_prompt_lists_steps_and_matrix(sample_state):
+def test_report_prompt_lists_investor_sections(sample_state):
     role = load_system_role("Role.")
     ac = sample_analysis_context()
     bundle = build_report_prompt(
@@ -95,14 +108,24 @@ def test_report_prompt_lists_steps_and_matrix(sample_state):
         analysis_context=ac,
         recent_summary=None,
     )
-    assert PRE_STEP in bundle.body
-    for step in WORKFLOW_STEPS:
-        assert step in bundle.body
-    for row in DECISION_MATRIX_ROWS:
-        assert row in bundle.body
+    for title in PASS2_PROSE_SECTIONS:
+        assert title in bundle.body
     assert "Updated Decision Matrix" in bundle.body
-    assert "Evidence Reconciliation" in bundle.body
+    assert "Do NOT emit" in bundle.body
+    assert EVIDENCE_AND_TENSIONS_HEADING in bundle.body
+    assert "Evidence Reconciliation" not in bundle.body
     assert sample_state.primary_tension in bundle.body
+    assert "Read-only fact snippets" in bundle.body
+    assert len(PASS2_PROSE_SECTIONS) == 8
+    assert len(INVESTOR_REPORT_SECTIONS) == 9
+
+
+def test_system_role_pass_split_constraints():
+    role = load_system_role("You are an SPX analyst.").lower()
+    assert "pass 1:" in role
+    assert "pass 2:" in role
+    assert "evidence and tensions" in role
+    assert "always end with the updated decision matrix" not in role
 
 
 def test_system_role_has_precompute_authority():
@@ -139,7 +162,10 @@ def test_report_prompt_exposition_lock_and_divergence_ids(sample_state):
     )
     body = bundle.body.lower()
     assert "not re-deciding" in body
-    assert "by its id" in body
+    assert "investor-facing" in body
+    assert "conflicting_evidence" in body
+    assert "evidence and tensions headings" not in body
+    assert "snake_case" not in body
     assert "do not call tools" in body
     assert "emit_daily_state" in body
 

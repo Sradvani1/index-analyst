@@ -19,6 +19,7 @@ from .memory import (
 from .pass2_images import Pass2ImagePlan, resolve_pass2_images
 from .precompute import run_precompute
 from .prompts import build_report_prompt, build_state_prompt, load_system_role
+from .report_assembly import assemble_investor_report, extract_prose_sections
 from .schemas import AnalysisContext, DailyState, ValidationIssue, ValidationReport
 from .state_enforcement import apply_precomputed_fields, audit_enforcement_issues
 from .state_normalize import resolve_pass1_daily_state
@@ -168,7 +169,14 @@ def run_daily_analysis(
     report_call = client.run_markdown_report(
         report_bundle, pass2_plan.attached, pass2_audit=pass2_audit
     )
-    report_md = report_call.text or ""
+    report_prose = report_call.text or ""
+    prose_section_count = len(extract_prose_sections(report_prose))
+    report_md = assemble_investor_report(
+        date=date,
+        daily_state=daily_state,
+        analysis_context=analysis_context,
+        prose_md=report_prose,
+    )
 
     report_validation = validate_report(
         report_md, date, settings.max_report_chars, daily_state=daily_state
@@ -200,6 +208,12 @@ def run_daily_analysis(
         },
         "eps_resolution": eps_resolution_log(eps_resolution),
         "pass1_schema_status": pass1.pass1_schema_status(),
+        "report_assembly": {
+            "matrix_source": "daily_state",
+            "prose_sections": prose_section_count,
+            "prose_chars": len(report_prose),
+            "assembled_chars": len(report_md),
+        },
     }
     if memory_load is not None:
         run_log["memory_load"] = memory_load
@@ -211,7 +225,9 @@ def run_daily_analysis(
             "state_pass": state_call.request_snapshot,
             "report_pass": report_call.request_snapshot,
         },
-        response_raw=_pass1_response_raw(state_call, pass1, report_raw=report_call.raw_response),
+        response_raw=_pass1_response_raw(
+            state_call, pass1, report_raw=report_call.raw_response, report_prose=report_prose
+        ),
         run_log=run_log,
         validation_reports=[
             state_validation.model_dump(mode="json"),
@@ -252,6 +268,7 @@ def _pass1_response_raw(
     pass1,
     *,
     report_raw: dict | None = None,
+    report_prose: str | None = None,
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "state_pass": state_call.raw_response,
@@ -263,6 +280,8 @@ def _pass1_response_raw(
         payload["repair_pass"] = pass1.repair_raw_response
     if report_raw is not None:
         payload["report_pass"] = report_raw
+    if report_prose is not None:
+        payload["report_pass_prose"] = report_prose
     return payload
 
 

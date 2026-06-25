@@ -9,10 +9,9 @@ from pydantic import ValidationError
 
 from .prompts import (
     DECISION_MATRIX_ROWS,
-    EVIDENCE_RECONCILIATION_HEADING,
-    PRE_STEP,
+    EVIDENCE_AND_TENSIONS_HEADING,
+    INVESTOR_REPORT_SECTIONS,
     STRUCTURAL_BIAS_THRESHOLDS,
-    WORKFLOW_STEPS,
 )
 from .schemas import DailyState, ValidationIssue, ValidationReport
 
@@ -111,22 +110,75 @@ def _report_lower(report_md: str) -> str:
     return report_md.lower()
 
 
-def _evidence_reconciliation_section(report_md: str) -> str:
+_SECTION_HEADING_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
+_CANONICAL_SECTIONS = {s.lower(): s for s in INVESTOR_REPORT_SECTIONS}
+
+
+def _extract_report_sections(report_md: str) -> list[str]:
+    titles: list[str] = []
+    for match in _SECTION_HEADING_RE.finditer(report_md):
+        raw = match.group(1).strip()
+        canonical = _CANONICAL_SECTIONS.get(raw.lower())
+        titles.append(canonical if canonical else raw)
+    return titles
+
+
+def _validate_section_structure(report_md: str) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    found = _extract_report_sections(report_md)
+    found_set = set(found)
+
+    for section in INVESTOR_REPORT_SECTIONS:
+        if section not in found_set:
+            issues.append(
+                ValidationIssue(
+                    severity="error",
+                    code="missing_section",
+                    message=f"missing investor report section: {section}",
+                )
+            )
+
+    allowlist = set(INVESTOR_REPORT_SECTIONS)
+    for title in found:
+        if title not in allowlist:
+            issues.append(
+                ValidationIssue(
+                    severity="error",
+                    code="extra_section",
+                    message=f"unexpected report section: {title}",
+                )
+            )
+
+    expected_order = [s for s in INVESTOR_REPORT_SECTIONS if s in found_set]
+    actual_order = [s for s in found if s in allowlist]
+    if actual_order != expected_order:
+        issues.append(
+            ValidationIssue(
+                severity="error",
+                code="section_order",
+                message="investor report sections are missing, extra, or out of canonical order",
+            )
+        )
+
+    return issues
+
+
+def _evidence_and_tensions_section(report_md: str) -> str:
     match = re.search(
-        r"^#{1,6}\s.*" + re.escape(EVIDENCE_RECONCILIATION_HEADING),
+        r"^##\s+" + re.escape(EVIDENCE_AND_TENSIONS_HEADING) + r"\s*$",
         report_md,
         re.IGNORECASE | re.MULTILINE,
     )
     if match is None:
         return ""
     start = match.start()
-    next_heading = re.search(r"^#{1,6}\s", report_md[match.end() :], re.MULTILINE)
+    next_heading = re.search(r"^##\s+", report_md[match.end() :], re.MULTILINE)
     end = match.end() + next_heading.start() if next_heading else len(report_md)
     return report_md[start:end]
 
 
 def _mentions_tension(report_md: str, tension: str) -> bool:
-    section = _evidence_reconciliation_section(report_md)
+    section = _evidence_and_tensions_section(report_md)
     if not section.strip() or not tension.strip():
         return False
     lowered = section.lower()
@@ -154,7 +206,7 @@ def _conflict_addressed(report_md: str, divergence_id: str, bullish: str, bearis
 
 def _matrix_uniformly_directional(report_md: str) -> bool:
     matrix_match = re.search(
-        r"^#{1,6}\s.*Decision Matrix", report_md, re.IGNORECASE | re.MULTILINE
+        r"^##\s+Updated Decision Matrix\s*$", report_md, re.IGNORECASE | re.MULTILINE
     )
     if matrix_match is None:
         return False
@@ -165,6 +217,53 @@ def _matrix_uniformly_directional(report_md: str) -> bool:
     bullish = sum(1 for w in ("bull", "greed", "actionable", "attractive") if w in tail.lower())
     bearish = sum(1 for w in ("bear", "fear", "trim", "ceiling") if w in tail.lower())
     return bullish >= 3 and bearish == 0
+
+
+def _parse_matrix_table(report_md: str) -> list[tuple[str, str, str]] | None:
+    matrix_match = re.search(
+        r"^##\s+Updated Decision Matrix\s*$", report_md, re.IGNORECASE | re.MULTILINE
+    )
+    if matrix_match is None:
+        return None
+    tail = report_md[matrix_match.end() :]
+    rows: list[tuple[str, str, str]] = []
+    for line in tail.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            if rows:
+                break
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        if all(re.match(r"^:?-{2,}:?$", c.replace(" ", "")) for c in cells):
+            continue
+        if cells[0].lower() == "signal layer":
+            continue
+        rows.append((cells[0], cells[1], cells[2]))
+    return rows or None
+
+
+def _validate_matrix_state_echo(report_md: str, state: DailyState) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    parsed = _parse_matrix_table(report_md)
+    if parsed is None:
+        return issues
+
+    expected = {
+        (r.signal_layer.strip(), r.current_reading.strip(), r.signal.strip())
+        for r in state.decision_matrix.rows
+    }
+    rendered = {(layer.strip(), reading.strip(), signal.strip()) for layer, reading, signal in parsed}
+    if rendered != expected:
+        issues.append(
+            ValidationIssue(
+                severity="error",
+                code="matrix_state_mismatch",
+                message="rendered Updated Decision Matrix does not match daily_state.decision_matrix",
+            )
+        )
+    return issues
 
 
 def _norm_bias_text(text: str) -> str:
@@ -210,7 +309,7 @@ def _validate_state_consistency(report_md: str, state: DailyState) -> list[Valid
     action_tokens = [t for t in re.findall(r"[a-z0-9]+", action.lower()) if len(t) >= 4]
     if action_tokens:
         matrix_match = re.search(
-            r"^#{1,6}\s.*Decision Matrix", report_md, re.IGNORECASE | re.MULTILINE
+            r"^##\s+Updated Decision Matrix\s*$", report_md, re.IGNORECASE | re.MULTILINE
         )
         tail = report_md[matrix_match.start() :].lower() if matrix_match else lowered
         hits = sum(1 for t in action_tokens if t in tail)
@@ -240,80 +339,30 @@ def validate_report(
         )
         return ValidationReport(date=date, target="report", passed=False, issues=issues)
 
-    pre_match = re.search(
-        r"^#{1,6}\s.*" + re.escape(PRE_STEP.split()[0]),
-        report_md,
-        re.IGNORECASE | re.MULTILINE,
-    )
-    if pre_match is None and not re.search(r"Structural Regime", report_md, re.IGNORECASE):
-        issues.append(
-            ValidationIssue(
-                severity="warning",
-                code="missing_pre_step",
-                message=f"missing pre-step heading: {PRE_STEP}",
-            )
-        )
+    issues.extend(_validate_section_structure(report_md))
 
-    last_pos = -1
-    out_of_order = False
-    for step in WORKFLOW_STEPS:
-        key = step.split(" & ")[0].split(" (")[0]
-        match = re.search(
-            r"^#{1,6}\s.*" + re.escape(key), report_md, re.IGNORECASE | re.MULTILINE
-        )
-        if not match:
+    matrix_match = re.search(
+        r"^##\s+Updated Decision Matrix\s*$", report_md, re.IGNORECASE | re.MULTILINE
+    )
+    if matrix_match is None:
+        if not any(
+            i.code == "missing_section" and "Updated Decision Matrix" in i.message for i in issues
+        ):
             issues.append(
                 ValidationIssue(
                     severity="error",
-                    code="missing_step",
-                    message=f"missing workflow step heading: {step}",
+                    code="missing_decision_matrix",
+                    message="report is missing the Updated Decision Matrix",
                 )
             )
-            continue
-        if match.start() < last_pos:
-            out_of_order = True
-        last_pos = match.start()
-
-    if out_of_order:
-        issues.append(
-            ValidationIssue(
-                severity="warning",
-                code="step_order",
-                message="workflow step headings appear out of methodology order",
-            )
-        )
-
-    matrix_match = re.search(
-        r"^#{1,6}\s.*Decision Matrix", report_md, re.IGNORECASE | re.MULTILINE
-    )
-    if matrix_match is None:
+    elif re.search(r"^##\s+", report_md[matrix_match.end() :], re.MULTILINE):
         issues.append(
             ValidationIssue(
                 severity="error",
-                code="missing_decision_matrix",
-                message="report is missing the Updated Decision Matrix",
+                code="matrix_not_last",
+                message="content appears after the Updated Decision Matrix; it should be the final section",
             )
         )
-    else:
-        missing_rows = [
-            row for row in DECISION_MATRIX_ROWS if row.lower() not in report_md.lower()
-        ]
-        if missing_rows:
-            issues.append(
-                ValidationIssue(
-                    severity="warning",
-                    code="decision_matrix_rows",
-                    message=f"decision matrix may be missing rows: {missing_rows}",
-                )
-            )
-        if re.search(r"^#{1,6}\s", report_md[matrix_match.end() :], re.MULTILINE):
-            issues.append(
-                ValidationIssue(
-                    severity="warning",
-                    code="matrix_not_last",
-                    message="content appears after the Updated Decision Matrix; it should be the final section",
-                )
-            )
 
     if len(report_md) > max_chars:
         issues.append(
@@ -326,58 +375,55 @@ def validate_report(
 
     if daily_state is not None:
         issues.extend(_validate_state_consistency(report_md, daily_state))
+        issues.extend(_validate_matrix_state_echo(report_md, daily_state))
+
+        if not _evidence_and_tensions_section(report_md):
+            issues.append(
+                ValidationIssue(
+                    severity="error",
+                    code="missing_evidence_and_tensions",
+                    message=f"report requires '## {EVIDENCE_AND_TENSIONS_HEADING}' on every run",
+                )
+            )
+        elif not _mentions_tension(report_md, daily_state.primary_tension):
+            issues.append(
+                ValidationIssue(
+                    severity="error",
+                    code="missing_primary_tension",
+                    message="report does not address primary_tension from validated state",
+                )
+            )
+
+        for div in daily_state.conflicting_evidence:
+            if div.weight != "high":
+                continue
+            if not _conflict_addressed(
+                report_md, div.id, div.bullish_read, div.bearish_read
+            ):
+                issues.append(
+                    ValidationIssue(
+                        severity="error",
+                        code="missing_high_weight_conflict",
+                        message=f"high-weight conflict not addressed: {div.id}",
+                    )
+                )
+
         mixed_day = (
             daily_state.signal_alignment.overall == "mixed"
             or _hold_or_monitor_action(daily_state.decision_matrix.recommended_action)
         )
-        if mixed_day:
-            recon_match = re.search(
-                r"^#{1,6}\s.*" + re.escape(EVIDENCE_RECONCILIATION_HEADING),
-                report_md,
-                re.IGNORECASE | re.MULTILINE,
+        if (
+            mixed_day
+            and daily_state.signal_alignment.overall == "mixed"
+            and _matrix_uniformly_directional(report_md)
+        ):
+            issues.append(
+                ValidationIssue(
+                    severity="warning",
+                    code="matrix_uniformly_directional",
+                    message="decision matrix reads uniformly directional despite mixed alignment",
+                )
             )
-            if recon_match is None:
-                issues.append(
-                    ValidationIssue(
-                        severity="error",
-                        code="missing_evidence_reconciliation",
-                        message=f"mixed-signal day requires '## {EVIDENCE_RECONCILIATION_HEADING}' section",
-                    )
-                )
-            elif not _mentions_tension(report_md, daily_state.primary_tension):
-                issues.append(
-                    ValidationIssue(
-                        severity="error",
-                        code="missing_primary_tension",
-                        message="report does not address primary_tension from validated state",
-                    )
-                )
-
-            for div in daily_state.conflicting_evidence:
-                if div.weight != "high":
-                    continue
-                if not _conflict_addressed(
-                    report_md, div.id, div.bullish_read, div.bearish_read
-                ):
-                    issues.append(
-                        ValidationIssue(
-                            severity="error",
-                            code="missing_high_weight_conflict",
-                            message=f"high-weight conflict not addressed: {div.id}",
-                        )
-                    )
-
-            if (
-                daily_state.signal_alignment.overall == "mixed"
-                and _matrix_uniformly_directional(report_md)
-            ):
-                issues.append(
-                    ValidationIssue(
-                        severity="warning",
-                        code="matrix_uniformly_directional",
-                        message="decision matrix reads uniformly directional despite mixed alignment",
-                    )
-                )
 
     passed = not any(i.severity == "error" for i in issues)
     return ValidationReport(date=date, target="report", passed=passed, issues=issues)

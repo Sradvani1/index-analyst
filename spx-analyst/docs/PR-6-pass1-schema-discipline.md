@@ -8,7 +8,7 @@ Reduce Pass 1 schema repair by making `signals` contract expectations explicit, 
 
 1. **Prompt discipline** (`build_state_prompt`): explicit allowed-key list and prohibition of `*_detail`, `*_note`, extra `*_zone` fields.
 2. **Schema descriptions** (`SignalSet` `Field(description=...)`): flows into `emit_daily_state` tool schema at zero extra prompt cost.
-3. **Contract-preserving coalescer** (`state_normalize.coalesce_signals_drift`): allowlisted rules only; unknown extras left untouched (fail closed).
+3. **Contract-preserving coalescer** (`state_normalize.coalesce_pass1_drift` → `coalesce_signals_drift`): allowlisted rules only; unknown extras with values left untouched (fail closed). Extended in [PR-8](PR-8-pass1-repair-hardening.md).
 4. **Observability**: `pass1_schema_status` in `run_log.json`; traceable payloads in `response_raw.json`.
 
 ## Coalescence rules (v1)

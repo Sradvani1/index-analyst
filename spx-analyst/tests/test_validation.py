@@ -4,65 +4,9 @@ from src.schemas import DailyState
 from src.validation import parse_daily_state, validate_report
 
 from tests.conftest import SAMPLE_STATE
+from tests.fixtures.investor_report import PASS2_PROSE, assembled_report_for_state
 
-GOOD_REPORT = """
-# Daily Analysis 2026-06-12
-
-## Structural Regime Classification
-Mid Bull structural bias assigned.
-
-## Step 1: Price Action and Trend Recentering
-Close held above the 50-day.
-
-## Step 2: Technical and Sentiment Pulse
-RSI 64, MFI 70.
-
-## Evidence Reconciliation
-Primary tension: Bullish trend extension versus cautious valuation bucket.
-
-**extension_vs_valuation**
-- Bullish read: Price trend remains bullish with momentum intact (see SPX charts).
-- Bearish read: Forward P/E in cautious bucket limits add aggression.
-- Framework rule: Forward PE calibration — cautious bucket.
-- Blocks action: Neither trim nor buy reaches confluence; hold and monitor.
-
-## Step 3: Fundamental Valuation and ERP
-Forward P/E elevated per analysis_context.
-
-## Step 4: Leverage and Liquidation Structure
-VIX below 20.
-
-## Step 5: Monte Carlo and Brownian Motion
-Precomputed edge 53% adjusted — monitor only, below 65% threshold.
-
-## Step 6: Tactical Matrix
-Trim and re-entry posture mapped.
-
-## Step 7: Narrative and Executive Summary
-Given mixed evidence, resolving to hold and monitor.
-
-## Updated Decision Matrix
-| Signal Layer | Reading | Signal |
-|---|---|---|
-| Structural Bias | Mid Bull | Mid Bull |
-| Monte Carlo Threshold | 65% | 65% |
-| Volatility Input | 0.16 | Moderate |
-| Drift Input | 0.07 | Standard |
-| Rally Exhaustion Score | Moderate | Moderate |
-| Trend Regime | bullish | Bull |
-| Intraday Close Position | middle third | Neutral |
-| RSI / MFI State | 64/70 | Neutral |
-| 20-Day SMA Status | above | Bullish |
-| Bollinger Band State | upper half | Within |
-| ERP State and Trend | thin / stable | Caution |
-| Credit Condition | flat | Neutral |
-| Breadth Condition | mixed | Mixed |
-| VIX Regime | 18 | Standard |
-| Leverage Risk State | moderate | Moderate |
-| Monte Carlo Edge | 53% | Monitor |
-| Overall Signal Balance | mixed | Mixed |
-| Recommended Action | hold_and_monitor | Hold and monitor |
-"""
+GOOD_REPORT = assembled_report_for_state(DailyState.model_validate(SAMPLE_STATE), date="2026-06-12")
 
 
 def test_parse_daily_state_valid():
@@ -102,14 +46,34 @@ def test_validate_report_missing_matrix():
     md = GOOD_REPORT.split("## Updated Decision Matrix")[0]
     report = validate_report(md, "2026-06-12", max_chars=24000)
     assert not report.passed
-    assert any(i.code == "missing_decision_matrix" for i in report.errors)
+    assert any(i.code == "missing_section" for i in report.errors)
 
 
-def test_validate_report_missing_step():
-    md = GOOD_REPORT.replace("## Step 5: Monte Carlo and Brownian Motion", "## Step 5: Something else")
+def test_validate_report_missing_section():
+    md = GOOD_REPORT.replace("## Risk and Monte Carlo", "## Risk Summary")
     report = validate_report(md, "2026-06-12", max_chars=24000)
     assert not report.passed
-    assert any(i.code == "missing_step" for i in report.errors)
+    assert any(i.code in {"missing_section", "extra_section", "section_order"} for i in report.errors)
+
+
+def test_validate_report_extra_section():
+    md = GOOD_REPORT.replace(
+        "## Evidence and Tensions",
+        "## Evidence and Tensions\n\nBody.\n\n## Extra Section",
+        1,
+    )
+    report = validate_report(md, "2026-06-12", max_chars=24000)
+    assert not report.passed
+    assert any(i.code == "extra_section" for i in report.errors)
+
+
+def test_validate_report_section_order():
+    md = GOOD_REPORT.replace("## Market Regime", "## MARKET REGIME PLACEHOLDER")
+    parts = md.split("## MARKET REGIME PLACEHOLDER", 1)
+    md = parts[0] + "## Price and Trend" + parts[1].replace("## Price and Trend", "## Market Regime", 1)
+    report = validate_report(md, "2026-06-12", max_chars=24000)
+    assert not report.passed
+    assert any(i.code == "section_order" for i in report.errors)
 
 
 def test_validate_report_empty():
@@ -117,18 +81,19 @@ def test_validate_report_empty():
     assert not report.passed
 
 
-def test_validate_report_mixed_missing_reconciliation():
+def test_validate_report_missing_evidence_and_tensions():
     state = DailyState.model_validate(SAMPLE_STATE)
-    md = GOOD_REPORT.replace("## Evidence Reconciliation", "## Conflict Summary")
+    md = GOOD_REPORT.replace("## Evidence and Tensions", "## Conflict Summary")
     report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
     assert not report.passed
-    assert any(i.code == "missing_evidence_reconciliation" for i in report.errors)
+    assert any(i.code == "missing_evidence_and_tensions" for i in report.errors)
 
 
-RECON_SECTION = """## Evidence Reconciliation
+TENSIONS_SECTION = """## Evidence and Tensions
+
 Primary tension: Bullish trend extension versus cautious valuation bucket.
 
-**extension_vs_valuation**
+**Extension vs valuation** (high)
 - Bullish read: Price trend remains bullish with momentum intact (see SPX charts).
 - Bearish read: Forward P/E in cautious bucket limits add aggression.
 - Framework rule: Forward PE calibration — cautious bucket.
@@ -136,15 +101,15 @@ Primary tension: Bullish trend extension versus cautious valuation bucket.
 """
 
 
-def test_validate_report_mixed_missing_primary_tension():
+def test_validate_report_missing_primary_tension():
     state = DailyState.model_validate(SAMPLE_STATE)
     unrelated = (
-        "## Evidence Reconciliation\n"
+        "## Evidence and Tensions\n"
         "We focus only on liquidity plumbing today.\n\n"
         "**repo_market_note**\n"
         "- Overnight funding eased; no equity signal implications.\n"
     )
-    md = GOOD_REPORT.replace(RECON_SECTION, unrelated)
+    md = GOOD_REPORT.replace(TENSIONS_SECTION, unrelated)
     report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
     assert not report.passed
     assert any(i.code == "missing_primary_tension" for i in report.errors)
@@ -186,3 +151,26 @@ def test_validate_report_unaddressed_high_weight_conflict_is_error():
         i.code == "missing_high_weight_conflict" and i.severity == "error"
         for i in report.issues
     )
+
+
+def test_validate_report_matrix_state_mismatch():
+    state = DailyState.model_validate(SAMPLE_STATE)
+    md = GOOD_REPORT.replace("| Recommended Action | hold_and_monitor | hold_and_monitor |", "| Recommended Action | buy | buy |")
+    report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
+    assert not report.passed
+    assert any(i.code == "matrix_state_mismatch" for i in report.errors)
+
+
+def test_validate_report_matrix_not_last():
+    md = GOOD_REPORT + "\n## After Matrix\nTail content."
+    report = validate_report(md, "2026-06-12", max_chars=24000)
+    assert not report.passed
+    assert any(i.code == "matrix_not_last" for i in report.errors)
+
+
+def test_pass2_prose_has_eight_sections_only():
+    import re
+
+    headings = re.findall(r"^##\s+(.+?)\s*$", PASS2_PROSE, re.MULTILINE)
+    assert len(headings) == 8
+    assert "Updated Decision Matrix" not in headings

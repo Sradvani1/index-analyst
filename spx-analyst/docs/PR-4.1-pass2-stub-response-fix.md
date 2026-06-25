@@ -27,7 +27,13 @@ The model treated Pass 2 as another structured-state turn because `emit_daily_st
 ### Stub heuristic (`_is_pass2_stub_response`)
 
 - Known preamble phrases (`emit the structured daily state`, `emit_daily_state`, …), or
-- Short response (<500 chars) with no `## ` markdown headings, unless already looks like a full report (`# SPX`, `## Updated Decision Matrix`, workflow headings).
+- Short response (<500 chars) with no `## ` markdown headings, unless already looks like real output.
+
+**Non-stub signals (PR-7 investor template):** `## Today's Posture`, `## Market Regime`, or `## Evidence and Tensions`.
+
+**Legacy non-stub signals:** `# SPX` with workflow headings, `## Updated Decision Matrix`, `## Structural Regime`, etc.
+
+**Stub under PR-7:** short `# SPX Daily Analysis …` preambles with no investor sections (Python assembles the header).
 
 ## Cache impact
 

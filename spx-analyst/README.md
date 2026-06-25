@@ -16,6 +16,8 @@ a markdown report plus structured JSON state.
 - [PR-4.1: Pass 2 stub-response fix](docs/PR-4.1-pass2-stub-response-fix.md) — `claude-opus-4-8` tools-free retry when Pass 2 returns a preamble stub
 - [PR-5: EPS master history](docs/PR-5-eps-master-history.md) — single `eps_history.json` source; no per-run EPS files
 - [PR-6: Pass 1 schema discipline](docs/PR-6-pass1-schema-discipline.md) — signals contract prompt + tool schema descriptions, allowlisted drift coalescer, `pass1_schema_status` audit trail
+- [PR-7: Pass 2 investor report template](docs/PR-7-pass2-investor-report-template.md) — eight-section Pass 2 prose, Python assembly of nine visible parts, strict heading validation
+- [PR-8: Pass 1 repair hardening](docs/PR-8-pass1-repair-hardening.md) — structural coercion (`what_changed_today`), extended signals drift rules, repair SLO observability
 
 ## How it works
 
@@ -33,11 +35,15 @@ Each daily run has five stages:
    are sent in one multimodal request at `SPX_IMAGE_MAX_DIMENSION` (default 1568). The model
    emits a `DailyState` JSON object via `emit_daily_state`, focusing on qualitative chart reads
    and `structural_bias`. The prompt and tool schema enforce a strict `signals` contract (no
-   `*_detail`, `*_note`, or extra `*_zone` fields). Before validation, `state_normalize.py`
-   coalesces only **allowlisted** known drift (e.g. `vix_regime_detail` → `vix_regime`); unknown
-   extras fail closed and may trigger a one-shot repair fallback. Seven decision-matrix rows are
-   `(engine-filled)` placeholders; the engine overwrites them next. See
-   [PR-6](docs/PR-6-pass1-schema-discipline.md).
+   `*_detail`, `*_note`, or extra `*_zone` fields) and require `what_changed_today` as a
+   3–5 item JSON array. Before validation, `state_normalize.coalesce_pass1_drift()` applies
+   structural coercion (e.g. wrap a lone `what_changed_today` string as a one-element list)
+   and **allowlisted** signals drift rules (e.g. `vix_regime_detail` → `vix_regime`, drop
+   `*_zone` except `fear_greed_zone`, drop null/empty unknown keys). Unknown extras with
+   substantive values fail closed and may trigger a one-shot repair fallback. Seven
+   decision-matrix rows are `(engine-filled)` placeholders; the engine overwrites them next.
+   See [PR-6](docs/PR-6-pass1-schema-discipline.md) and
+   [PR-8](docs/PR-8-pass1-repair-hardening.md).
 3. **Post-Pass-1 enforcement.** `state_enforcement.py` applies precomputed numerics
    (`spx_close`, Monte Carlo block, seven owned matrix rows) before Pass 2 runs.
 4. **Pass 2 chart selection (PR-4).** `pass2_images.resolve_pass2_images()` runs on the
@@ -46,12 +52,18 @@ Each daily run has five stages:
    [PR-4](docs/PR-4-pass2-image-optimization.md).
 5. **Pass 2 — markdown report.** Only **attached** charts are encoded (default max edge
    1092 when `SPX_PASS2_IMAGE_OPTIMIZATION=true`). The prompt lists reference-only charts
-   by filename without sending their bytes. The enforced state scaffolds a full report that
-   follows the Daily 7-Step Workflow, includes Evidence Reconciliation for listed
-   divergences, and ends with the 18-row Updated Decision Matrix. Pass 2 is exposition-only:
-   it must not contradict the validated state. When memory is enabled, the same optional
-   prior posture snapshot is included (continuity only — not authoritative for today's
-   numerics).
+   by filename without sending their bytes. Pass 2 returns **eight investor-facing prose
+   sections only** (no `#` preamble, no Decision Matrix). Python then assembles the
+   published `{date}-analysis.md`: Header Snapshot, prose sections with injected fact
+   blocks under Valuation / Monte Carlo / Tactical Levels, and the Updated Decision Matrix
+   from enforced state. Raw Pass 2 output is stored as `response_raw.report_pass_prose`.
+   Pass 2 is exposition-only: it must not contradict the validated state. When memory is
+   enabled, the same optional prior posture snapshot is included (continuity only — not
+   authoritative for today's numerics).
+
+See [PR-7: Pass 2 investor report template](docs/PR-7-pass2-investor-report-template.md)
+for the nine-vs-eight distinction, assembly module, validation gates, and
+`cli validate` expectations on historical vs new reports.
 
 Set `SPX_PASS2_IMAGE_OPTIMIZATION=false` to restore pre-PR-4 Pass 2 behavior (all charts,
 full resolution, legacy manifest prompt block).
@@ -76,6 +88,11 @@ See [PR-6: Pass 1 schema discipline](docs/PR-6-pass1-schema-discipline.md) for t
 `signals` contract, allowlisted coalescer rules, `run_log.pass1_schema_status`, and
 traceable `response_raw` payloads (`state_pass_original`, `state_pass_normalized`,
 `repair_pass`).
+
+See [PR-8: Pass 1 repair hardening](docs/PR-8-pass1-repair-hardening.md) for
+`coalesce_pass1_drift`, extended drift rules (zone keys, framework-bleed denylist,
+null/empty unknown drop), `normalize_audit.structural_coercions`, and repair-rate SLO
+fields (`repair_avoided`, `what_changed_today_count`, `what_changed_today_count_warning`).
 
 ## Install
 
@@ -141,7 +158,8 @@ python -m src.cli run --date 2026-06-12 --force-fetch
 # Use a custom run directory
 python -m src.cli run --date 2026-06-12 --input-dir data/runs/2026-06-12
 
-# Re-validate previously written outputs
+# Re-validate previously written outputs (investor-template reports post–PR-7;
+# pre-migration workflow-heading reports will fail strict section validation)
 python -m src.cli validate --date 2026-06-12
 
 # Rebuild memory/rolling/recent_summary.md from archived states (also runs automatically after every successful run)
@@ -198,7 +216,7 @@ output/2026-06-12/
   analysis_context.json      # mirror of data/runs/.../analysis_context.json
   request_snapshot.json      # reproducibility metadata per pass (no secrets)
   response_raw.json          # raw provider responses; state_pass + report_pass; state_pass_original always; state_pass_normalized / repair_pass when applicable (PR-6)
-  run_log.json               # timings, warnings, eps_resolution, pass1_schema_status (PR-6), model, precompute enforcement; pass2_* audit fields; memory_load when SPX_INCLUDE_MEMORY=true
+  run_log.json               # timings, warnings, eps_resolution, pass1_schema_status (PR-6/PR-8), report_assembly (PR-7), model, precompute enforcement; pass2_* audit fields; memory_load when SPX_INCLUDE_MEMORY=true
   validation_report.json     # schema, report structure, enforcement audit
 
 memory/daily_states/2026-06-12-state.json      # mirrored on successful run
@@ -242,7 +260,7 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
 
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime)
-docs/        PR-1 through PR-6 implementation records; docs/archive/ for retired specs
+docs/        PR-1 through PR-8 implementation records; docs/archive/ for retired specs
 data/
   master/    eps_history.json — sole EPS source (append-only)
   runs/      dated input folders (charts + manifest + precompute cache)
@@ -267,6 +285,8 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Pass 2 stub-response retry for `claude-opus-4-8` | PR-4.1 |
 | EPS master history — single `eps_history.json`, `show-eps`, no per-run EPS files | PR-5 |
 | Pass 1 schema discipline — signals contract, allowlisted coalescer, repair observability | PR-6 |
+| Pass 2 investor report template — eight prose sections, Python assembly, strict validation | PR-7 |
+| Pass 1 repair hardening — `what_changed_today` coercion, extended drift rules, repair SLO | PR-8 |
 | Monte Carlo target straddle guard (downside re-anchor when leg fully retraced) | PR-1 doc + `structure.reanchor_downside_for_straddle()` |
 
 ## Memory migration (one-time)
@@ -293,8 +313,9 @@ date before running. See [PR-5](docs/PR-5-eps-master-history.md).
 
 Use `migrate-perplexity` to backfill valid `daily-2026-06` memory from historical
 Perplexity markdown when chart packs are unavailable. The pipeline runs Step 0
-precompute, Pass 1 with the same allowlisted signals coalescer and `pass1_schema_status`
-audit as chart runs ([PR-6](docs/PR-6-pass1-schema-discipline.md)), `apply_precomputed_fields`,
+precompute, Pass 1 with the same `coalesce_pass1_drift` pipeline and `pass1_schema_status`
+audit as chart runs ([PR-6](docs/PR-6-pass1-schema-discipline.md),
+[PR-8](docs/PR-8-pass1-repair-hardening.md)), `apply_precomputed_fields`,
 PR-3 posture snapshots, and rebuilds rolling memory after each session. See
 [docs/PR-3.1-perplexity-backfill.md](docs/PR-3.1-perplexity-backfill.md).
 

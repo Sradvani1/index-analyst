@@ -11,8 +11,8 @@ from src.analysis_engine import run_daily_analysis
 from src.anthropic_client import CallResult
 
 from tests.conftest import SAMPLE_STATE, build_run_dir, write_state
+from tests.fixtures.investor_report import PASS2_PROSE
 from tests.sample_analysis_context import sample_analysis_context
-from tests.test_validation import GOOD_REPORT
 
 
 class FakeClient:
@@ -44,7 +44,7 @@ class FakeClient:
         self.report_bodies.append(bundle.body)
         self.report_image_paths.append(list(image_paths))
         return CallResult(
-            text=GOOD_REPORT,
+            text=PASS2_PROSE,
             tool_input=None,
             raw_response={"ok": True},
             request_snapshot={
@@ -103,6 +103,8 @@ def test_pass1_normalize_avoids_repair(mock_precompute, tmp_path, settings):
     assert status["final_valid"] is True
     assert status["normalize_audit"]["merged"]
     assert status["normalize_audit"]["untouched_unknown"] == []
+    assert status["repair_avoided"] is True
+    assert status["normalize_audit"]["structural_coercions"] == []
 
     raw = json.loads((result.output_dir / "response_raw.json").read_text(encoding="utf-8"))
     assert "state_pass_normalized" in raw
@@ -199,12 +201,22 @@ def test_full_run_writes_artifacts(mock_precompute, tmp_path, settings):
     assert "Do not recalculate" in client.state_bodies[0]
     assert len(client.state_image_paths[0]) == 3
     assert client.report_bodies
-    assert "do not recompute" in client.report_bodies[0].lower()
+    assert "do not emit" in client.report_bodies[0].lower()
     assert len(client.report_image_paths[0]) < len(client.state_image_paths[0])
     assert "Pass 2 chart pack" in client.report_bodies[0]
     assert "Today's chart pack (images attached in this order)" not in client.report_bodies[0]
 
+    analysis_md = (result.output_dir / f"{date}-analysis.md").read_text(encoding="utf-8")
+    assert analysis_md.startswith("# SPX Daily Analysis")
+    assert "## Updated Decision Matrix" in analysis_md
+
+    raw = json.loads((result.output_dir / "response_raw.json").read_text(encoding="utf-8"))
+    assert "report_pass_prose" in raw
+    assert raw["report_pass_prose"] == PASS2_PROSE
+
     run_log = json.loads((result.output_dir / "run_log.json").read_text(encoding="utf-8"))
+    assert run_log["report_assembly"]["matrix_source"] == "daily_state"
+    assert run_log["report_assembly"]["prose_sections"] == 8
     assert run_log["chart_count"] == run_log["pass1_chart_count"] == 3
     assert run_log["pass2_chart_count"] == len(client.report_image_paths[0])
     assert "pass2_selection_reasons" in run_log

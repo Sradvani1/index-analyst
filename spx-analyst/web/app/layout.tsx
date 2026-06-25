@@ -39,7 +39,6 @@ export default async function RootLayout({
                 <h1 className="text-lg font-semibold tracking-tight">
                   SPX Analyst
                 </h1>
-                <p className="text-xs text-muted-foreground">Phase 2 viewer</p>
               </Link>
             </div>
             <Separator />

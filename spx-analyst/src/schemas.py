@@ -315,9 +315,13 @@ class DailyState(BaseModel):
     trend_regime: str
     valuation_bucket: str
     signals: SignalSet
-    what_changed_today: List[str]
+    what_changed_today: List[str] = Field(
+        description="Array of 3–5 change bullets; never a single string."
+    )
     narrative_summary: str
-    open_questions: List[str]
+    open_questions: List[str] = Field(
+        description="Array of strings; never a single string."
+    )
     decision_matrix: DecisionMatrix
     signal_alignment: SignalAlignment
     confirming_evidence: List[str]

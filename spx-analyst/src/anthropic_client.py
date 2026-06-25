@@ -24,7 +24,7 @@ from tenacity import (
 )
 
 from .config import Settings, get_settings
-from .prompts import PromptBundle
+from .prompts import EVIDENCE_AND_TENSIONS_HEADING, PASS2_PROSE_SECTIONS, PromptBundle
 from .schemas import DailyState
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,21 @@ _PASS2_STUB_PHRASES = (
     "emit the structured daily state",
     "emit structured daily state",
     "emit_daily_state",
+)
+
+# Positive signals that Pass 2 returned real investor-template prose (PR-7).
+_INVESTOR_PROSE_MARKERS = (
+    f"## {PASS2_PROSE_SECTIONS[0]}",
+    f"## {PASS2_PROSE_SECTIONS[1]}",
+    f"## {EVIDENCE_AND_TENSIONS_HEADING}",
+)
+
+# Legacy workflow headings — still treated as non-stub for retries and drift.
+_LEGACY_REPORT_MARKERS = (
+    "## 0.",
+    "## 1.",
+    "## Structural Regime",
+    "## Updated Decision Matrix",
 )
 
 _TRANSIENT_ERRORS = (
@@ -89,13 +104,15 @@ def _state_tool() -> dict[str, Any]:
 
 
 def _is_pass2_stub_response(text: str) -> bool:
-    """True when Pass 2 returned a preamble instead of the full markdown report."""
+    """True when Pass 2 returned a preamble instead of investor prose sections."""
     if len(text) >= 3000:
         return False
-    if text.startswith("# SPX") or "## Updated Decision Matrix" in text:
+    if any(marker in text for marker in _INVESTOR_PROSE_MARKERS):
         return False
-    if any(marker in text for marker in ("## 0.", "## 1.", "## Structural Regime")):
+    if any(marker in text for marker in _LEGACY_REPORT_MARKERS):
         return False
+    if text.startswith("# SPX"):
+        return True
     lower = text.lower()
     if any(phrase in lower for phrase in _PASS2_STUB_PHRASES):
         return True

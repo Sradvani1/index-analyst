@@ -26,6 +26,16 @@ def test_stub_rejects_full_report_opening():
     assert not _is_pass2_stub_response(text)
 
 
+def test_stub_detects_short_spx_preamble_without_sections():
+    text = "# SPX Daily Analysis — 2026-06-10\n\nI'll deliver the full report next."
+    assert _is_pass2_stub_response(text)
+
+
+def test_stub_rejects_investor_prose_opening():
+    text = "## Today's Posture\n\nHold and monitor; no new deployment today.\n"
+    assert not _is_pass2_stub_response(text)
+
+
 def test_stub_rejects_long_body():
     text = "x" * 3500
     assert not _is_pass2_stub_response(text)
@@ -44,7 +54,10 @@ def _mock_response(text: str):
 @patch.object(AnthropicClient, "_create")
 def test_run_markdown_report_retries_without_tools_on_stub(mock_create):
     stub = "I'll first emit the structured daily state, then provide the full markdown report."
-    good = "# SPX Daily Analysis — 2026-06-10\n\n## 0. Structural Regime Classification\n\nBody."
+    good = (
+        "## Today's Posture\n\nHold and monitor.\n\n"
+        "## Market Regime\n\nMid Bull structural bias.\n"
+    )
     mock_create.side_effect = [_mock_response(stub), _mock_response(good)]
 
     client = AnthropicClient.__new__(AnthropicClient)
@@ -60,7 +73,7 @@ def test_run_markdown_report_retries_without_tools_on_stub(mock_create):
     with patch("src.anthropic_client._user_content", return_value=[{"type": "text", "text": "body"}]):
         result = client.run_markdown_report(bundle, [Path("a.png")])
 
-    assert result.text == good
+    assert result.text.strip() == good.strip()
     assert mock_create.call_count == 2
     assert "tools" not in mock_create.call_args_list[1].kwargs
     assert result.request_snapshot["pass2_stub_retry"] is True

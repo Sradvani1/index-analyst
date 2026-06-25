@@ -52,7 +52,23 @@ PRECOMPUTE_OWNED_MATRIX_ROWS: list[str] = [
     "ERP State and Trend",
 ]
 
-EVIDENCE_RECONCILIATION_HEADING = "Evidence Reconciliation"
+EVIDENCE_RECONCILIATION_HEADING = "Evidence Reconciliation"  # legacy; Pass 2 uses EVIDENCE_AND_TENSIONS_HEADING
+
+INVESTOR_REPORT_SECTIONS: list[str] = [
+    "Today's Posture",
+    "Market Regime",
+    "Price and Trend",
+    "Technicals and Sentiment",
+    "Valuation and ERP",
+    "Risk and Monte Carlo",
+    "Tactical Levels and Next Session Plan",
+    "Evidence and Tensions",
+    "Updated Decision Matrix",
+]
+
+PASS2_PROSE_SECTIONS: list[str] = INVESTOR_REPORT_SECTIONS[:-1]
+
+EVIDENCE_AND_TENSIONS_HEADING = "Evidence and Tensions"
 
 STRUCTURAL_BIAS_THRESHOLDS: dict[str, int] = {
     "Early Bull": 65,
@@ -70,9 +86,11 @@ Non-negotiable constraints (from the framework):
 Fibonacci, drawdown/liquidation zones, volatility, drift, Monte Carlo), read and interpret the precomputed \
 value instead — never recompute or adjust it. Chart labels never override analysis_context numerics.
 - The engine deterministically re-derives spx_close, the Monte Carlo block, and the numeric decision-matrix \
-rows after this step, so spend your effort on the qualitative chart reads and structural_bias, not on \
+rows after Pass 1, so spend your effort on the qualitative chart reads and structural_bias, not on \
 transcribing numbers precisely.
-- Always end with the Updated Decision Matrix (18 rows)."""
+- Pass 1: emit decision_matrix.rows with all 18 framework rows via emit_daily_state.
+- Pass 2: prose only — eight ## sections ending with Evidence and Tensions; do not emit a # title, \
+injected fact blocks, or Updated Decision Matrix (Python assembles those for publish)."""
 
 
 def load_system_role(role_text: str) -> str:
@@ -176,6 +194,42 @@ def _optional_memory_block(recent_summary: str | None) -> str:
     )
 
 
+def _investor_fact_snippets(analysis_context: AnalysisContext) -> str:
+    v = analysis_context.valuation
+    mc = analysis_context.monte_carlo
+    s = analysis_context.structure
+    m = analysis_context.market_data
+    lines = [
+        "## Read-only fact snippets (Python injects these under sections 5–7 — do not duplicate numerics in prose)",
+        "",
+        "**Valuation and ERP (section 5):**",
+        f"- Forward P/E: {v.forward_pe}x | Trailing P/E: {v.trailing_pe}x",
+        f"- Forward earnings yield: {v.forward_earnings_yield:.2%}" if v.forward_earnings_yield else "- Forward earnings yield: n/a",
+        f"- 10-year Treasury: {m.us10y:.3f}%",
+        f"- ERP: {v.erp:.2%} ({v.erp_trend})" if v.erp is not None else "- ERP: n/a",
+        f"- ERP re-entry floor at 0.5% ERP: {v.erp_reentry_floor_at_0_5pct:,.2f}"
+        if v.erp_reentry_floor_at_0_5pct is not None
+        else "- ERP re-entry floor: n/a",
+        "",
+        "**Risk and Monte Carlo (section 6):**",
+        f"- σ (20d realized vol): {mc.sigma:.4f} | μ (drift): {mc.mu:.4f}",
+        f"- Raw up-first: {mc.prob_up_first_raw:.1%} | Raw down-first: {mc.prob_down_first_raw:.1%}",
+        f"- Adjusted up-first: {mc.prob_up_first_adjusted:.1%} | Adjusted down-first: {mc.prob_down_first_adjusted:.1%}",
+        f"- Rally exhaustion: {mc.rally_exhaustion_score} (discount {mc.exhaustion_discount:.0%})",
+        f"- Upside target: {mc.upside_target:,.2f} ({mc.upside_target_rule})",
+        f"- Downside target: {mc.downside_target:,.2f} ({mc.downside_target_rule})",
+        f"- Median days: {mc.median_days} | Cascades: {mc.cascades}",
+        "",
+        "**Tactical levels (section 7):**",
+        f"- Active swing high: {s.active_swing_high_price:,.2f} ({s.active_swing_high_date})",
+        f"- Active swing low: {s.active_swing_low_price:,.2f} ({s.active_swing_low_date})",
+        f"- Fib 23.6%: {s.fib_236:,.2f} | 38.2%: {s.fib_382:,.2f} | 50%: {s.fib_500:,.2f} | 61.8%: {s.fib_618:,.2f}",
+        f"- Liquidation caution: {s.liquidation_caution:,.2f} | nervous: {s.liquidation_nervous:,.2f}",
+        f"- Margin call: {s.liquidation_margin_call:,.2f} | cascade: {s.liquidation_cascade:,.2f}",
+    ]
+    return "\n".join(lines)
+
+
 def _conflict_block(daily_state: DailyState) -> str:
     conflicts_json = json.dumps(
         [d.model_dump(mode="json") for d in daily_state.conflicting_evidence],
@@ -238,6 +292,14 @@ def build_state_prompt(
         "- `vix_regime`: one string with zone and level/MA context; no `vix_regime_detail` or "
         "`signals.vix`.\n"
         "- `put_call`: numeric ratio only; no `put_call_zone`.\n\n"
+        "`what_changed_today` contract:\n"
+        "- Must be a JSON array of 3–5 strings (never a single string).\n"
+        "- Each item: one material change vs prior session (price structure, VIX, "
+        "breadth/credit, valuation, Monte Carlo).\n"
+        "- Compare against prior posture snapshot when memory is present.\n\n"
+        "Divergences and zone labels:\n"
+        "- RSI/MFI divergences belong in `conflicting_evidence`, not new `signals` keys.\n"
+        "- No `rsi_divergence`, `rsi14_zone`, `mfi_zone`, or other invented signal fields.\n\n"
         "Set `framework_version` to 'daily-2026-06'."
     )
     return PromptBundle(system_role=system_role, framework=framework, body="\n\n".join(parts))
@@ -257,13 +319,11 @@ def build_report_prompt(
     pass2_optimization_enabled: bool = True,
 ) -> PromptBundle:
     state_json = json.dumps(daily_state.model_dump(mode="json"), indent=2)
-    steps = "\n".join(f"{i + 1}. {s}" for i, s in enumerate(WORKFLOW_STEPS))
-    pre = f"0. {PRE_STEP}\n" + steps
+    section_list = "\n".join(f"{i + 1}. `## {title}`" for i, title in enumerate(PASS2_PROSE_SECTIONS))
     action = daily_state.decision_matrix.recommended_action
     mixed = daily_state.signal_alignment.overall == "mixed"
     mixed_note = (
-        " When alignment is mixed, present qualified/hedged readings in the matrix cells without "
-        "altering the validated signal values."
+        " When alignment is mixed, present qualified/hedged readings without altering validated signal values."
         if mixed
         else ""
     )
@@ -277,6 +337,7 @@ def build_report_prompt(
         _analysis_context_block(analysis_context),
         _eps_block(resolved_eps),
         chart_block,
+        _investor_fact_snippets(analysis_context),
         f"## Validated daily state (immutable)\n```json\n{state_json}\n```",
         _conflict_block(daily_state),
     ]
@@ -300,20 +361,30 @@ def build_report_prompt(
         "## Task\n"
         "Pass 1 already completed in a separate API call — structured state was emitted via "
         "`emit_daily_state`. Do NOT call tools or emit JSON in this pass. Your entire response "
-        "must be the complete markdown report only.\n\n"
-        "Write the full daily markdown report for an already-decided posture. The validated state is "
+        "must be markdown prose only.\n\n"
+        "Write investor-facing narrative for an already-decided posture. The validated state is "
         "final: do not introduce or imply signal readings that contradict its structural_bias, "
         "signal_alignment, decision_matrix, or recommended action. Your job is exposition and "
         "reconciliation, not re-deciding.\n\n"
         f"Recommended action (verbatim): {action!r}.\n\n"
         "Re-open charts only to add descriptive detail and to reconcile the conflicts already listed in "
         "the conflict checklist — not to form new conclusions.\n\n"
-        f"Workflow headings in order:\n{pre}\n\n"
-        f"After Step 2, include `## {EVIDENCE_RECONCILIATION_HEADING}` and address each listed divergence "
-        "by its id (e.g. DIV-1), giving the bullish read, the bearish read, and how the framework rule "
-        "resolves it.\n\n"
-        "Step 5 must cite precomputed Monte Carlo from analysis_context (do not recompute).\n\n"
-        f"End with `## Updated Decision Matrix` table rows: {', '.join(DECISION_MATRIX_ROWS)}."
+        "Output exactly these eight `##` sections in order — nothing else:\n"
+        f"{section_list}\n\n"
+        "Do NOT emit:\n"
+        "- A `#` title line or Header Snapshot (Python assembles the preamble)\n"
+        "- Injected numeric fact blocks under sections 5–7 (Python inserts them during assembly)\n"
+        "- `## Updated Decision Matrix` (Python renders the matrix from validated state)\n\n"
+        "Tone: write for market participants, not internal framework review. No methodology "
+        "meta-commentary (e.g. 'Step 2 requires…'). Do not regenerate numerics in prose where "
+        "Python injects a facts block — interpret the read-only snippets instead.\n\n"
+        "Section budgets: Today's Posture 150–250 words (lead with action); Market Regime 200–300; "
+        "Price and Trend through Tactical Levels 150–350 each; Evidence and Tensions ≥100 words when "
+        "no divergences remain.\n\n"
+        f"`## {EVIDENCE_AND_TENSIONS_HEADING}` is required every run. For each item in "
+        "conflicting_evidence from the conflict checklist, give the bullish read, the bearish read, "
+        "and how the framework rule resolves it. On zero-divergence days, cover primary_tension "
+        "and confirming evidence explicitly."
         f"{mixed_note}"
         f"{pass2_task_extra}"
     )

@@ -28,22 +28,37 @@ ALLOWED_SIGNAL_KEYS = frozenset(
 
 _NOTE_SUFFIX = "_note"
 
+FRAMEWORK_BLEED_KEYS = frozenset(
+    {
+        "rsi_divergence",
+        "mfi_divergence",
+        "bearish_divergence",
+        "bullish_divergence",
+    }
+)
+
+
+def _is_null_or_empty(value: Any) -> bool:
+    return value is None or value == "" or value == {}
+
 
 @dataclass(frozen=True)
 class NormalizeAudit:
     merged: list[dict[str, Any]] = field(default_factory=list)
     dropped: list[dict[str, Any]] = field(default_factory=list)
     untouched_unknown: list[str] = field(default_factory=list)
+    structural_coercions: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def changed(self) -> bool:
-        return bool(self.merged or self.dropped)
+        return bool(self.merged or self.dropped or self.structural_coercions)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "merged": list(self.merged),
             "dropped": list(self.dropped),
             "untouched_unknown": list(self.untouched_unknown),
+            "structural_coercions": list(self.structural_coercions),
         }
 
 
@@ -65,11 +80,19 @@ class Pass1ResolveResult:
     repair_usage: dict[str, Any] | None = None
 
     def pass1_schema_status(self) -> dict[str, Any]:
+        wct = self.normalized_tool_input.get("what_changed_today")
+        wct_count = len(wct) if isinstance(wct, list) else 0
+        repair_avoided = (
+            not self.original_valid and not self.repair_triggered and self.final_valid
+        )
         return {
             "original_valid": self.original_valid,
             "normalized": self.normalized,
             "repair_triggered": self.repair_triggered,
             "final_valid": self.final_valid,
+            "repair_avoided": repair_avoided,
+            "what_changed_today_count": wct_count,
+            "what_changed_today_count_warning": wct_count < 2,
             "normalize_audit": self.normalize_audit.to_dict(),
             "validation_errors_original": self.validation_errors_original,
             "validation_errors_after_normalize": self.validation_errors_after_normalize,
@@ -155,11 +178,6 @@ def coalesce_signals_drift(tool_input: dict[str, Any]) -> tuple[dict[str, Any], 
             del signals[key]
             continue
 
-        if key == "put_call_zone":
-            audit.dropped.append({"key": f"signals.{key}", "reason": "no_target_field"})
-            del signals[key]
-            continue
-
         if key.endswith(_NOTE_SUFFIX):
             base_key = key[: -len(_NOTE_SUFFIX)]
             if base_key in ALLOWED_SIGNAL_KEYS:
@@ -184,8 +202,46 @@ def coalesce_signals_drift(tool_input: dict[str, Any]) -> tuple[dict[str, Any], 
                 del signals[key]
                 continue
 
+        if key.endswith("_zone") and key != "fear_greed_zone":
+            audit.dropped.append({"key": f"signals.{key}", "reason": "zone_key_except_fear_greed"})
+            del signals[key]
+            continue
+
+        if key in FRAMEWORK_BLEED_KEYS and _is_null_or_empty(value):
+            audit.dropped.append(
+                {"key": f"signals.{key}", "reason": "framework_bleed_null_or_empty"}
+            )
+            del signals[key]
+            continue
+
+        if _is_null_or_empty(value):
+            audit.dropped.append({"key": f"signals.{key}", "reason": "null_or_empty_unknown"})
+            del signals[key]
+            continue
+
         audit.untouched_unknown.append(f"signals.{key}")
 
+    return out, audit
+
+
+def coalesce_pass1_drift(tool_input: dict[str, Any]) -> tuple[dict[str, Any], NormalizeAudit]:
+    """Apply structural coercion plus signals drift coalescence for Pass 1 output."""
+    out = copy.deepcopy(tool_input)
+    structural: list[dict[str, Any]] = []
+
+    wct = out.get("what_changed_today")
+    if isinstance(wct, str) and wct.strip():
+        out["what_changed_today"] = [wct.strip()]
+        structural.append({"field": "what_changed_today", "action": "wrap_str_as_list"})
+
+    out, audit = coalesce_signals_drift(out)
+    if structural:
+        audit = NormalizeAudit(
+            merged=audit.merged,
+            dropped=audit.dropped,
+            untouched_unknown=audit.untouched_unknown,
+            structural_coercions=structural,
+        )
     return out, audit
 
 
@@ -201,7 +257,7 @@ def resolve_pass1_daily_state(
     original_valid = original_report.passed
     validation_errors_original = _schema_error_messages(original_report)
 
-    normalized_input, audit = coalesce_signals_drift(original)
+    normalized_input, audit = coalesce_pass1_drift(original)
     normalized_changed = normalized_input != original
     daily_state, normalized_report = parse_daily_state(normalized_input, date)
     validation_errors_after_normalize = _schema_error_messages(normalized_report)
