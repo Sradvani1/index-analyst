@@ -1,25 +1,25 @@
 {
-  "date": "2026-06-10",
+  "date": "2026-06-12",
   "market_data": {
-    "spx_close": 7266.990234375,
-    "vix": 22.219999313354492,
-    "us10y": 4.541999816894531,
-    "as_of_date": "2026-06-10",
-    "pct_above_200dma": 5.7418,
-    "realized_vol_20d": 0.143964,
-    "sma_50": 7213.351,
-    "sma_200": 6872.3923,
+    "spx_close": 7431.4599609375,
+    "vix": 17.68000030517578,
+    "us10y": 4.486999988555908,
+    "as_of_date": "2026-06-12",
+    "pct_above_200dma": 7.9841,
+    "realized_vol_20d": 0.15492,
+    "sma_50": 7247.7894,
+    "sma_200": 6881.9948,
     "precompute_warnings": [
-      "active leg fully retraced: close 7266.99 <= prior downside target 7477.29 (fib_500); re-anchored downside to 7239.85 (reanchor_liquidation) for Monte Carlo straddle validity"
+      "active leg fully retraced: close 7431.46 <= prior downside target 7477.29 (fib_500); re-anchored downside to 7392.27 (reanchor_liquidation) for Monte Carlo straddle validity"
     ]
   },
   "valuation": {
-    "forward_pe": 19.64,
-    "trailing_pe": 25.06,
-    "forward_earnings_yield": 0.050915,
-    "erp": 0.005495,
+    "forward_pe": 20.09,
+    "trailing_pe": 25.63,
+    "forward_earnings_yield": 0.049788,
+    "erp": 0.004918,
     "erp_trend": "stable",
-    "erp_reentry_floor_at_0_5pct": 7338.36
+    "erp_reentry_floor_at_0_5pct": 7419.29
   },
   "structure": {
     "active_swing_high_date": "2026-06-02",
@@ -38,37 +38,37 @@
     "liquidation_cascade": 6477.76,
     "upside_target": 7620.9,
     "upside_target_rule": "active_swing_high",
-    "downside_target": 7239.85,
+    "downside_target": 7392.27,
     "downside_target_rule": "reanchor_liquidation"
   },
   "monte_carlo": {
-    "sigma": 0.143964,
+    "sigma": 0.15492,
     "mu": 0.07,
     "rally_exhaustion_score": "Low",
     "exhaustion_discount": 0.0,
     "upside_target": 7620.89990234375,
-    "downside_target": 7239.854907226562,
+    "downside_target": 7392.272905273438,
     "upside_target_rule": "active_swing_high",
     "downside_target_rule": "reanchor_liquidation",
-    "prob_up_first_raw": 0.1821,
-    "prob_down_first_raw": 0.8179,
-    "prob_up_first_adjusted": 0.1821,
-    "prob_down_first_adjusted": 0.8179,
-    "cascades": "If 7240 breaks, P(6859)=35%; If 7621 breaks, P(7716)=81%",
-    "median_days": "upside 23d / downside 2d",
-    "drift_path": "5d=7275.59; 10d=7284.21; 20d=7301.47; 30d=7318.77; 60d=7370.91",
-    "cash_drag_prob": 0.1358,
+    "prob_up_first_raw": 0.2947,
+    "prob_down_first_raw": 0.7053,
+    "prob_up_first_adjusted": 0.2947,
+    "prob_down_first_adjusted": 0.7053,
+    "cascades": "If 7392 breaks, P(7240)=73%; If 7621 breaks, P(7716)=86%",
+    "median_days": "upside 11d / downside 3d",
+    "drift_path": "5d=7440.02; 10d=7448.58; 20d=7465.75; 30d=7482.95; 60d=7534.80",
+    "cash_drag_prob": 0.1467,
     "threshold_evaluation": {
       "65": {
-        "adjusted_prob_up_first": 0.1821,
+        "adjusted_prob_up_first": 0.2947,
         "actionable": false
       },
       "70": {
-        "adjusted_prob_up_first": 0.1821,
+        "adjusted_prob_up_first": 0.2947,
         "actionable": false
       },
       "75": {
-        "adjusted_prob_up_first": 0.1821,
+        "adjusted_prob_up_first": 0.2947,
         "actionable": false
       }
     }
