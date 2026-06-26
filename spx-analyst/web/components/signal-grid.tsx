@@ -109,9 +109,9 @@ function AlignmentTile({
         3-of-5 Alignment
       </span>
       <div className="flex items-baseline gap-2 text-sm font-semibold tabular-nums">
-        <span className="text-emerald-600 dark:text-emerald-400">Buy {buy}</span>
+        <span className="text-market-green">Buy {buy}</span>
         <span className="text-muted-foreground">/</span>
-        <span className="text-rose-600 dark:text-rose-400">Trim {trim}</span>
+        <span className="text-risk-red">Trim {trim}</span>
       </div>
       <span className="text-[0.7rem] capitalize text-muted-foreground">
         {overall.replaceAll("_", " ")}

@@ -6,7 +6,12 @@ import { DecisionMatrix } from "@/components/decision-matrix";
 import { ReportMarkdown } from "@/components/report-markdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { sectionTabLabel, type ReportSection } from "@/lib/report";
+import {
+  isDecisionMatrixSection,
+  isEvidenceSection,
+  sectionTabLabel,
+  type ReportSection,
+} from "@/lib/report";
 import type { DailyState } from "@/lib/types";
 
 interface ReportTabsProps {
@@ -14,19 +19,10 @@ interface ReportTabsProps {
   dailyState?: DailyState;
 }
 
-function isEvidenceSection(title: string): boolean {
-  return /evidence (and tensions|reconciliation)/i.test(title);
-}
-
-function isDecisionMatrix(title: string): boolean {
-  return /decision matrix/i.test(title);
-}
-
 export function ReportTabs({ sections, dailyState }: ReportTabsProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const active = sections[activeIndex] ?? sections[0];
 
-  if (!active) {
+  if (sections.length === 0) {
     return null;
   }
 
@@ -40,6 +36,7 @@ export function ReportTabs({ sections, dailyState }: ReportTabsProps) {
         >
           {sections.map((section, index) => {
             const selected = index === activeIndex;
+            const label = sectionTabLabel(section.title);
             return (
               <button
                 key={section.id}
@@ -50,43 +47,41 @@ export function ReportTabs({ sections, dailyState }: ReportTabsProps) {
                 aria-controls={`panel-${section.id}`}
                 tabIndex={selected ? 0 : -1}
                 onClick={() => setActiveIndex(index)}
-                className={cn(
-                  "rounded-lg border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+                style={
                   selected
-                    ? "border-primary/30 bg-primary text-primary-foreground"
-                    : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? {
+                        backgroundColor: "#0e6b57",
+                        borderColor: "#0e6b57",
+                        color: "#ffffff",
+                      }
+                    : undefined
+                }
+                className={cn(
+                  "appearance-none rounded-lg border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+                  selected
+                    ? "font-semibold"
+                    : "border-transparent bg-surface-1 text-ink-700 hover:border-border-soft hover:bg-paper-100 hover:text-ink-900",
                 )}
               >
-                {sectionTabLabel(section.title)}
+                {label}
               </button>
             );
           })}
         </div>
       </div>
 
-      <SectionPanel
-        key={active.id}
-        section={active}
-        dailyState={dailyState}
-      />
-    </div>
-  );
-}
-
-function SectionPanel({
-  section,
-  dailyState,
-}: {
-  section: ReportSection;
-  dailyState?: DailyState;
-}) {
-  return (
-    <div
-      role="tabpanel"
-      id={`panel-${section.id}`}
-      aria-labelledby={`tab-${section.id}`}
-    >
-      <SectionContent section={section} dailyState={dailyState} />
+      {sections.map((section, index) => (
+        <div
+          key={section.id}
+          role="tabpanel"
+          id={`panel-${section.id}`}
+          aria-labelledby={`tab-${section.id}`}
+          hidden={index !== activeIndex}
+          className={index === activeIndex ? "block min-w-0" : "hidden"}
+        >
+          <SectionContent section={section} dailyState={dailyState} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -98,13 +93,13 @@ function SectionContent({
   section: ReportSection;
   dailyState?: DailyState;
 }) {
-  if (isDecisionMatrix(section.title)) {
+  if (isDecisionMatrixSection(section.title)) {
     return (
       <SectionCard section={section} accent>
         {dailyState?.decision_matrix ? (
           <DecisionMatrix matrix={dailyState.decision_matrix} />
         ) : (
-          <ReportMarkdown markdown={section.body} />
+          <SectionBody body={section.body} />
         )}
       </SectionCard>
     );
@@ -112,14 +107,19 @@ function SectionContent({
 
   if (isEvidenceSection(section.title)) {
     return (
-      <Card className="bg-amber-50 ring-amber-200 dark:bg-amber-950/40 dark:ring-amber-900">
+      <Card
+        className={cn(
+          "overflow-visible border-border-soft shadow-editorial-1",
+          "bg-[color-mix(in_srgb,var(--caution-amber)_8%,var(--surface-0))]",
+        )}
+      >
         <CardHeader>
-          <CardTitle className="text-amber-900 dark:text-amber-100">
+          <CardTitle className="font-display text-lg text-ink-900">
             {section.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ReportMarkdown markdown={section.body} />
+          <SectionBody body={section.body} />
         </CardContent>
       </Card>
     );
@@ -127,9 +127,17 @@ function SectionContent({
 
   return (
     <SectionCard section={section}>
-      <ReportMarkdown markdown={section.body} />
+      <SectionBody body={section.body} />
     </SectionCard>
   );
+}
+
+function SectionBody({ body }: { body: string }) {
+  const trimmed = body.trim();
+  if (!trimmed) {
+    return <p className="text-sm text-ink-500">No content for this section.</p>;
+  }
+  return <ReportMarkdown markdown={trimmed} />;
 }
 
 function SectionCard({
@@ -142,11 +150,18 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className={cn(accent && "ring-primary/30")}>
+    <Card
+      className={cn(
+        "overflow-visible border-border-soft bg-surface-0 text-ink-900 shadow-editorial-1",
+        accent && "ring-1 ring-market-green/25",
+      )}
+    >
       <CardHeader>
-        <CardTitle className="text-lg">{section.title}</CardTitle>
+        <CardTitle className="font-display text-lg text-ink-900">
+          {section.title}
+        </CardTitle>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="text-ink-900">{children}</CardContent>
     </Card>
   );
 }

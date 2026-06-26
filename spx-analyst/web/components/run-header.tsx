@@ -4,8 +4,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { formatClose, humanizeAction } from "@/lib/format";
 import { TONE_SURFACE, parseHeader, toneFor } from "@/lib/report";
+import { cn } from "@/lib/utils";
 import { getRecommendedAction, type DailyState } from "@/lib/types";
 
 interface RunHeaderProps {
@@ -13,69 +14,54 @@ interface RunHeaderProps {
   reportMarkdown: string;
 }
 
-function humanizeAction(action: string): string {
-  return action.replaceAll("_", " ");
-}
-
 export function RunHeader({ state, reportMarkdown }: RunHeaderProps) {
   const header = parseHeader(reportMarkdown);
-  const close = state.spx_close.toLocaleString(undefined, {
-    maximumFractionDigits: 2,
-  });
+  const close = formatClose(state.spx_close);
   const actionTone = toneFor(getRecommendedAction(state.decision_matrix));
 
   return (
-    <header className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <header className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
             {state.date}
             {header.instrument ? ` · ${header.instrument}` : ""}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
             SPX Daily Tactical Analysis
           </h1>
         </div>
         <div className="text-right">
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-semibold tabular-nums tracking-tight">
+          <div className="flex items-baseline justify-end gap-2">
+            <span className="text-4xl font-bold tabular-nums tracking-tight text-ink-900">
               {close}
             </span>
             {header.changePct && (
               <span
                 className={cn(
                   "text-sm font-semibold tabular-nums",
-                  header.changeDirection === "down"
-                    ? "text-rose-600 dark:text-rose-400"
-                    : "text-emerald-600 dark:text-emerald-400",
+                  header.changeDirection === "down" ? "text-risk-red" : "text-market-green",
                 )}
               >
                 {header.change} ({header.changePct})
               </span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">SPX close</p>
+          <p className="text-xs text-ink-500">SPX close</p>
         </div>
       </div>
 
-      <div
-        className={cn(
-          "rounded-xl p-4 ring-1 ring-inset",
-          TONE_SURFACE[actionTone],
-        )}
-      >
+      <div className={cn("rounded-[14px] p-4 ring-1 ring-inset", TONE_SURFACE[actionTone])}>
         <p className="text-[0.65rem] font-medium uppercase tracking-wide opacity-70">
           Recommended action
         </p>
         <p className="mt-1 text-base font-semibold leading-snug">
           {humanizeAction(getRecommendedAction(state.decision_matrix))}
         </p>
-        <p className="mt-2 text-sm leading-relaxed opacity-90">
-          {state.primary_tension}
-        </p>
+        <p className="mt-2 text-sm leading-relaxed opacity-90">{state.primary_tension}</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <TruncatedFact label="Structural bias" value={state.structural_bias} />
         <TruncatedFact label="Trend regime" value={state.trend_regime} />
         <TruncatedFact label="Valuation bucket" value={state.valuation_bucket} />
@@ -88,8 +74,8 @@ export function RunHeader({ state, reportMarkdown }: RunHeaderProps) {
 
 function TruncatedFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border p-3">
-      <p className="text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-lg border border-border-soft bg-surface-0 p-3">
+      <p className="text-[0.65rem] font-medium uppercase tracking-wide text-ink-500">
         {label}
       </p>
       <Tooltip>

@@ -23,9 +23,7 @@ export default async function RunPage({ params }: RunPageProps) {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col px-6 py-8">
-      <ReportView markdown={run.report_markdown} dailyState={run.daily_state} />
-    </div>
+    <ReportView markdown={run.report_markdown} dailyState={run.daily_state} />
   );
 }
 

@@ -9,21 +9,22 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  --font-heading: var(--font-display);
+  --color-ink-900: var(--ink-900);
+  --color-ink-700: var(--ink-700);
+  --color-ink-500: var(--ink-500);
+  --color-paper-50: var(--paper-50);
+  --color-paper-100: var(--paper-100);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-border-soft: var(--border-soft);
+  --color-market-green: var(--market-green);
+  --color-market-green-hover: var(--market-green-hover);
+  --color-signal-blue: var(--signal-blue);
+  --color-caution-amber: var(--caution-amber);
+  --color-risk-red: var(--risk-red);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -45,77 +46,81 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-editorial-1: var(--shadow-1);
+  --shadow-editorial-2: var(--shadow-2);
+  --shadow-editorial-3: var(--shadow-3);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ink-900: #151922;
+  --ink-700: #2b3443;
+  --ink-500: #5e6a7d;
+  --paper-50: #faf8f3;
+  --paper-100: #f3f0e8;
+  --surface-0: #ffffff;
+  --surface-1: #f7f5ef;
+  --border-soft: #e6e0d4;
+  --market-green: #0e6b57;
+  --market-green-hover: #0a5848;
+  --signal-blue: #295c9b;
+  --caution-amber: #a56a17;
+  --risk-red: #a23a3a;
+  --shadow-1: 0 1px 2px rgba(18, 24, 32, 0.04);
+  --shadow-2: 0 6px 18px rgba(18, 24, 32, 0.06);
+  --shadow-3: 0 14px 34px rgba(18, 24, 32, 0.1);
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --background: var(--paper-50);
+  --foreground: var(--ink-900);
+  --card: var(--surface-0);
+  --card-foreground: var(--ink-900);
+  --popover: var(--surface-0);
+  --popover-foreground: var(--ink-900);
+  --primary: var(--market-green);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-1);
+  --secondary-foreground: var(--ink-900);
+  --muted: var(--paper-100);
+  --muted-foreground: var(--ink-500);
+  --accent: var(--surface-1);
+  --accent-foreground: var(--ink-900);
+  --destructive: var(--risk-red);
+  --border: var(--border-soft);
+  --input: var(--border-soft);
+  --ring: color-mix(in srgb, var(--market-green) 40%, transparent);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0f131a;
+  --foreground: #e9edf3;
+  --card: #171c24;
+  --card-foreground: #e9edf3;
+  --popover: #171c24;
+  --popover-foreground: #e9edf3;
+  --primary: #1a8f74;
+  --primary-foreground: #ffffff;
+  --secondary: #1f2632;
+  --secondary-foreground: #e9edf3;
+  --muted: #1f2632;
+  --muted-foreground: #98a3b5;
+  --accent: #1f2632;
+  --accent-foreground: #e9edf3;
+  --destructive: #c45a5a;
+  --border: #2a3240;
+  --input: #2a3240;
+  --ring: color-mix(in srgb, #1a8f74 40%, transparent);
+  --paper-50: #0f131a;
+  --surface-0: #171c24;
+  --surface-1: #1f2632;
+  --border-soft: #2a3240;
+  --ink-900: #e9edf3;
+  --ink-700: #c5cdd8;
+  --ink-500: #98a3b5;
 }
 
 @layer base {
@@ -127,5 +132,17 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display), Georgia, serif;
+  }
+  .shadow-editorial-1 {
+    box-shadow: var(--shadow-1);
+  }
+  .shadow-editorial-2 {
+    box-shadow: var(--shadow-2);
   }
 }

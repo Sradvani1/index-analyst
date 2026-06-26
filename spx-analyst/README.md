@@ -149,7 +149,13 @@ python -m src.cli show-eps --date 2026-06-10   # verify before run
 # Optional: preview Step 0 precompute when EPS resolves
 python -m src.cli setup-run --date 2026-06-12 --precompute
 
-# Run a full daily analysis (replace placeholder charts with the 15-chart pack first)
+# Import 15 PNG screenshots from Images/<date>/ (repo root) into the run directory
+python -m src.cli import-run --date 2026-06-24
+
+# Optional: chain Step 0 precompute after import
+python -m src.cli import-run --date 2026-06-24 --precompute
+
+# Run a full daily analysis (use import-run instead of manual chart copy + manifest edit)
 python -m src.cli run --date 2026-06-12
 
 # Force fresh yfinance fetch during precompute
@@ -199,8 +205,11 @@ data/master/
   eps_history.json        # sole EPS source — append rows when consensus changes
 ```
 
-`setup-run` creates a **placeholder** 1-chart manifest. Replace it with the full
-15-chart pack and a complete `manifest.json` before running analysis.
+`setup-run` creates a **placeholder** 1-chart manifest. For daily production runs,
+use `import-run` to copy the 15-chart pack from `Images/<date>/` at the repo root
+and build a complete `manifest.json` (fetches SPX close from yfinance). Screenshot
+files in intake order — alphabetical filename order maps to chart order 1–15; do not
+rename out of capture sequence.
 
 `manifest.json` lists charts with unique, contiguous `order` values; Pass 1 sends
 images to the model in that order. Pass 2 sends a subset in the same manifest order
@@ -241,9 +250,58 @@ fixed fixtures; live yfinance is not required for CI.
 
 ## Phase 2 web viewer (local)
 
-Browse archived runs in `memory/` via a FastAPI backend and Next.js frontend.
-Successful `run` commands populate the archive automatically. Start both in separate
-terminals:
+Publication-style archive and report reader over canonical `memory/` artifacts. The
+viewer is **read-only exposition**: it does not recompute analytical outputs or
+synthesize market interpretations from prose. Structured UI (rails, chips, matrix)
+uses `DailyState` / `RunSummary` fields only; the assembled markdown report is
+rendered as served (see [PR-7](docs/PR-7-pass2-investor-report-template.md)).
+
+### Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/` | Redirects to the newest archived run |
+| `/archive` | Full archive grid (optional; primary navigation is the left sidebar) |
+| `/runs/{date}` | Report header, signal grid, and section tabs |
+| `/about` | Static product note |
+
+API (FastAPI, port 8000): `GET /api/health`, `GET /api/runs`, `GET /api/runs/{date}`.
+
+### Prerequisites — seed `memory/`
+
+The UI requires at least one valid **state + report pair** in `memory/`. Successful
+`run` commands populate the archive automatically. For local UI work without a full
+engine run:
+
+```bash
+cd spx-analyst && source .venv/bin/activate
+python -c "
+from pathlib import Path
+import json
+from tests.conftest import SAMPLE_STATE
+from tests.fixtures.investor_report import assembled_report_for_state
+from src.schemas import DailyState
+
+memory = Path('memory')
+(memory / 'daily_states').mkdir(parents=True, exist_ok=True)
+(memory / 'daily_reports').mkdir(parents=True, exist_ok=True)
+
+for date in ('2026-06-12', '2026-06-11'):
+    data = dict(SAMPLE_STATE)
+    data['date'] = date
+    state = DailyState.model_validate(data)
+    (memory / 'daily_states' / f'{date}-state.json').write_text(
+        json.dumps(state.model_dump(mode='json'), indent=2) + '\n')
+    (memory / 'daily_reports' / f'{date}-analysis.md').write_text(
+        assembled_report_for_state(state, date))
+    print('Seeded', date)
+"
+```
+
+**Do not** use `memory-archive/` Perplexity migration samples for the viewer — they
+use a legacy `DailyState` shape and will be skipped by the API.
+
+### Start locally
 
 ```bash
 # Terminal 1 — API on :8000
@@ -255,6 +313,14 @@ cd spx-analyst/web && npm install && npm run dev
 ```
 
 Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
+
+### Troubleshooting
+
+| Symptom | Likely cause |
+|---------|----------------|
+| Empty homepage / archive | No valid pairs in `memory/daily_states` + `memory/daily_reports` |
+| Run missing from list | Orphan state or report; corrupt JSON; schema validation failure (check API logs) |
+| Backend unavailable page | FastAPI not running on `:8000` or `API_BASE_URL` misconfigured |
 
 ## Project layout
 

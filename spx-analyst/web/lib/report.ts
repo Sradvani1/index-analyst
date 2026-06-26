@@ -34,22 +34,6 @@ export interface DecisionMatrix {
   rows: MatrixRow[];
 }
 
-/** Tailwind class fragments per tone, for tinted surfaces and text accents. */
-export const TONE_SURFACE: Record<Tone, string> = {
-  bull: "bg-emerald-50 text-emerald-900 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-100 dark:ring-emerald-900",
-  bear: "bg-rose-50 text-rose-900 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-100 dark:ring-rose-900",
-  caution:
-    "bg-amber-50 text-amber-900 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-100 dark:ring-amber-900",
-  neutral: "bg-muted text-foreground ring-border",
-};
-
-export const TONE_DOT: Record<Tone, string> = {
-  bull: "bg-emerald-500",
-  bear: "bg-rose-500",
-  caution: "bg-amber-500",
-  neutral: "bg-muted-foreground/50",
-};
-
 /** Classify a signal/action string into a semantic tone. */
 export function toneFor(text: string | null | undefined): Tone {
   const t = (text ?? "").toLowerCase();
@@ -72,6 +56,30 @@ export function toneFor(text: string | null | undefined): Tone {
     return "caution";
   }
   return "neutral";
+}
+
+/** Tailwind class fragments per tone — editorial semantic colors. */
+export const TONE_SURFACE: Record<Tone, string> = {
+  bull: "bg-[color-mix(in_srgb,var(--market-green)_12%,var(--surface-0))] text-[var(--market-green)] ring-[color-mix(in_srgb,var(--market-green)_25%,transparent)]",
+  bear: "bg-[color-mix(in_srgb,var(--risk-red)_10%,var(--surface-0))] text-[var(--risk-red)] ring-[color-mix(in_srgb,var(--risk-red)_22%,transparent)]",
+  caution:
+    "bg-[color-mix(in_srgb,var(--caution-amber)_12%,var(--surface-0))] text-[var(--caution-amber)] ring-[color-mix(in_srgb,var(--caution-amber)_25%,transparent)]",
+  neutral: "bg-muted text-foreground ring-border",
+};
+
+export const TONE_DOT: Record<Tone, string> = {
+  bull: "bg-market-green",
+  bear: "bg-risk-red",
+  caution: "bg-caution-amber",
+  neutral: "bg-muted-foreground/50",
+};
+
+export function isDecisionMatrixSection(title: string): boolean {
+  return /decision matrix/i.test(title);
+}
+
+export function isEvidenceSection(title: string): boolean {
+  return /evidence (and tensions|reconciliation)/i.test(title);
 }
 
 /** Parse the H1 title and the bold subtitle line for close, day change, regime. */

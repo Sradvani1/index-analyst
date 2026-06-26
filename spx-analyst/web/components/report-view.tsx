@@ -6,7 +6,7 @@ import type { DailyState } from "@/lib/types";
 
 interface ReportViewProps {
   markdown: string;
-  dailyState?: DailyState;
+  dailyState: DailyState;
 }
 
 export function ReportView({ markdown, dailyState }: ReportViewProps) {
@@ -14,13 +14,19 @@ export function ReportView({ markdown, dailyState }: ReportViewProps) {
 
   if (sections.length === 0) {
     return (
-      <Card>
-        <CardContent>
-          <ReportMarkdown markdown={markdown} />
-        </CardContent>
-      </Card>
+      <div className="mx-auto max-w-6xl px-6 py-6">
+        <Card className="border-border-soft bg-surface-0 shadow-editorial-1">
+          <CardContent>
+            <ReportMarkdown markdown={markdown} />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
-  return <ReportTabs sections={sections} dailyState={dailyState} />;
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-6">
+      <ReportTabs sections={sections} dailyState={dailyState} />
+    </div>
+  );
 }

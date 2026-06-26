@@ -91,6 +91,67 @@ def setup_run(
     typer.echo(f"Run directory ready: {run_dir}")
 
 
+@app.command("import-run")
+def import_run_cmd(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+    images_dir: str = typer.Option(
+        None, help="Intake folder with 15 PNGs (default: ../Images/<date>)."
+    ),
+    input_dir: str = typer.Option(None, help="Run directory (default: data/runs/<date>)."),
+    force: bool = typer.Option(False, help="Overwrite an existing imported run."),
+    close: float = typer.Option(None, help="Override manifest.close (default: yfinance)."),
+    precompute: bool = typer.Option(False, help="Run Step 0 precompute after import."),
+    force_fetch: bool = typer.Option(False, help="Force fresh yfinance fetch during precompute."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Import 15 PNG screenshots from Images/<date>/ into a production run directory."""
+    _setup_logging(verbose)
+    date = date or _today()
+    settings = get_settings()
+    from .eps_history import require_eps_for_run
+    from .import_run import default_images_dir, import_run
+    from .precompute import run_precompute
+
+    images_path = Path(images_dir) if images_dir else default_images_dir(date)
+    run_dir = Path(input_dir) if input_dir else settings.runs_dir / date
+    close_override = close if close is not None else None
+
+    try:
+        result = import_run(
+            date,
+            images_dir=images_path,
+            run_dir=run_dir,
+            force=force,
+            close_override=close_override,
+            settings=settings,
+        )
+    except InputError as exc:
+        typer.secho(f"Import failed: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    typer.secho(
+        f"Imported {result.manifest.chart_count} charts → {result.run_dir}",
+        fg=typer.colors.GREEN,
+    )
+    typer.echo(f"manifest.close={result.close}")
+    for warning in result.warnings:
+        typer.secho(warning, fg=typer.colors.YELLOW, err=True)
+
+    if precompute:
+        try:
+            eps, _ = require_eps_for_run(date, settings=settings)
+        except InputError as exc:
+            typer.secho(str(exc), fg=typer.colors.RED, err=True)
+            raise typer.Exit(code=1)
+        ctx = run_precompute(
+            date, run_dir, result.manifest, eps, settings=settings, force_fetch=force_fetch
+        )
+        typer.secho(
+            f"Wrote analysis_context.json (close={ctx.market_data.spx_close})",
+            fg=typer.colors.GREEN,
+        )
+
+
 @app.command("show-eps")
 def show_eps(
     date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
