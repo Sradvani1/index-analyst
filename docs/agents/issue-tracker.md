@@ -6,7 +6,6 @@
 |----------|----------|------|
 | **Active plan** | `.cursor/plans/<slug>_<id>.plan.md` | Scope, todos, acceptance criteria |
 | **Implementation record** | `spx-analyst/docs/PR-N-<slug>.md` | What was built, how, tests, files touched |
-| **Domain glossary** | `CONTEXT.md` (repo root) | SPX vocabulary via `/grill-with-docs` |
 | **Design intent** | `design.md` (repo root) | Publication UI |
 | **Engine specs** | `spx-analyst/docs/`, `spx-analyst/framework/` | Framework and prior PRs |
 
@@ -25,5 +24,3 @@
 | `in_progress` | Currently being implemented |
 | `completed` | Done and verified |
 | `cancelled` | Dropped |
-
-Update status as work moves through the loop in [workflow.md](./workflow.md).
