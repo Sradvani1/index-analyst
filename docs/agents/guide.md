@@ -15,6 +15,8 @@ PLAN  →  IMPLEMENT  →  REVIEW  →  RECORD
 
 Active work → plan. Completed work → PR doc. Small follow-ups can skip Plan and Record.
 
+**Commands** (`/sharpen-plan`, `/implement`, `/review`) are global Cursor commands in `~/.cursor/commands/`, not in this repo.
+
 ---
 
 ## Plan
@@ -70,6 +72,8 @@ Tests: `pytest` from `spx-analyst/`.
 **Numbering:** Next integer after existing `PR-N-*.md` files (highest: **PR-9** → next **PR-10**). Decimal (`PR-3.1`) only for follow-ups to that parent PR.
 
 Update `spx-analyst/README.md` when the PR doc is substantial.
+
+Link the PR doc from the plan. Mark plan todos `completed`.
 
 ### PR doc template
 

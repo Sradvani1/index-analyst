@@ -137,7 +137,6 @@ python -m src.cli run --date 2026-06-24
 | Generic "already imported" error | **Distinct incomplete-import message** when charts exist but manifest not ready |
 | Stale cache on fetch failure + `--close` | **Delete `market_history.json`** on fetch failure |
 | `analysis_context` purge on `--force` only | **Purge on every import** — simpler and safer |
-| `CONTEXT.md` + ADR | Deferred (lazy domain docs) |
 
 ## Non-goals
 
