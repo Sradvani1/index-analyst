@@ -39,8 +39,8 @@ Starting a new feature, a significant refactor, or any work that spans more than
 | Tool | Use when | What it does |
 |------|----------|--------------|
 | **Plan mode** | Always, for the first draft | Cursor generates the structured plan file |
+| **Ask mode** | You need to understand existing code before planning | Read-only exploration — no code changes |
 | **`/grill-with-docs`** | The plan is vague, terminology is fuzzy, or tradeoffs are unresolved | Runs a structured interview to sharpen scope and decisions; creates or updates `CONTEXT.md` (domain glossary) and ADRs in `docs/adr/` as needed |
-| **`/ask`** | You need to understand existing code before planning a change | Explains control flow, data flow, key types, and edge cases — no code changes |
 
 **`/grill-with-docs` is for planning, not building.** Run it when you want the plan and domain vocabulary solid before `/implement`.
 
@@ -73,7 +73,6 @@ The plan exists and you are ready to write code.
 | **`/implement`** | Default for building the plan | Proceeds with implementation: simple typed code, proper error handling, concise summary when done |
 | **`/tdd`** | Changing `spx-analyst/src/` logic that should have pytest coverage | Test-driven development: one failing test → minimal implementation → repeat (vertical slices, not "write all tests then all code") |
 | **`/diagnosing-bugs`** | Something is broken, failing, slow, or behaving unexpectedly | Structured debug loop: build a tight pass/fail signal first, then bisect, hypothesize, and fix |
-| **`/ask`** | You hit unfamiliar code mid-implementation | Same as in Plan — understand before editing |
 
 **Choosing between `/implement` and `/tdd`:**
 
@@ -146,7 +145,6 @@ These are global Cursor commands you wrote. They apply to any project; this repo
 |---------|-------|---------|
 | `/implement` | Implement | Build the plan — default coding command |
 | `/review` | Review | Audit changes against plan acceptance criteria |
-| `/ask` | Any | Understand how code works before planning or editing |
 
 ### Installed agent skills (`~/.agents/skills/`)
 
@@ -175,12 +173,12 @@ Plan mode  →  read design.md
 
 **Regression or pipeline bug:**
 ```
-/ask (if unfamiliar)  →  /diagnosing-bugs  →  fix  →  /review  →  PR doc
+Ask mode (if unfamiliar)  →  /diagnosing-bugs  →  /implement  →  /review
 ```
 
 **Exploring the codebase:**
 ```
-/ask
+Cursor Ask mode
 ```
 
 ---

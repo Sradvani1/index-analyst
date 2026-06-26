@@ -10,7 +10,6 @@ Daily SPX tactical analysis: Python engine + Next.js publication UI.
 |-----------------|------|
 | `/implement` | Building the plan |
 | `/review` | Checking work against plan before the PR doc |
-| `/ask` | Understanding code before changing it |
 | `/grill-with-docs` | Sharpening a plan; building `CONTEXT.md` |
 | `/tdd` | Test-first engine changes |
 | `/diagnosing-bugs` | Methodical debugging |
