@@ -1,42 +1,131 @@
-"""Phase 2 chat service (stub).
-
-Defines the interface a future conversational layer will implement. Daily-state
-memory (canonical research memory) stays separate from chat-session memory
-(ephemeral reasoning memory) to preserve analytical integrity.
-"""
+"""Chat orchestration: local session index + OpenAI Assistants + preload."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import functools
+import logging
+from typing import Iterator
 
-from .chat_context import load_chat_context
+from .chat_preload import build_additional_instructions
+from .chat_sessions import (
+    DEFAULT_TITLE,
+    SessionNotFoundError,
+    create_session,
+    delete_session_record,
+    get_session,
+    list_sessions,
+    touch_session,
+    update_session_title,
+)
 from .config import Settings, get_settings
-from .schemas import ChatSessionContext
+from .files import InputError
+from .openai_assistant import AssistantClient, AssistantError, LiveAssistantClient, ThreadMessage
+from .schemas import ChatSessionRecord
+
+logger = logging.getLogger(__name__)
+
+__all__ = [
+    "ChatService",
+    "ChatServiceError",
+    "SessionNotFoundError",
+    "get_chat_service",
+]
 
 
-@dataclass
-class ChatMessage:
-    role: str  # "user" | "assistant"
-    content: str
-
-
-@dataclass
-class ChatSession:
-    context: ChatSessionContext
-    messages: list[ChatMessage] = field(default_factory=list)
+class ChatServiceError(Exception):
+    """Chat operation failed."""
 
 
 class ChatService:
-    """Skeleton for Phase 2. The reply path is intentionally not implemented."""
-
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        assistant: AssistantClient | None = None,
+    ) -> None:
         self.settings = settings or get_settings()
+        self._assistant = assistant or LiveAssistantClient(self.settings)
 
-    def start_session(self, date: str) -> ChatSession:
-        return ChatSession(context=load_chat_context(date, self.settings))
+    def list_sessions(self) -> list[ChatSessionRecord]:
+        return list_sessions(self.settings)
 
-    def reply(self, session: ChatSession, user_message: str) -> str:
-        raise NotImplementedError(
-            "Phase 2: wire the chat context into a Claude conversation here. "
-            "Chat-session memory must remain separate from canonical daily-state memory."
-        )
+    def create_session(self, *, title: str = DEFAULT_TITLE) -> ChatSessionRecord:
+        try:
+            thread_id = self._assistant.create_thread()
+        except AssistantError as exc:
+            raise ChatServiceError(str(exc)) from exc
+        return create_session(thread_id, title=title, settings=self.settings)
+
+    def rename_session(self, session_id: str, title: str) -> ChatSessionRecord:
+        try:
+            return update_session_title(session_id, title, settings=self.settings)
+        except SessionNotFoundError as exc:
+            raise
+        except InputError as exc:
+            raise ChatServiceError(str(exc)) from exc
+
+    def delete_session(self, session_id: str) -> None:
+        try:
+            record = delete_session_record(session_id, settings=self.settings)
+        except SessionNotFoundError:
+            raise
+        try:
+            self._assistant.delete_thread(record.openai_thread_id)
+        except AssistantError as exc:
+            logger.warning(
+                "deleted local session %s but OpenAI thread delete failed: %s",
+                session_id,
+                exc,
+            )
+
+    def get_messages(self, session_id: str) -> list[ThreadMessage]:
+        record = get_session(session_id, self.settings)
+        try:
+            return self._assistant.list_messages(record.openai_thread_id)
+        except AssistantError as exc:
+            raise ChatServiceError(str(exc)) from exc
+
+    def stream_reply(self, session_id: str, user_message: str) -> Iterator[str]:
+        content = user_message.strip()
+        if not content:
+            raise ChatServiceError("message must not be empty")
+
+        record = get_session(session_id, self.settings)
+        try:
+            preload = build_additional_instructions(self.settings)
+        except InputError as exc:
+            raise ChatServiceError(str(exc)) from exc
+
+        if record.title == DEFAULT_TITLE:
+            auto_title = _auto_title(content)
+            if auto_title:
+                record = update_session_title(
+                    session_id,
+                    auto_title,
+                    settings=self.settings,
+                    touch_updated_at=False,
+                )
+
+        try:
+            yield from self._assistant.stream_assistant_reply(
+                thread_id=record.openai_thread_id,
+                user_message=content,
+                additional_instructions=preload.additional_instructions,
+            )
+        except AssistantError as exc:
+            raise ChatServiceError(str(exc)) from exc
+        else:
+            touch_session(session_id, self.settings)
+
+
+def _auto_title(first_message: str, *, max_len: int = 60) -> str:
+    text = " ".join(first_message.split())
+    if not text:
+        return ""
+    if len(text) <= max_len:
+        return text
+    return text[: max_len - 1].rstrip() + "…"
+
+
+@functools.lru_cache(maxsize=1)
+def get_chat_service() -> ChatService:
+    return ChatService()

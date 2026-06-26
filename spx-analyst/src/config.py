@@ -26,6 +26,11 @@ class Settings(BaseSettings):
 
     # Anthropic
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
+
+    # OpenAI (chat assistant + RAG indexing)
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    openai_assistant_id: str = Field(default="", alias="OPENAI_ASSISTANT_ID")
+    openai_vector_store_id: str = Field(default="", alias="OPENAI_VECTOR_STORE_ID")
     model: str = Field(default="claude-opus-4-20250514", alias="SPX_MODEL")
     prompt_cache_enabled: bool = Field(default=True, alias="SPX_PROMPT_CACHE_ENABLED")
 
@@ -54,6 +59,10 @@ class Settings(BaseSettings):
         default="framework/SPX-Claude-Role-Block.md",
         alias="SPX_ROLE_PATH",
     )
+    chat_assistant_instructions_path_raw: str = Field(
+        default="framework/chat-assistant-instructions.md",
+        alias="SPX_CHAT_ASSISTANT_INSTRUCTIONS_PATH",
+    )
     data_dir_raw: str = Field(default="data", alias="SPX_DATA_DIR")
     memory_dir_raw: str = Field(default="memory", alias="SPX_MEMORY_DIR")
     output_dir_raw: str = Field(default="output", alias="SPX_OUTPUT_DIR")
@@ -73,6 +82,10 @@ class Settings(BaseSettings):
     @property
     def role_path(self) -> Path:
         return _resolve(self.role_path_raw)
+
+    @property
+    def chat_assistant_instructions_path(self) -> Path:
+        return _resolve(self.chat_assistant_instructions_path_raw)
 
     @property
     def data_dir(self) -> Path:
@@ -97,6 +110,14 @@ class Settings(BaseSettings):
     @property
     def rolling_dir(self) -> Path:
         return self.memory_dir / "rolling"
+
+    @property
+    def rag_dir(self) -> Path:
+        return self.memory_dir / "rag"
+
+    @property
+    def chat_dir(self) -> Path:
+        return self.memory_dir / "chat"
 
     @property
     def output_dir(self) -> Path:

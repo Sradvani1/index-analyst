@@ -241,6 +241,13 @@ def run_daily_analysis(
 
     rebuild_rolling_summary(settings=settings)
 
+    from .rag_index import RagIndexError, index_rag_or_fail
+
+    try:
+        index_rag_or_fail(date, settings=settings)
+    except RagIndexError as exc:
+        raise RunError(f"RAG indexing failed for {date}: {exc}") from exc
+
     return RunResult(
         date=date,
         output_dir=out,

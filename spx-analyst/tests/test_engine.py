@@ -15,6 +15,25 @@ from tests.fixtures.investor_report import PASS2_PROSE
 from tests.sample_analysis_context import sample_analysis_context
 
 
+@pytest.fixture(autouse=True)
+def _mock_rag_index(monkeypatch, request):
+    """Engine tests must not call live OpenAI for post-run RAG indexing."""
+    if request.node.name == "test_rag_index_failure_emits_retry_hint":
+        return
+
+    from src.rag_index import RagIndexManifest
+
+    def fake_index_rag_or_fail(date, *, settings=None, client=None):
+        return RagIndexManifest(
+            date=date,
+            vector_store_id="vs_test",
+            sections=[],
+            indexed_at="2026-01-01T00:00:00+00:00",
+        )
+
+    monkeypatch.setattr("src.rag_index.index_rag_or_fail", fake_index_rag_or_fail)
+
+
 class FakeClient:
     def __init__(self, state: dict):
         self._state = state
@@ -401,3 +420,32 @@ def test_pass2_engine_zero_charts_completes(mock_precompute, tmp_path, settings)
     assert run_log["pass2_chart_count"] == 0
     assert run_log["pass2_charts_attached"] == []
     assert run_log["pass2_selection_reasons"] == {}
+
+
+@patch("src.analysis_engine.run_precompute")
+def test_rag_index_failure_emits_retry_hint(
+    mock_precompute, tmp_path, settings, monkeypatch, capsys
+):
+    date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    state = dict(SAMPLE_STATE)
+    state["date"] = date
+    client = FakeClient(state)
+
+    from src.rag_index import RagIndexError, index_rag_or_fail
+
+    def failing_report_rag(date, *, settings=None, client=None):
+        raise RagIndexError("missing required OpenAI env var(s): OPENAI_API_KEY")
+
+    monkeypatch.setattr("src.rag_index.index_report_rag", failing_report_rag)
+    monkeypatch.setattr("src.rag_index.index_rag_or_fail", index_rag_or_fail)
+
+    from src.analysis_engine import RunError, run_daily_analysis
+
+    with pytest.raises(RunError, match="RAG indexing failed"):
+        run_daily_analysis(date, str(run_dir), settings=settings, client=client)
+
+    err = capsys.readouterr().err
+    assert f"Retry: python -m src.cli index-rag --date {date}" in err
+    assert "report saved to memory/" in err

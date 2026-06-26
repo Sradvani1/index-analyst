@@ -13,3 +13,4 @@ data/runs/*/charts/
 memory/daily_states/*.json
 memory/daily_reports/*.md
 memory/rolling/*
+memory/chat/

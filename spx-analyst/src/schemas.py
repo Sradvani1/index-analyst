@@ -362,6 +362,89 @@ class ValidationReport(BaseModel):
         return [i for i in self.issues if i.severity == "warning"]
 
 
+# --- Chat preload (Phase 1) --------------------------------------------------
+
+
+class MonteCarloSummary(BaseModel):
+    """Monte Carlo fields injected into latest-run preload (from DailyState.monte_carlo)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    effective_threshold: EffectiveThreshold
+    meets_threshold: bool
+    prob_up_first_adjusted: float = Field(..., ge=0.0, le=1.0)
+    prob_down_first_adjusted: float = Field(..., ge=0.0, le=1.0)
+    rally_exhaustion_score: RallyExhaustionScore
+    upside_target: float
+    downside_target: float
+
+
+class LatestRunState(BaseModel):
+    """Authoritative current posture for chat preload — matrix rows from DailyState JSON only."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    latest_run_date: str
+    structural_bias: StructuralBias
+    spx_close: float
+    signal_alignment: SignalAlignment
+    decision_matrix: DecisionMatrix
+    monte_carlo: MonteCarloSummary
+    what_changed_today: List[str]
+    recommended_action: str
+
+    @classmethod
+    def from_daily_state(cls, state: DailyState) -> "LatestRunState":
+        mc = state.monte_carlo
+        return cls(
+            latest_run_date=state.date,
+            structural_bias=state.structural_bias,
+            spx_close=state.spx_close,
+            signal_alignment=state.signal_alignment,
+            decision_matrix=state.decision_matrix,
+            monte_carlo=MonteCarloSummary(
+                effective_threshold=mc.effective_threshold,
+                meets_threshold=mc.meets_threshold,
+                prob_up_first_adjusted=mc.prob_up_first_adjusted,
+                prob_down_first_adjusted=mc.prob_down_first_adjusted,
+                rally_exhaustion_score=mc.rally_exhaustion_score,
+                upside_target=mc.upside_target,
+                downside_target=mc.downside_target,
+            ),
+            what_changed_today=list(state.what_changed_today),
+            recommended_action=state.decision_matrix.recommended_action,
+        )
+
+
+class ChatPreloadContext(BaseModel):
+    """Deterministic preload assembled for every Assistants run (Phase 1 contract)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    instructions: str
+    latest_run: LatestRunState
+    rolling_summary: str
+    additional_instructions: str
+
+
+class ChatSessionRecord(BaseModel):
+    """Local session index row — maps to an OpenAI thread."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    openai_thread_id: str
+    title: str
+    created_at: str
+    updated_at: str
+
+
+class ChatSessionIndex(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sessions: List[ChatSessionRecord] = Field(default_factory=list)
+
+
 # --- Phase 2 (future-ready) --------------------------------------------------
 
 

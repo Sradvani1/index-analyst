@@ -18,6 +18,11 @@ a markdown report plus structured JSON state.
 - [PR-6: Pass 1 schema discipline](docs/PR-6-pass1-schema-discipline.md) — signals contract prompt + tool schema descriptions, allowlisted drift coalescer, `pass1_schema_status` audit trail
 - [PR-7: Pass 2 investor report template](docs/PR-7-pass2-investor-report-template.md) — eight-section Pass 2 prose, Python assembly of nine visible parts, strict heading validation
 - [PR-8: Pass 1 repair hardening](docs/PR-8-pass1-repair-hardening.md) — structural coercion (`what_changed_today`), extended signals drift rules, repair SLO observability
+- [PR-9: Daily run import](docs/PR-9-daily-run-import.md) — `import-run` from `Images/<date>/` into canonical chart pack
+- [PR-10: Research assistant Phase 1](docs/PR-10-research-assistant-phase1.md) — preload authority + section-vector RAG indexing; OpenAI required post-run
+- [PR-11: Research assistant Phase 2](docs/PR-11-research-assistant-phase2.md) — OpenAI Assistants chat engine, session store, FastAPI SSE, CLI REPL
+- [PR-12: Research assistant Phase 3](docs/PR-12-research-assistant-phase3.md) — Next.js `/assistant` UI wired to local FastAPI chat routes
+- [PR-13: Research assistant Phase 4](docs/PR-13-research-assistant-phase4.md) — operator setup guide, E2E checklist, setup script
 
 ## How it works
 
@@ -71,6 +76,10 @@ full resolution, legacy manifest prompt block).
 On every **successful** run, canonical state and report files are mirrored into
 `memory/daily_states/` and `memory/daily_reports/` (used by the web viewer).
 `rebuild_rolling_summary` refreshes `memory/rolling/` after every successful run.
+Report sections are then uploaded to the OpenAI vector store for the research
+assistant (requires `OPENAI_API_KEY` and `OPENAI_VECTOR_STORE_ID` in `.env`).
+If indexing fails, the run exits with an error after memory is saved — retry with
+`python -m src.cli index-rag --date YYYY-MM-DD`.
 `SPX_INCLUDE_MEMORY=true` gates **prompt injection** of the posture snapshot into
 Pass 1/Pass 2 only — archival and rolling rebuild always run on success.
 
@@ -111,6 +120,9 @@ Set these in `.env` (see `.env.example`):
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `ANTHROPIC_API_KEY` | — | Required for live runs |
+| `OPENAI_API_KEY` | — | Required for post-run RAG indexing and chat assistant (Phase 2+) |
+| `OPENAI_VECTOR_STORE_ID` | — | Vector store for report section retrieval |
+| `OPENAI_ASSISTANT_ID` | — | Assistants API id (chat); create via [operator guide](docs/research-assistant-operator-guide.md) |
 | `SPX_MODEL` | `claude-opus-4-20250514` | Claude model for both passes |
 | `SPX_PROMPT_CACHE_ENABLED` | `true` | Reuse framework + tool schema across passes |
 | `SPX_INCLUDE_MEMORY` | `false` | Inject prior posture snapshot into Pass 1/Pass 2 (rebuild always runs on success; rollup is categorical-only — no historical numerics) |
@@ -171,8 +183,13 @@ python -m src.cli validate --date 2026-06-12
 # Rebuild memory/rolling/recent_summary.md from archived states (also runs automatically after every successful run)
 python -m src.cli rebuild-summary --days 6
 
-# Phase 2 stub: load a day's context (interactive chat not yet implemented)
-python -m src.cli chat --date 2026-06-12
+# Upload report sections to OpenAI vector store (also runs automatically after every successful run)
+python -m src.cli index-rag --date 2026-06-12
+python -m src.cli index-rag --backfill
+
+# Research assistant REPL (OpenAI Assistants + latest-run preload)
+python -m src.cli chat
+python -m src.cli chat --session-id <uuid>
 ```
 
 The console entry point `spx-analyst` is also available after `pip install -e .`.
@@ -232,6 +249,7 @@ memory/daily_states/2026-06-12-state.json      # mirrored on successful run
 memory/daily_reports/2026-06-12-analysis.md    # mirrored on successful run
 memory/rolling/recent_summary.md               # posture snapshot rollup (rebuilt every successful run)
 memory/rolling/recent_memory.json              # JSON mirror of states used in rollup
+memory/rag/2026-06-12.json                     # OpenAI file IDs per indexed section (after index-rag)
 ```
 
 After a successful `run`, `analysis_context.json` exists in **both** the run
@@ -248,6 +266,25 @@ pytest
 Unit and engine tests mock the provider and run offline. Precompute unit tests use
 fixed fixtures; live yfinance is not required for CI.
 
+## Research assistant
+
+Personal localhost chat over published runs — deterministic latest-run preload plus section-vector RAG ([PR-10](docs/PR-10-research-assistant-phase1.md)–[PR-13](docs/PR-13-research-assistant-phase4.md)).
+
+**Operator walkthrough:** [docs/research-assistant-operator-guide.md](docs/research-assistant-operator-guide.md)
+
+```bash
+# One-time OpenAI setup (prints ids for .env)
+python scripts/setup_openai_assistant.py
+
+# Backfill report sections into vector store
+python -m src.cli index-rag --backfill
+
+# CLI chat (no UI)
+python -m src.cli chat
+```
+
+UI: http://localhost:3000/assistant (requires uvicorn + `npm run dev` — see below).
+
 ## Phase 2 web viewer (local)
 
 Publication-style archive and report reader over canonical `memory/` artifacts. The
@@ -263,9 +300,10 @@ rendered as served (see [PR-7](docs/PR-7-pass2-investor-report-template.md)).
 | `/` | Redirects to the newest archived run |
 | `/archive` | Full archive grid (optional; primary navigation is the left sidebar) |
 | `/runs/{date}` | Report header, signal grid, and section tabs |
+| `/assistant` | Research assistant (conversation sidebar + streaming chat) |
 | `/about` | Static product note |
 
-API (FastAPI, port 8000): `GET /api/health`, `GET /api/runs`, `GET /api/runs/{date}`.
+API (FastAPI, port 8000): `GET /api/health`, `GET /api/runs`, `GET /api/runs/{date}`, `GET/POST /api/chat/sessions`, `POST /api/chat/sessions/{id}/messages` (SSE).
 
 ### Prerequisites — seed `memory/`
 
@@ -312,7 +350,7 @@ uvicorn src.web.app:app --host 127.0.0.1 --port 8000
 cd spx-analyst/web && npm install && npm run dev
 ```
 
-Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
+Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs. Assistant: http://localhost:3000/assistant.
 
 ### Troubleshooting
 
@@ -321,19 +359,23 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs.
 | Empty homepage / archive | No valid pairs in `memory/daily_states` + `memory/daily_reports` |
 | Run missing from list | Orphan state or report; corrupt JSON; schema validation failure (check API logs) |
 | Backend unavailable page | FastAPI not running on `:8000` or `API_BASE_URL` misconfigured |
+| Chat 503 / missing OpenAI vars | Complete [operator guide](docs/research-assistant-operator-guide.md) Steps 1–2 |
 
 ## Project layout
 
 ```text
-framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime)
-docs/        PR-1 through PR-8 implementation records; docs/archive/ for retired specs
+framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime);
+             chat-assistant-instructions.md (research assistant)
+docs/        PR-1 through PR-13 implementation records; docs/archive/ for retired specs
+scripts/     operator utilities (e.g. setup_openai_assistant.py)
 data/
   master/    eps_history.json — sole EPS source (append-only)
   runs/      dated input folders (charts + manifest + precompute cache)
-memory/      archived states/reports + rolling summary (rebuilt on every successful run)
+memory/      archived states/reports + rolling summary (rebuilt on every successful run);
+             rag/ section index manifests; chat/ session index (gitignored)
 output/      per-run artifacts
-src/         engine modules (includes src/web/ FastAPI viewer)
-web/         Next.js Phase 2 frontend
+src/         engine modules (includes src/web/ FastAPI viewer + chat API)
+web/         Next.js publication UI + /assistant chat workspace
 tests/       pytest suite
 ```
 
@@ -353,6 +395,11 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Pass 1 schema discipline — signals contract, allowlisted coalescer, repair observability | PR-6 |
 | Pass 2 investor report template — eight prose sections, Python assembly, strict validation | PR-7 |
 | Pass 1 repair hardening — `what_changed_today` coercion, extended drift rules, repair SLO | PR-8 |
+| Daily run import — `import-run` from `Images/<date>/` | PR-9 |
+| Research assistant Phase 1 — preload authority + section-vector RAG indexing | PR-10 |
+| Research assistant Phase 2 — OpenAI Assistants chat engine, FastAPI SSE, CLI REPL | PR-11 |
+| Research assistant Phase 3 — Next.js `/assistant` UI | PR-12 |
+| Research assistant Phase 4 — operator guide, setup script, E2E checklist | PR-13 |
 | Monte Carlo target straddle guard (downside re-anchor when leg fully retraced) | PR-1 doc + `structure.reanchor_downside_for_straddle()` |
 
 ## Memory migration (one-time)

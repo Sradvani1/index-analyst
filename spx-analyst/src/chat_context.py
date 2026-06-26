@@ -1,19 +1,28 @@
-"""Phase 2 retrieval contract (stub).
-
-Loads a day's canonical artifacts read-only so a future conversational agent can
-discuss them. Never mutates the daily-state memory.
-"""
+"""Thin wrapper over chat_preload for the Phase 1 preload contract."""
 
 from __future__ import annotations
 
+import warnings
+
+from .chat_preload import build_additional_instructions, load_latest_daily_state
 from .config import Settings, get_settings
 from .files import InputError, read_json, read_text
 from .memory import build_recent_summary, load_recent_states
-from .schemas import ChatSessionContext, DailyState
+from .schemas import ChatPreloadContext, ChatSessionContext, DailyState
+
+
+def load_chat_preload(settings: Settings | None = None) -> ChatPreloadContext:
+    """Load authority-ordered preload for Assistants runs (latest state + rolling summary)."""
+    return build_additional_instructions(settings)
 
 
 def load_chat_context(date: str, settings: Settings | None = None) -> ChatSessionContext:
-    """Assemble the read-only context for a chat session about `date`."""
+    """Deprecated: date-anchored full-report load. Prefer :func:`load_chat_preload`."""
+    warnings.warn(
+        "load_chat_context is deprecated; use load_chat_preload() for latest-run authority",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     settings = settings or get_settings()
 
     state_path = settings.daily_states_dir / f"{date}-state.json"
@@ -31,3 +40,11 @@ def load_chat_context(date: str, settings: Settings | None = None) -> ChatSessio
         recent_states=recent_states,
         recent_summary=build_recent_summary(recent_states),
     )
+
+
+__all__ = [
+    "load_chat_preload",
+    "load_chat_context",
+    "load_latest_daily_state",
+    "build_additional_instructions",
+]

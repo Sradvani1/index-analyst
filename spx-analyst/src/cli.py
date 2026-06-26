@@ -282,27 +282,85 @@ def rebuild_summary(
     typer.echo(summary)
 
 
-@app.command()
-def chat(
-    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+@app.command("index-rag")
+def index_rag(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD to index."),
+    backfill: bool = typer.Option(False, help="Index all reports in memory/daily_reports/."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
-    """Phase 2 stub: load a day's context for interactive discussion."""
-    date = date or _today()
-    from .chat_service import ChatService
+    """Upload report sections to the OpenAI vector store for historical retrieval."""
+    _setup_logging(verbose)
+    from .rag_index import RagIndexError, backfill_rag_index, index_report_rag
 
     try:
-        session = ChatService().start_session(date)
-    except InputError as exc:
+        if backfill:
+            manifests = backfill_rag_index()
+            typer.secho(f"Indexed {len(manifests)} report(s)", fg=typer.colors.GREEN)
+            for manifest in manifests:
+                typer.echo(f"  {manifest.date}: {len(manifest.sections)} sections")
+            return
+
+        if not date:
+            typer.secho("Provide --date YYYY-MM-DD or --backfill", fg=typer.colors.RED, err=True)
+            raise typer.Exit(code=1)
+
+        manifest = index_report_rag(date)
+    except RagIndexError as exc:
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
 
-    typer.echo(f"Loaded chat context for {date}:")
-    typer.echo(f"  recent states: {len(session.context.recent_states)}")
-    typer.echo(f"  report chars: {len(session.context.report_markdown)}")
     typer.secho(
-        "Interactive chat is a Phase 2 feature and is not yet implemented.",
-        fg=typer.colors.YELLOW,
+        f"Indexed {len(manifest.sections)} sections for {manifest.date}",
+        fg=typer.colors.GREEN,
     )
+
+
+@app.command()
+def chat(
+    session_id: str = typer.Option(None, help="Resume an existing session id."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Interactive research assistant REPL (OpenAI Assistants + latest-run preload)."""
+    _setup_logging(verbose)
+    from .chat_service import ChatService, ChatServiceError, SessionNotFoundError
+    from .chat_sessions import get_session
+
+    service = ChatService()
+    try:
+        if session_id:
+            record = get_session(session_id, service.settings)
+            typer.echo(f"Resumed session {record.id}: {record.title}")
+        else:
+            record = service.create_session()
+            typer.echo(f"New session {record.id}")
+    except SessionNotFoundError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+    except ChatServiceError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo("Ask about current posture or historical runs. Type 'exit' or 'quit' to leave.")
+    while True:
+        try:
+            user_input = input("You: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            typer.echo("")
+            break
+        if not user_input:
+            continue
+        if user_input.lower() in {"exit", "quit"}:
+            break
+
+        typer.echo("Assistant:", nl=False)
+        try:
+            for chunk in service.stream_reply(record.id, user_input):
+                typer.echo(chunk, nl=False)
+        except ChatServiceError as exc:
+            typer.echo("")
+            typer.secho(str(exc), fg=typer.colors.RED, err=True)
+            continue
+        typer.echo("")
 
 
 def main() -> None:

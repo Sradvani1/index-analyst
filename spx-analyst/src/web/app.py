@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from .chat_api import router as chat_router
 from .models import HealthResponse, RunDetail, RunSummary
 from .service import RunNotFoundError, get_run, list_runs
 
@@ -17,9 +18,11 @@ app.add_middleware(
         "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+app.include_router(chat_router)
 
 
 @app.get("/api/health", response_model=HealthResponse)

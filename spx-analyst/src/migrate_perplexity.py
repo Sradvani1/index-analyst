@@ -538,6 +538,23 @@ def migrate_session(
 
     rebuild_rolling_summary(settings=settings)
 
+    from .prompts import INVESTOR_REPORT_SECTIONS
+    from .rag_index import RagIndexError, index_rag_or_fail, split_report_sections
+
+    sections = split_report_sections(report_md)
+    if set(INVESTOR_REPORT_SECTIONS) <= set(sections):
+        try:
+            index_rag_or_fail(session.date, settings=settings)
+        except RagIndexError as exc:
+            raise MigrationError(
+                f"RAG indexing failed for {session.date}: {exc}"
+            ) from exc
+    else:
+        logger.warning(
+            "skipped RAG indexing for %s: report missing investor sections",
+            session.date,
+        )
+
     return MigrationResult(
         date=session.date,
         daily_state=daily_state,
