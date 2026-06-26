@@ -8,7 +8,7 @@ PLAN  →  IMPLEMENT  →  REVIEW  →  RECORD
 
 | Phase | Tools | Artifact |
 |-------|-------|----------|
-| **Plan** | Plan mode; Ask mode to explore | `.cursor/plans/<slug>_<id>.plan.md` |
+| **Plan** | Plan mode; `/sharpen-plan`; Ask mode to explore | `.cursor/plans/<slug>_<id>.plan.md` |
 | **Implement** | `/implement`; `/tdd` for engine logic; `/diagnosing-bugs` for bugs | Code + tests in `spx-analyst/` |
 | **Review** | `/review` | Fixes before Record |
 | **Record** | PR doc | `spx-analyst/docs/PR-N-<slug>.md` |
@@ -30,6 +30,8 @@ A plan should have:
 - `Builds on` links to prior PR docs
 
 Use **Ask mode** when you need to read the codebase before scoping — no code changes.
+
+Use **`/sharpen-plan`** when the plan exists but scope, tradeoffs, or acceptance criteria are still fuzzy. Point at the plan file; the agent updates it as decisions land.
 
 For UI work, read `design.md` before implementing.
 
@@ -69,9 +71,9 @@ Update `spx-analyst/README.md` when the PR doc is substantial.
 
 ## Typical sequences
 
-**Engine feature:** Plan mode → `/tdd` or `/implement` → `/review` → PR doc
+**Engine feature:** Plan mode → `/sharpen-plan` (optional) → `/tdd` or `/implement` → `/review` → PR doc
 
-**UI feature:** Plan mode → read `design.md` → `/implement` → `/review` → PR doc
+**UI feature:** Plan mode → `/sharpen-plan` (optional) → read `design.md` → `/implement` → `/review` → PR doc
 
 **Bug:** Ask mode (if needed) → `/diagnosing-bugs` → `/implement` → `/review`
 

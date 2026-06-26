@@ -8,6 +8,7 @@ Daily SPX tactical analysis: Python engine + Next.js publication UI.
 
 | Command | When |
 |---------|------|
+| `/sharpen-plan` | Stress-test a plan before implementation |
 | `/implement` | Build the change — planned work or small follow-ups |
 | `/review` | Check work against requirements before recording |
 

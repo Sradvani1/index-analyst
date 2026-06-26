@@ -14,7 +14,7 @@ Guide: [guide.md](./guide.md)
 
 | Phase | Mode / tools | Artifact |
 |-------|--------------|----------|
-| **Plan** | Plan mode; Ask mode to explore | `.cursor/plans/<slug>_<id>.plan.md` |
+| **Plan** | Plan mode; `/sharpen-plan`; Ask mode to explore | `.cursor/plans/<slug>_<id>.plan.md` |
 | **Implement** | `/implement`; `/tdd` for engine; `/diagnosing-bugs` for bugs | Code + tests in `spx-analyst/` |
 | **Review** | `/review` | Fixes before Record |
 | **Record** | PR doc | `spx-analyst/docs/PR-N-<slug>.md` |
