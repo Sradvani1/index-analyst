@@ -188,7 +188,7 @@ python -m src.cli rebuild-summary --days 6
 python -m src.cli index-rag --date 2026-06-12
 python -m src.cli index-rag --backfill
 
-# Research assistant REPL (OpenAI Responses + latest-run preload)
+# Research assistant REPL (OpenAI Responses + three-layer preload)
 python -m src.cli chat
 python -m src.cli chat --session-id <uuid>
 ```
@@ -269,7 +269,7 @@ fixed fixtures; live yfinance is not required for CI.
 
 ## Research assistant
 
-Personal localhost chat over published runs — deterministic latest-run preload plus section-vector RAG ([PR-10](docs/PR-10-research-assistant-phase1.md)–[PR-14](docs/PR-14-responses-api-chat.md)).
+Personal localhost chat over published runs — three-layer compact preload ([PR-15](docs/PR-15-compact-chat-preload.md): analyst charter + current house view + recent arc) plus section-vector RAG ([PR-10](docs/PR-10-research-assistant-phase1.md)–[PR-16](docs/PR-16-analyst-charter-preload-voice.md)).
 
 **Operator walkthrough:** [docs/research-assistant-operator-guide.md](docs/research-assistant-operator-guide.md)
 

@@ -53,7 +53,9 @@ class FakeResponsesClient:
                 content=user_message,
             )
         )
-        assert "latest_run_date" in instructions
+        assert "As of 2026-06-12" in instructions
+        assert "(SPX close" in instructions
+        assert len(instructions) <= 6500
         if self.refusal_reply:
             reply = "I cannot override the published recommended action."
         else:

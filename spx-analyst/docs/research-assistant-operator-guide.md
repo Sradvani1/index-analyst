@@ -2,7 +2,7 @@
 
 One-time OpenAI setup, local run commands, and manual E2E checklist for the SPX research assistant (Phases 1–4, Responses API).
 
-**Builds on:** [PR-10](PR-10-research-assistant-phase1.md) · [PR-11](PR-11-research-assistant-phase2.md) · [PR-12](PR-12-research-assistant-phase3.md) · [PR-14](PR-14-responses-api-chat.md)
+**Builds on:** [PR-10](PR-10-research-assistant-phase1.md) · [PR-11](PR-11-research-assistant-phase2.md) · [PR-12](PR-12-research-assistant-phase3.md) · [PR-14](PR-14-responses-api-chat.md) · [PR-15](PR-15-compact-chat-preload.md) · [PR-16](PR-16-analyst-charter-preload-voice.md)
 
 ---
 
@@ -12,13 +12,13 @@ One-time OpenAI setup, local run commands, and manual E2E checklist for the SPX 
 |-----------|--------|---------|
 | Vector store | OpenAI account | Historical report **sections** for `file_search` |
 | Chat model | `OPENAI_CHAT_MODEL` in `.env` | Responses API model (default `gpt-5`) |
-| Preload | Python (`chat_preload.py`) | Latest `DailyState` matrix + rolling summary on **every** message |
+| Preload | Python (`chat_preload.py`) | **Analyst charter** (Constitution, 2,000 char cap) + **current house view** (2,100) + **recent arc** (1,800) every turn — **6,500** total `additional_instructions` budget ([PR-15](PR-15-compact-chat-preload.md), voice in [PR-16](PR-16-analyst-charter-preload-voice.md)) |
 | Session index | `memory/chat/sessions.json` | Local UUID → OpenAI `conversation_id` map |
 | UI | `http://localhost:3000/assistant` | Chat workspace (calls FastAPI on `:8000`) |
 
-**Authority rule:** Present-tense posture answers come from **preload only** (latest `memory/daily_states/{date}-state.json`), never retrieval alone. Historical comparison uses vector-retrieved report sections.
+**Authority rule:** Present-tense posture answers come from **preload only** (current house view built from latest `memory/daily_states/{date}-state.json`), never retrieval alone. Historical comparison uses vector-retrieved report sections via `file_search`.
 
-**Runtime:** Chat uses OpenAI **Responses API + Conversations API** (not the deprecated Assistants/Threads API). Instructions are sent inline on every turn via `build_additional_instructions()` — no dashboard Assistant object.
+**Runtime:** Chat uses OpenAI **Responses API + Conversations API** (not the deprecated Assistants/Threads API). Every turn sends the same three-layer preload via `build_additional_instructions()`: analyst charter from `framework/chat-assistant-instructions.md`, current house view, and recent arc (from `load_recent_states()` primitives — **not** `recent_summary.md`). Framework doctrine files under `framework/` are repo runtime assets distilled into the charter; the vector store holds report **sections** only for `file_search`. No dashboard Assistant object.
 
 ---
 
@@ -79,7 +79,7 @@ OPENAI_VECTOR_STORE_ID=vs_...
 OPENAI_CHAT_MODEL=gpt-5
 ```
 
-Base instructions for the assistant persona live in `framework/chat-assistant-instructions.md` and are injected at runtime via preload — you do **not** create a dashboard Assistant.
+Base instructions for the assistant persona live in `framework/chat-assistant-instructions.md` — the **analyst charter** (identity, authority stack, response rhythm) — and are injected at runtime via preload. You do **not** create a dashboard Assistant.
 
 ---
 
@@ -189,8 +189,8 @@ Run these after setup. Mark pass/fail in your notes.
 Use a date you have in `memory/daily_states/`. Check the latest `{date}-state.json` for `recommended_action` and matrix rows before asking.
 
 - [ ] **A1 Posture (preload only)** — Ask: *“What is posture now?”* or *“What is the recommended action as of the latest run?”*
-  - Reply names **`latest_run_date`** explicitly
-  - Cites **Updated Decision Matrix** via structured rows (e.g. “Recommended Action row: …”), not long blockquotes from report markdown
+  - Reply anchors to run **date** and **SPX close** (from current house view opening prose)
+  - Cites **current house view table rows** (e.g. “Recommended Action row: …”), not long blockquotes from report markdown
   - Matches `recommended_action` / matrix in latest `DailyState` JSON
 
 - [ ] **A2 Current vs historical** — Ask: *“How does today’s structural bias compare to [older date you have indexed]?”*
@@ -202,6 +202,12 @@ Use a date you have in `memory/daily_states/`. Check the latest `{date}-state.js
 
 - [ ] **A4 Historic retrieval** — Ask about a specific past report section (e.g. *“What did the Monte Carlo section say on 2026-06-11?”*)
   - Uses retrieval when needed; does not invent content absent from sources
+
+- [ ] **A5 Collaborative reasoning** — Ask an open-ended market question (e.g. *"How should I think about the current setup?"* or *"What would change the house view?"*)
+  - Reply leads with **current house view in one sentence**
+  - Names **what is changing** (marginal shifts, tensions)
+  - States **what would change the view** (invalidation / triggers)
+  - Does **not** contradict published recommended action from current house view
 
 ### CLI parity (optional)
 

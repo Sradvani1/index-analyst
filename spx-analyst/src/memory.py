@@ -15,7 +15,8 @@ from pydantic import ValidationError
 
 from .config import Settings, get_settings
 from .files import InputError, read_json
-from .schemas import DailyState, Divergence, SignalSet
+from .formatting import format_event_headline
+from .schemas import ArcBrief, ArcBriefCaps, ArcBriefSessionSnapshot, DailyState, Divergence, SignalSet
 
 _WEIGHT_ORDER = {"high": 0, "medium": 1, "low": 2}
 
@@ -258,6 +259,11 @@ def _select_conflicts(divergences: list[Divergence]) -> list[Divergence]:
     return ordered[:2]
 
 
+def select_top_conflicts(divergences: list[Divergence]) -> list[Divergence]:
+    """Return up to two highest-weight divergences for compact preload bullets."""
+    return _select_conflicts(divergences)
+
+
 def _action_for_state(s: DailyState) -> str:
     row = None
     for r in s.decision_matrix.rows:
@@ -324,12 +330,15 @@ def _newest_wording(states: DailyState | list[DailyState], normalized: str) -> s
     return ""
 
 
-def _build_unresolved_watchlist(states: list[DailyState]) -> str:
-    """Build rollup footer watchlist from open_questions (states newest-first)."""
+def _select_unresolved_questions(
+    states: list[DailyState],
+    *,
+    limit: int,
+) -> list[str]:
+    """Eligible open_questions across states (newest-first), deduped by normalized text."""
     if not states:
-        return "Unresolved watchlist: (none)"
+        return []
 
-    # Collect normalized -> {dates newest-first, wordings by date}
     by_norm: dict[str, list[tuple[str, str]]] = {}
     for s in states:
         for q in s.open_questions:
@@ -342,7 +351,9 @@ def _build_unresolved_watchlist(states: list[DailyState]) -> str:
     for norm, occurrences in by_norm.items():
         dates = [d for d, _ in occurrences]
         in_newest = states[0].date in dates
-        in_last_three = sum(1 for s in states[:3] if any(_normalize_question(q) == norm for q in s.open_questions))
+        in_last_three = sum(
+            1 for s in states[:3] if any(_normalize_question(q) == norm for q in s.open_questions)
+        )
         two_consecutive_miss = True
         for s in states[:2]:
             if any(_normalize_question(q) == norm for q in s.open_questions):
@@ -364,10 +375,87 @@ def _build_unresolved_watchlist(states: list[DailyState]) -> str:
         selected.append((newest_date, wording))
 
     selected.sort(key=lambda x: x[0], reverse=True)
-    items = [w.strip() for _, w in selected[:2]]
+    return [w.strip() for _, w in selected[:limit] if w.strip()]
+
+
+def _build_unresolved_watchlist(states: list[DailyState]) -> str:
+    """Build rollup footer watchlist from open_questions (states newest-first)."""
+    items = _select_unresolved_questions(states, limit=2)
     if not items:
         return "Unresolved watchlist: (none)"
     return "Unresolved watchlist: " + " | ".join(items)
+
+
+def _build_still_open_bullets(states: list[DailyState]) -> list[str]:
+    """Still-open questions for arc brief preload (not rolling-summary replay)."""
+    bullets: list[str] = []
+    for wording in _select_unresolved_questions(
+        states, limit=ArcBriefCaps.MAX_STILL_OPEN_BULLETS
+    ):
+        bullets.append(_truncate(wording, ArcBriefCaps.MAX_STILL_OPEN_BULLET_CHARS))
+    return bullets
+
+
+def _build_inflection_bullets(states: list[DailyState]) -> list[str]:
+    """Recent marginal-change headlines as arc inflection points (newest first)."""
+    bullets: list[str] = []
+    for state in states:
+        if not state.what_changed_today:
+            continue
+        headline = format_event_headline(state.what_changed_today[0].strip())
+        bullets.append(
+            _truncate(
+                f"{state.date}: {headline}",
+                ArcBriefCaps.MAX_INFLECTION_BULLET_CHARS,
+            )
+        )
+        if len(bullets) >= ArcBriefCaps.MAX_INFLECTION_BULLETS:
+            break
+    return bullets
+
+
+def first_sentence(text: str) -> str:
+    """Return the first sentence of text (shared by arc brief and current brief)."""
+    text = text.strip()
+    if not text:
+        return ""
+    parts = re.split(r"(?<=[.!?])\s+", text, maxsplit=1)
+    return parts[0]
+
+
+def _tension_fragment(text: str, max_len: int | None = None) -> str:
+    cap = max_len if max_len is not None else ArcBriefCaps.MAX_TENSION_FRAGMENT_CHARS
+    return _truncate(first_sentence(text), cap)
+
+
+def _arc_session_fragment(state: DailyState) -> str:
+    """Marginal change headline for arc timeline (not full tension replay)."""
+    if state.what_changed_today:
+        return _truncate(
+            format_event_headline(state.what_changed_today[0].strip()),
+            ArcBriefCaps.MAX_TENSION_FRAGMENT_CHARS,
+        )
+    return _tension_fragment(state.primary_tension)
+
+
+def build_arc_brief(states: list[DailyState]) -> ArcBrief:
+    """Build compressed arc brief from rolling memory primitives (not recent_summary.md)."""
+    window = states[: ArcBriefCaps.MAX_SESSIONS]
+    snapshots = [
+        ArcBriefSessionSnapshot(
+            date=s.date,
+            bias=s.structural_bias,
+            action=_action_for_state(s),
+            tension_fragment=_arc_session_fragment(s),
+        )
+        for s in reversed(window)
+    ]
+    return ArcBrief(
+        regime_arc=_regime_arc(states),
+        session_snapshots=snapshots,
+        still_open_bullets=_build_still_open_bullets(states),
+        inflection_bullets=_build_inflection_bullets(states),
+    )
 
 
 def build_recent_summary(states: list[DailyState]) -> str:

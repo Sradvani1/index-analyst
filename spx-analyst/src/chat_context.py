@@ -12,7 +12,7 @@ from .schemas import ChatPreloadContext, ChatSessionContext, DailyState
 
 
 def load_chat_preload(settings: Settings | None = None) -> ChatPreloadContext:
-    """Load authority-ordered preload for Assistants runs (latest state + rolling summary)."""
+    """Load compact preload for Responses runs (constitution + current brief + arc brief)."""
     return build_additional_instructions(settings)
 
 

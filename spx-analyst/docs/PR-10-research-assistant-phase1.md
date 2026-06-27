@@ -1,13 +1,17 @@
 # PR-10: Research assistant Phase 1 (RAG + preload)
 
-**Status:** Complete — **Phase 1 accepted** (review sign-off)
+**Status:** Complete — **Phase 1 accepted** (review sign-off)  
+**Superseded (preload only):** [PR-15: Deterministic compact chat preload](PR-15-compact-chat-preload.md) replaced the monolithic preload (`LatestRunState` block + full `recent_summary.md`) with constitution + current brief + arc brief. RAG indexing, authority rules, and matrix-from-`DailyState` semantics are unchanged.
+
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-7: Pass 2 investor report template](PR-7-pass2-investor-report-template.md) · [PR-3: Memory rollup overhaul](PR-3-memory-rollup-overhaul.md)  
 **Plan:** [.cursor/plans/subscription_chat_assistant_9dcd0913.plan.md](../../.cursor/plans/subscription_chat_assistant_9dcd0913.plan.md)
 
 ## Summary
 
-Phase 1 of the local SPX research assistant: deterministic **latest-run preload** (authority-ordered instructions + structured `DailyState` + rolling summary) and **section-vector RAG indexing** (one OpenAI file per investor report section, manifest in `memory/rag/`). Python only — no Threads, no FastAPI chat routes, no UI.
+Phase 1 of the local SPX research assistant: deterministic **chat preload** (authority-ordered instructions + structured `DailyState`) and **section-vector RAG indexing** (one OpenAI file per investor report section, manifest in `memory/rag/`). Python only — no Threads, no FastAPI chat routes, no UI.
+
+> **Current preload shape ([PR-15](PR-15-compact-chat-preload.md), voice in [PR-16](PR-16-analyst-charter-preload-voice.md)):** `build_additional_instructions()` assembles constitution + **current house view** + **recent arc** (4,016 chars on 2026-06-25 per [payload example](chat-api-payload-example-2026-06-25.md)). The Phase 1 monolithic block described below is historical context only.
 
 Every successful `run` now ends with RAG indexing after memory is saved. Index failure is a hard `fail_run` with a copy-paste stderr retry command. Preload matrix authority comes **only** from `memory/daily_states/{latest}-state.json`; same-date report markdown is validate/warn only.
 
@@ -128,7 +132,7 @@ cd spx-analyst && pytest
 | `test_rag_index.py` | Nine-section split; manifest write; missing report/section errors; backfill; upload error → `RagIndexError`; `index_rag_or_fail` stderr retry |
 | `test_engine.py` | RAG mocked by default; failure test asserts stderr retry hint |
 
-**Exit gate (plan):** preload-only posture canary — `answer_posture_from_preload()` answers from `LatestRunState` without vector retrieval. **Passed.**
+**Exit gate (plan):** preload-only posture canary — `answer_posture_from_preload()` answers from structured preload (`CurrentBrief` since PR-15; originally `LatestRunState`) without vector retrieval. **Passed.**
 
 ## Acceptance criteria (Phase 1)
 
@@ -179,7 +183,7 @@ cd spx-analyst && pytest
 
 ## Review sign-off
 
-Phase 1 accepted. Matrix authority resolves cleanly: `LatestRunState.decision_matrix` from structured `DailyState`, `recommended_action` derived from that object, same-date report markdown validate-only. Preload-only posture canary passed.
+Phase 1 accepted. Matrix authority resolves cleanly from structured `DailyState` JSON; same-date report markdown validate-only. Preload-only posture canary passed. Preload serialization superseded by [PR-15](PR-15-compact-chat-preload.md).
 
 Documented deviations (`index_rag_or_fail()` shared helper, deprecated `load_chat_context()` with schema retained) are appropriate for staged rollout. **Do not reopen Phase 1 scope.**
 

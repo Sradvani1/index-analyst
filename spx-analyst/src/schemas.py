@@ -362,68 +362,95 @@ class ValidationReport(BaseModel):
         return [i for i in self.issues if i.severity == "warning"]
 
 
-# --- Chat preload (Phase 1) --------------------------------------------------
+# --- Chat preload (PR-15 compact contract) -------------------------------------
 
 
-class MonteCarloSummary(BaseModel):
-    """Monte Carlo fields injected into latest-run preload (from DailyState.monte_carlo)."""
+class CurrentBriefCaps:
+    MAX_OPENING_CHARS = 220
+    MAX_SETUP_TENSION_CHARS = 260
+    MAX_RISK_BULLETS = 4
+    MAX_RISK_BULLET_CHARS = 160
+    MAX_MATRIX_ROWS = 6
+    MAX_TREND_REGIME_CHARS = 240
+    MAX_TRIGGER_BULLETS = 5
+    MAX_TRIGGER_BULLET_CHARS = 100
+    MAX_VIEW_CHANGE_BULLETS = 3
+    MAX_VIEW_CHANGE_BULLET_CHARS = 110
+    MAX_RENDERED_CHARS = 2100
 
+
+class ArcBriefCaps:
+    MAX_SESSIONS = 8
+    MAX_TENSION_FRAGMENT_CHARS = 110
+    MAX_STILL_OPEN_BULLETS = 3
+    MAX_STILL_OPEN_BULLET_CHARS = 140
+    MAX_INFLECTION_BULLETS = 3
+    MAX_INFLECTION_BULLET_CHARS = 130
+    MAX_RENDERED_CHARS = 1800
+
+
+class ConstitutionCaps:
+    MAX_RENDERED_CHARS = 2000
+
+
+class ChatPreloadBudget:
+    MAX_ADDITIONAL_INSTRUCTIONS_CHARS = 6500
+    MAX_ADDITIONAL_INSTRUCTIONS_TOKENS = 1500
+
+
+class CurrentBriefRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    effective_threshold: EffectiveThreshold
-    meets_threshold: bool
-    prob_up_first_adjusted: float = Field(..., ge=0.0, le=1.0)
-    prob_down_first_adjusted: float = Field(..., ge=0.0, le=1.0)
-    rally_exhaustion_score: RallyExhaustionScore
-    upside_target: float
-    downside_target: float
+    signal_layer: str
+    signal: str
 
 
-class LatestRunState(BaseModel):
-    """Authoritative current posture for chat preload — matrix rows from DailyState JSON only."""
+class CurrentBrief(BaseModel):
+    """Authoritative present-tense slice from latest DailyState."""
 
     model_config = ConfigDict(extra="forbid")
 
     latest_run_date: str
-    structural_bias: StructuralBias
     spx_close: float
-    signal_alignment: SignalAlignment
-    decision_matrix: DecisionMatrix
-    monte_carlo: MonteCarloSummary
-    what_changed_today: List[str]
+    structural_bias: StructuralBias
     recommended_action: str
+    overall_signal_balance: str
+    opening_house_view: str
+    setup_tension: str
+    key_risks_or_tensions: List[str]
+    key_trigger_levels: List[str]
+    view_change_bullets: List[str]
+    authoritative_rows: List[CurrentBriefRow]
 
-    @classmethod
-    def from_daily_state(cls, state: DailyState) -> "LatestRunState":
-        mc = state.monte_carlo
-        return cls(
-            latest_run_date=state.date,
-            structural_bias=state.structural_bias,
-            spx_close=state.spx_close,
-            signal_alignment=state.signal_alignment,
-            decision_matrix=state.decision_matrix,
-            monte_carlo=MonteCarloSummary(
-                effective_threshold=mc.effective_threshold,
-                meets_threshold=mc.meets_threshold,
-                prob_up_first_adjusted=mc.prob_up_first_adjusted,
-                prob_down_first_adjusted=mc.prob_down_first_adjusted,
-                rally_exhaustion_score=mc.rally_exhaustion_score,
-                upside_target=mc.upside_target,
-                downside_target=mc.downside_target,
-            ),
-            what_changed_today=list(state.what_changed_today),
-            recommended_action=state.decision_matrix.recommended_action,
-        )
+
+class ArcBriefSessionSnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    date: str
+    bias: StructuralBias
+    action: str
+    tension_fragment: str
+
+
+class ArcBrief(BaseModel):
+    """Compressed multi-day continuity from rolling memory primitives."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    regime_arc: str
+    session_snapshots: List[ArcBriefSessionSnapshot]
+    still_open_bullets: List[str]
+    inflection_bullets: List[str]
 
 
 class ChatPreloadContext(BaseModel):
-    """Deterministic preload assembled for every Responses chat turn (Phase 1 contract)."""
+    """Deterministic preload assembled for every Responses chat turn (compact contract)."""
 
     model_config = ConfigDict(extra="forbid")
 
     instructions: str
-    latest_run: LatestRunState
-    rolling_summary: str
+    current_brief: CurrentBrief
+    arc_brief: ArcBrief
     additional_instructions: str
 
 

@@ -1,15 +1,26 @@
-"""Deterministic chat preload: latest-run state + rolling summary + instructions."""
+"""Deterministic compact chat preload: constitution + current brief + arc brief."""
 
 from __future__ import annotations
 
-import json
 import logging
 import re
 
 from .config import Settings, get_settings
 from .files import InputError, read_json, read_text
+from .formatting import format_event_headline, format_price
+from .memory import build_arc_brief, first_sentence, load_recent_states, select_top_conflicts
 from .prompts import INVESTOR_REPORT_SECTIONS
-from .schemas import ChatPreloadContext, DailyState, LatestRunState
+from .schemas import (
+    ArcBrief,
+    ArcBriefCaps,
+    ChatPreloadContext,
+    ConstitutionCaps,
+    CurrentBrief,
+    CurrentBriefCaps,
+    CurrentBriefRow,
+    DailyState,
+    DecisionMatrixRow,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,13 +51,11 @@ def load_latest_daily_state(settings: Settings | None = None) -> DailyState:
     return DailyState.model_validate(read_json(path))
 
 
-def load_rolling_summary(settings: Settings | None = None) -> str:
-    """Load rolling summary markdown; empty string if not yet generated."""
-    settings = settings or get_settings()
-    path = settings.rolling_dir / "recent_summary.md"
-    if not path.is_file():
-        return ""
-    return read_text(path).strip()
+def _truncate(text: str, max_len: int) -> str:
+    text = text.strip()
+    if len(text) <= max_len:
+        return text
+    return text[: max_len - 1].rstrip() + "…"
 
 
 def load_instructions(settings: Settings | None = None) -> str:
@@ -57,6 +66,8 @@ def load_instructions(settings: Settings | None = None) -> str:
     text = read_text(path).strip()
     if not text:
         raise InputError(f"chat assistant instructions are empty: {path}")
+    if len(text) > ConstitutionCaps.MAX_RENDERED_CHARS:
+        text = _truncate(text, ConstitutionCaps.MAX_RENDERED_CHARS)
     return text
 
 
@@ -97,117 +108,261 @@ def validate_report_matrix_section(
     return warnings
 
 
-def build_latest_run_state(daily_state: DailyState) -> LatestRunState:
-    return LatestRunState.from_daily_state(daily_state)
+def _matrix_row(state: DailyState, layer_name: str) -> DecisionMatrixRow | None:
+    target = layer_name.strip().lower()
+    for row in state.decision_matrix.rows:
+        if row.signal_layer.strip().lower() == target:
+            return row
+    return None
 
 
-def _format_matrix_table(latest: LatestRunState) -> str:
-    lines = [
-        "| Signal Layer | Current Reading | Signal |",
-        "|---|---|---|",
+def _matrix_signal(state: DailyState, layer_name: str, *, fallback: str = "n/a") -> str:
+    row = _matrix_row(state, layer_name)
+    if row is None:
+        return fallback
+    return row.signal or row.current_reading or fallback
+
+
+def _opening_house_view(brief: DailyState) -> str:
+    opening = (
+        f"As of {brief.date} (SPX close {format_price(brief.spx_close)}): "
+        f"{brief.structural_bias} — "
+        f"{_matrix_signal(brief, 'Recommended Action', fallback=brief.decision_matrix.recommended_action)}. "
+        f"Signal balance: {_matrix_signal(brief, 'Overall Signal Balance')}."
+    )
+    return _truncate(opening, CurrentBriefCaps.MAX_OPENING_CHARS)
+
+
+def _setup_tension_sentence(state: DailyState) -> str:
+    tension = first_sentence(state.primary_tension) or state.primary_tension.strip()
+    return _truncate(tension, CurrentBriefCaps.MAX_SETUP_TENSION_CHARS)
+
+
+def _risk_bullets(state: DailyState) -> list[str]:
+    bullets: list[str] = []
+    if state.what_changed_today:
+        bullets.append(
+            _truncate(
+                format_event_headline(state.what_changed_today[0].strip()),
+                CurrentBriefCaps.MAX_RISK_BULLET_CHARS,
+            )
+        )
+    else:
+        tension = first_sentence(state.primary_tension)
+        if tension:
+            bullets.append(_truncate(tension, CurrentBriefCaps.MAX_RISK_BULLET_CHARS))
+    for divergence in select_top_conflicts(state.conflicting_evidence):
+        bullets.append(
+            _truncate(
+                divergence.framework_rule.strip(),
+                CurrentBriefCaps.MAX_RISK_BULLET_CHARS,
+            )
+        )
+    return bullets[: CurrentBriefCaps.MAX_RISK_BULLETS]
+
+
+def _view_change_bullets(state: DailyState) -> list[str]:
+    bullets: list[str] = []
+    for question in state.open_questions:
+        text = question.strip()
+        if not text:
+            continue
+        bullets.append(_truncate(text, CurrentBriefCaps.MAX_VIEW_CHANGE_BULLET_CHARS))
+        if len(bullets) >= CurrentBriefCaps.MAX_VIEW_CHANGE_BULLETS:
+            break
+    return bullets
+
+
+def _trigger_levels(state: DailyState) -> list[str]:
+    levels: list[str] = []
+    mc = state.monte_carlo
+    levels.append(f"MC upside: {format_price(mc.upside_target)}")
+    levels.append(f"MC downside: {format_price(mc.downside_target)}")
+    if mc.conditional_cascade.strip():
+        levels.append(
+            f"MC cascade: {_truncate(mc.conditional_cascade, CurrentBriefCaps.MAX_TRIGGER_BULLET_CHARS)}"
+        )
+    leverage = _matrix_row(state, "Leverage Risk State")
+    if leverage is not None:
+        snippet = leverage.signal or leverage.current_reading
+        if snippet:
+            levels.append(
+                f"Leverage: {_truncate(snippet, CurrentBriefCaps.MAX_TRIGGER_BULLET_CHARS)}"
+            )
+    return levels[: CurrentBriefCaps.MAX_TRIGGER_BULLETS]
+
+
+def _authoritative_rows(state: DailyState) -> list[CurrentBriefRow]:
+    trend_regime = _truncate(state.trend_regime, CurrentBriefCaps.MAX_TREND_REGIME_CHARS)
+    leverage = _matrix_row(state, "Leverage Risk State")
+    mc_edge = _matrix_row(state, "Monte Carlo Edge")
+    rows = [
+        CurrentBriefRow(
+            signal_layer="Structural Bias",
+            signal=_matrix_signal(state, "Structural Bias", fallback=state.structural_bias),
+        ),
+        CurrentBriefRow(
+            signal_layer="Overall Signal Balance",
+            signal=_matrix_signal(state, "Overall Signal Balance"),
+        ),
+        CurrentBriefRow(signal_layer="Trend Regime", signal=trend_regime),
+        CurrentBriefRow(
+            signal_layer="Recommended Action",
+            signal=_matrix_signal(
+                state,
+                "Recommended Action",
+                fallback=state.decision_matrix.recommended_action,
+            ),
+        ),
+        CurrentBriefRow(
+            signal_layer="Leverage Risk State",
+            signal=(
+                leverage.signal or leverage.current_reading or "n/a"
+                if leverage is not None
+                else "n/a"
+            ),
+        ),
+        CurrentBriefRow(
+            signal_layer="Monte Carlo Edge",
+            signal=(
+                mc_edge.signal or mc_edge.current_reading or "n/a"
+                if mc_edge is not None
+                else "n/a"
+            ),
+        ),
     ]
-    for row in latest.decision_matrix.rows:
+    return rows[: CurrentBriefCaps.MAX_MATRIX_ROWS]
+
+
+def build_current_brief(state: DailyState) -> CurrentBrief:
+    """Build authoritative present-tense slice from latest DailyState."""
+    recommended_action = _matrix_signal(
+        state,
+        "Recommended Action",
+        fallback=state.decision_matrix.recommended_action,
+    )
+    return CurrentBrief(
+        latest_run_date=state.date,
+        spx_close=state.spx_close,
+        structural_bias=state.structural_bias,
+        recommended_action=recommended_action,
+        overall_signal_balance=_matrix_signal(state, "Overall Signal Balance"),
+        opening_house_view=_opening_house_view(state),
+        setup_tension=_setup_tension_sentence(state),
+        key_risks_or_tensions=_risk_bullets(state),
+        key_trigger_levels=_trigger_levels(state),
+        view_change_bullets=_view_change_bullets(state),
+        authoritative_rows=_authoritative_rows(state),
+    )
+
+
+def render_current_brief(brief: CurrentBrief) -> str:
+    """Render compact current brief markdown (no matrix JSON)."""
+    lines = [
+        "## Current house view",
+        "Authoritative for present-tense posture.",
+        "",
+        brief.opening_house_view,
+        "",
+        f"Setup / tension: {brief.setup_tension}",
+        "",
+        "| Signal Layer | Signal |",
+        "|---|---|",
+    ]
+    for row in brief.authoritative_rows:
         layer = row.signal_layer.replace("|", "\\|")
-        reading = row.current_reading.replace("|", "\\|")
         signal = row.signal.replace("|", "\\|")
-        lines.append(f"| {layer} | {reading} | {signal} |")
-    return "\n".join(lines)
+        lines.append(f"| {layer} | {signal} |")
+
+    if brief.key_risks_or_tensions:
+        lines.extend(["", "What shifted:"])
+        lines.extend(f"- {item}" for item in brief.key_risks_or_tensions)
+
+    if brief.key_trigger_levels:
+        lines.extend(["", "Triggers to watch:"])
+        lines.extend(f"- {item}" for item in brief.key_trigger_levels)
+
+    if brief.view_change_bullets:
+        lines.extend(["", "What changes the view:"])
+        lines.extend(f"- {item}" for item in brief.view_change_bullets)
+
+    rendered = "\n".join(lines)
+    if len(rendered) > CurrentBriefCaps.MAX_RENDERED_CHARS:
+        rendered = _truncate(rendered, CurrentBriefCaps.MAX_RENDERED_CHARS)
+    return rendered
 
 
-def build_latest_run_block(latest: LatestRunState) -> str:
-    """Serialize LatestRunState for Assistants additional_instructions."""
-    mc = latest.monte_carlo
-    changes = latest.what_changed_today or ["(none)"]
+def render_arc_brief(arc: ArcBrief) -> str:
+    """Render compressed arc brief (no PR-3 delta replay markers)."""
     lines = [
-        "## Latest-run state (authoritative for current posture)",
+        "## Recent arc",
+        "Current house view wins on same-date conflict.",
         "",
-        f"latest_run_date: {latest.latest_run_date}",
-        f"structural_bias: {latest.structural_bias}",
-        f"spx_close: {latest.spx_close}",
-        (
-            f"signal_alignment: trim={latest.signal_alignment.trim_signals_met} "
-            f"buy={latest.signal_alignment.buy_signals_met} "
-            f"overall={latest.signal_alignment.overall}"
-        ),
-        f"recommended_action: {latest.recommended_action}",
+        arc.regime_arc,
         "",
-        "what_changed_today:",
-        *[f"- {item}" for item in changes],
-        "",
-        "monte_carlo:",
-        f"- effective_threshold: {mc.effective_threshold}",
-        f"- meets_threshold: {mc.meets_threshold}",
-        f"- prob_up_first_adjusted: {mc.prob_up_first_adjusted:.4f}",
-        f"- prob_down_first_adjusted: {mc.prob_down_first_adjusted:.4f}",
-        f"- rally_exhaustion_score: {mc.rally_exhaustion_score}",
-        f"- upside_target: {mc.upside_target}",
-        f"- downside_target: {mc.downside_target}",
-        "",
-        "decision_matrix.rows (Updated Decision Matrix — authoritative):",
-        _format_matrix_table(latest),
-        "",
-        "decision_matrix.rows (JSON):",
-        json.dumps(
-            [r.model_dump(mode="json") for r in latest.decision_matrix.rows],
-            indent=2,
-        ),
     ]
-    return "\n".join(lines)
+    for snapshot in arc.session_snapshots:
+        lines.append(
+            f"{snapshot.date} | {snapshot.bias} | {snapshot.action} | {snapshot.tension_fragment}"
+        )
+    if arc.inflection_bullets:
+        lines.extend(["", "Inflection points:"])
+        lines.extend(f"- {item}" for item in arc.inflection_bullets)
+    if arc.still_open_bullets:
+        lines.extend(["", "Still open:"])
+        lines.extend(f"- {item}" for item in arc.still_open_bullets)
+    rendered = "\n".join(lines)
+    if len(rendered) > ArcBriefCaps.MAX_RENDERED_CHARS:
+        rendered = _truncate(rendered, ArcBriefCaps.MAX_RENDERED_CHARS)
+    return rendered
 
 
 def build_additional_instructions(settings: Settings | None = None) -> ChatPreloadContext:
-    """Assemble full preload: static instructions + latest-run block + rolling summary."""
+    """Assemble compact preload: constitution + current brief + arc brief."""
     settings = settings or get_settings()
     instructions = load_instructions(settings)
     daily_state = load_latest_daily_state(settings)
-    latest_run = build_latest_run_state(daily_state)
 
     for warning in validate_report_matrix_section(daily_state.date, daily_state, settings):
         logger.warning(warning)
 
-    rolling_summary = load_rolling_summary(settings)
-    latest_block = build_latest_run_block(latest_run)
+    states = load_recent_states(settings=settings)
+    brief = build_current_brief(daily_state)
+    arc = build_arc_brief(states)
 
     parts = [
         instructions,
         "",
-        latest_block,
+        render_current_brief(brief),
         "",
-        "## Rolling summary (multi-day arc)",
-        "",
-        rolling_summary or "(no rolling summary on record)",
+        render_arc_brief(arc),
     ]
     additional_instructions = "\n".join(parts).strip()
 
     return ChatPreloadContext(
         instructions=instructions,
-        latest_run=latest_run,
-        rolling_summary=rolling_summary,
+        current_brief=brief,
+        arc_brief=arc,
         additional_instructions=additional_instructions,
     )
 
 
 def answer_posture_from_preload(context: ChatPreloadContext) -> str:
     """Deterministic posture answer from preload only (no vector retrieval)."""
-    latest = context.latest_run
-    action_row = None
-    bias_row = None
-    for row in latest.decision_matrix.rows:
-        layer = row.signal_layer.strip().lower()
-        if layer == "recommended action":
-            action_row = row
-        elif layer == "structural bias":
-            bias_row = row
-
-    action_text = latest.recommended_action
-    if action_row is not None:
-        action_text = action_row.signal or action_row.current_reading or action_text
-    bias_text = latest.structural_bias
-    if bias_row is not None:
-        bias_text = bias_row.current_reading or bias_row.signal or bias_text
+    brief = context.current_brief
+    bias_row = next(
+        (row for row in brief.authoritative_rows if row.signal_layer == "Structural Bias"),
+        None,
+    )
+    action_row = next(
+        (row for row in brief.authoritative_rows if row.signal_layer == "Recommended Action"),
+        None,
+    )
+    bias_text = bias_row.signal if bias_row is not None else brief.structural_bias
+    action_text = action_row.signal if action_row is not None else brief.recommended_action
 
     return (
-        f"As of {latest.latest_run_date}, structural bias is {bias_text} "
+        f"As of {brief.latest_run_date}, structural bias is {bias_text} "
         f"with recommended action: {action_text} "
-        f"(SPX close {latest.spx_close})."
+        f"(SPX close {format_price(brief.spx_close)})."
     )

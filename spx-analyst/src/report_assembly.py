@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from .divergence_titles import rewrite_divergence_headings
+from .formatting import format_price
 from .prompts import INVESTOR_REPORT_SECTIONS, PASS2_PROSE_SECTIONS
 from .schemas import AnalysisContext, DailyState
 
@@ -14,7 +15,7 @@ _MATRIX_HEADING = INVESTOR_REPORT_SECTIONS[-1]
 
 
 def _format_close(value: float) -> str:
-    return f"{value:,.2f}"
+    return format_price(value)
 
 
 def _posture_display(state: DailyState) -> str:
