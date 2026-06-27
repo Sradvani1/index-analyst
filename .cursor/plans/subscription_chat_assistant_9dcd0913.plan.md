@@ -17,6 +17,9 @@ todos:
   - id: phase4-docs
     content: "Phase 4 accepted (PR-13): operator guide, setup script, E2E checklist, .env.example"
     status: completed
+  - id: responses-api-rewrite
+    content: "PR-14: migrate chat from Assistants/Threads to Responses + Conversations API"
+    status: completed
 isProject: false
 ---
 

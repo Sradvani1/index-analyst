@@ -26,13 +26,13 @@ from tests.conftest import make_settings
 
 def test_create_and_list_sessions(tmp_path):
     settings = make_settings(tmp_path)
-    a = create_session("thread_a", settings=settings)
-    b = create_session("thread_b", title="Trim discussion", settings=settings)
+    a = create_session("conv_a", settings=settings)
+    b = create_session("conv_b", title="Trim discussion", settings=settings)
 
     sessions = list_sessions(settings)
     assert len(sessions) == 2
     assert sessions[0].id in {a.id, b.id}
-    assert {s.openai_thread_id for s in sessions} == {"thread_a", "thread_b"}
+    assert {s.openai_conversation_id for s in sessions} == {"conv_a", "conv_b"}
 
 
 def test_get_session_not_found(tmp_path):
@@ -43,7 +43,7 @@ def test_get_session_not_found(tmp_path):
 
 def test_update_session_title(tmp_path):
     settings = make_settings(tmp_path)
-    record = create_session("thread_1", settings=settings)
+    record = create_session("conv_1", settings=settings)
     updated = update_session_title(record.id, "Posture check", settings=settings)
     assert updated.title == "Posture check"
     assert updated.updated_at >= record.updated_at
@@ -51,21 +51,21 @@ def test_update_session_title(tmp_path):
 
 def test_update_session_title_rejects_empty(tmp_path):
     settings = make_settings(tmp_path)
-    record = create_session("thread_1", settings=settings)
+    record = create_session("conv_1", settings=settings)
     with pytest.raises(InputError):
         update_session_title(record.id, "   ", settings=settings)
 
 
 def test_touch_session_updates_timestamp(tmp_path):
     settings = make_settings(tmp_path)
-    record = create_session("thread_1", settings=settings)
+    record = create_session("conv_1", settings=settings)
     touched = touch_session(record.id, settings=settings)
     assert touched.updated_at >= record.updated_at
 
 
 def test_delete_session_record(tmp_path):
     settings = make_settings(tmp_path)
-    record = create_session("thread_1", settings=settings)
+    record = create_session("conv_1", settings=settings)
     removed = delete_session_record(record.id, settings=settings)
     assert removed.id == record.id
     with pytest.raises(SessionNotFoundError):
@@ -78,7 +78,7 @@ def test_save_index_atomic_roundtrip(tmp_path):
         sessions=[
             ChatSessionRecord(
                 id="550e8400-e29b-41d4-a716-446655440000",
-                openai_thread_id="thread_abc",
+                openai_conversation_id="conv_abc",
                 title=DEFAULT_TITLE,
                 created_at="2026-06-25T10:00:00+00:00",
                 updated_at="2026-06-25T10:00:00+00:00",
@@ -88,6 +88,6 @@ def test_save_index_atomic_roundtrip(tmp_path):
     path = save_index(index, settings)
     assert path.is_file()
     loaded = load_index(settings)
-    assert loaded.sessions[0].openai_thread_id == "thread_abc"
+    assert loaded.sessions[0].openai_conversation_id == "conv_abc"
     raw = json.loads(path.read_text(encoding="utf-8"))
     assert "sessions" in raw

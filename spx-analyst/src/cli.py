@@ -320,7 +320,7 @@ def chat(
     session_id: str = typer.Option(None, help="Resume an existing session id."),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
-    """Interactive research assistant REPL (OpenAI Assistants + latest-run preload)."""
+    """Interactive research assistant REPL (OpenAI Responses + latest-run preload)."""
     _setup_logging(verbose)
     from .chat_service import ChatService, ChatServiceError, SessionNotFoundError
     from .chat_sessions import get_session

@@ -417,7 +417,7 @@ class LatestRunState(BaseModel):
 
 
 class ChatPreloadContext(BaseModel):
-    """Deterministic preload assembled for every Assistants run (Phase 1 contract)."""
+    """Deterministic preload assembled for every Responses chat turn (Phase 1 contract)."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -428,12 +428,12 @@ class ChatPreloadContext(BaseModel):
 
 
 class ChatSessionRecord(BaseModel):
-    """Local session index row — maps to an OpenAI thread."""
+    """Local session index row — maps to an OpenAI conversation."""
 
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    openai_thread_id: str
+    openai_conversation_id: str
     title: str
     created_at: str
     updated_at: str

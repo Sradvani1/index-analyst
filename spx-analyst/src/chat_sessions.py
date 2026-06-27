@@ -1,4 +1,4 @@
-"""Local chat session index — maps session ids to OpenAI thread ids."""
+"""Local chat session index — maps session ids to OpenAI conversation ids."""
 
 from __future__ import annotations
 
@@ -64,7 +64,7 @@ def get_session(session_id: str, settings: Settings | None = None) -> ChatSessio
 
 
 def create_session(
-    openai_thread_id: str,
+    openai_conversation_id: str,
     *,
     title: str = DEFAULT_TITLE,
     settings: Settings | None = None,
@@ -73,7 +73,7 @@ def create_session(
     now = _utc_now()
     record = ChatSessionRecord(
         id=str(uuid.uuid4()),
-        openai_thread_id=openai_thread_id,
+        openai_conversation_id=openai_conversation_id,
         title=title,
         created_at=now,
         updated_at=now,

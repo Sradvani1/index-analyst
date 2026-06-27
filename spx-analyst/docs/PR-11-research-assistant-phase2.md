@@ -1,6 +1,7 @@
 # PR-11: Research assistant Phase 2 (chat engine)
 
 **Status:** Complete — **Phase 2 accepted** (review sign-off + targeted fixes)  
+**Superseded (runtime):** Chat OpenAI layer replaced by [PR-14: Responses API chat](PR-14-responses-api-chat.md) — this doc remains the historical Phase 2 record.  
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-10: Research assistant Phase 1](PR-10-research-assistant-phase1.md)  
 **Plan:** [.cursor/plans/subscription_chat_assistant_9dcd0913.plan.md](../../.cursor/plans/subscription_chat_assistant_9dcd0913.plan.md)

@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 
 from ..chat_service import ChatServiceError, SessionNotFoundError, get_chat_service
 from ..chat_sessions import get_session
-from ..openai_assistant import ThreadMessage
+from ..openai_responses import ChatMessageRecord
 from ..schemas import ChatSessionRecord
 from .models import (
     ChatMessageResponse,
@@ -32,7 +32,7 @@ def _session_response(record: ChatSessionRecord) -> ChatSessionResponse:
     )
 
 
-def _message_response(message: ThreadMessage) -> ChatMessageResponse:
+def _message_response(message: ChatMessageRecord) -> ChatMessageResponse:
     return ChatMessageResponse(
         id=message.id,
         role=message.role,  # type: ignore[arg-type]

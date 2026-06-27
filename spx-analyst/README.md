@@ -23,6 +23,7 @@ a markdown report plus structured JSON state.
 - [PR-11: Research assistant Phase 2](docs/PR-11-research-assistant-phase2.md) — OpenAI Assistants chat engine, session store, FastAPI SSE, CLI REPL
 - [PR-12: Research assistant Phase 3](docs/PR-12-research-assistant-phase3.md) — Next.js `/assistant` UI wired to local FastAPI chat routes
 - [PR-13: Research assistant Phase 4](docs/PR-13-research-assistant-phase4.md) — operator setup guide, E2E checklist, setup script
+- [PR-14: Responses API chat](docs/PR-14-responses-api-chat.md) — migrate chat from Assistants/Threads to Responses + Conversations
 
 ## How it works
 
@@ -121,8 +122,8 @@ Set these in `.env` (see `.env.example`):
 |----------|---------|---------|
 | `ANTHROPIC_API_KEY` | — | Required for live runs |
 | `OPENAI_API_KEY` | — | Required for post-run RAG indexing and chat assistant (Phase 2+) |
-| `OPENAI_VECTOR_STORE_ID` | — | Vector store for report section retrieval |
-| `OPENAI_ASSISTANT_ID` | — | Assistants API id (chat); create via [operator guide](docs/research-assistant-operator-guide.md) |
+| `OPENAI_VECTOR_STORE_ID` | — | Vector store for report section retrieval (chat `file_search` + indexing) |
+| `OPENAI_CHAT_MODEL` | `gpt-5` | Responses API model for chat; create vector store via [operator guide](docs/research-assistant-operator-guide.md) |
 | `SPX_MODEL` | `claude-opus-4-20250514` | Claude model for both passes |
 | `SPX_PROMPT_CACHE_ENABLED` | `true` | Reuse framework + tool schema across passes |
 | `SPX_INCLUDE_MEMORY` | `false` | Inject prior posture snapshot into Pass 1/Pass 2 (rebuild always runs on success; rollup is categorical-only — no historical numerics) |
@@ -187,7 +188,7 @@ python -m src.cli rebuild-summary --days 6
 python -m src.cli index-rag --date 2026-06-12
 python -m src.cli index-rag --backfill
 
-# Research assistant REPL (OpenAI Assistants + latest-run preload)
+# Research assistant REPL (OpenAI Responses + latest-run preload)
 python -m src.cli chat
 python -m src.cli chat --session-id <uuid>
 ```
@@ -268,13 +269,13 @@ fixed fixtures; live yfinance is not required for CI.
 
 ## Research assistant
 
-Personal localhost chat over published runs — deterministic latest-run preload plus section-vector RAG ([PR-10](docs/PR-10-research-assistant-phase1.md)–[PR-13](docs/PR-13-research-assistant-phase4.md)).
+Personal localhost chat over published runs — deterministic latest-run preload plus section-vector RAG ([PR-10](docs/PR-10-research-assistant-phase1.md)–[PR-14](docs/PR-14-responses-api-chat.md)).
 
 **Operator walkthrough:** [docs/research-assistant-operator-guide.md](docs/research-assistant-operator-guide.md)
 
 ```bash
-# One-time OpenAI setup (prints ids for .env)
-python scripts/setup_openai_assistant.py
+# One-time OpenAI setup (prints vector store id for .env)
+python scripts/setup_openai_resources.py
 
 # Backfill report sections into vector store
 python -m src.cli index-rag --backfill
@@ -366,8 +367,8 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs. Assistant: htt
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime);
              chat-assistant-instructions.md (research assistant)
-docs/        PR-1 through PR-13 implementation records; docs/archive/ for retired specs
-scripts/     operator utilities (e.g. setup_openai_assistant.py)
+docs/        PR-1 through PR-14 implementation records; docs/archive/ for retired specs
+scripts/     operator utilities (e.g. setup_openai_resources.py)
 data/
   master/    eps_history.json — sole EPS source (append-only)
   runs/      dated input folders (charts + manifest + precompute cache)
@@ -400,6 +401,7 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Research assistant Phase 2 — OpenAI Assistants chat engine, FastAPI SSE, CLI REPL | PR-11 |
 | Research assistant Phase 3 — Next.js `/assistant` UI | PR-12 |
 | Research assistant Phase 4 — operator guide, setup script, E2E checklist | PR-13 |
+| Responses API chat migration — replace Assistants/Threads runtime | PR-14 |
 | Monte Carlo target straddle guard (downside re-anchor when leg fully retraced) | PR-1 doc + `structure.reanchor_downside_for_straddle()` |
 
 ## Memory migration (one-time)

@@ -1,4 +1,4 @@
-"""Chat orchestration: local session index + OpenAI Assistants + preload."""
+"""Chat orchestration: local session index + OpenAI Responses + preload."""
 
 from __future__ import annotations
 
@@ -19,7 +19,12 @@ from .chat_sessions import (
 )
 from .config import Settings, get_settings
 from .files import InputError
-from .openai_assistant import AssistantClient, AssistantError, LiveAssistantClient, ThreadMessage
+from .openai_responses import (
+    ChatMessageRecord,
+    LiveResponsesClient,
+    ResponsesClient,
+    ResponsesError,
+)
 from .schemas import ChatSessionRecord
 
 logger = logging.getLogger(__name__)
@@ -40,20 +45,20 @@ class ChatService:
     def __init__(
         self,
         settings: Settings | None = None,
-        assistant: AssistantClient | None = None,
+        responses: ResponsesClient | None = None,
     ) -> None:
         self.settings = settings or get_settings()
-        self._assistant = assistant or LiveAssistantClient(self.settings)
+        self._responses = responses or LiveResponsesClient(self.settings)
 
     def list_sessions(self) -> list[ChatSessionRecord]:
         return list_sessions(self.settings)
 
     def create_session(self, *, title: str = DEFAULT_TITLE) -> ChatSessionRecord:
         try:
-            thread_id = self._assistant.create_thread()
-        except AssistantError as exc:
+            conversation_id = self._responses.create_conversation()
+        except ResponsesError as exc:
             raise ChatServiceError(str(exc)) from exc
-        return create_session(thread_id, title=title, settings=self.settings)
+        return create_session(conversation_id, title=title, settings=self.settings)
 
     def rename_session(self, session_id: str, title: str) -> ChatSessionRecord:
         try:
@@ -69,19 +74,19 @@ class ChatService:
         except SessionNotFoundError:
             raise
         try:
-            self._assistant.delete_thread(record.openai_thread_id)
-        except AssistantError as exc:
+            self._responses.delete_conversation(record.openai_conversation_id)
+        except ResponsesError as exc:
             logger.warning(
-                "deleted local session %s but OpenAI thread delete failed: %s",
+                "deleted local session %s but OpenAI conversation delete failed: %s",
                 session_id,
                 exc,
             )
 
-    def get_messages(self, session_id: str) -> list[ThreadMessage]:
+    def get_messages(self, session_id: str) -> list[ChatMessageRecord]:
         record = get_session(session_id, self.settings)
         try:
-            return self._assistant.list_messages(record.openai_thread_id)
-        except AssistantError as exc:
+            return self._responses.list_messages(record.openai_conversation_id)
+        except ResponsesError as exc:
             raise ChatServiceError(str(exc)) from exc
 
     def stream_reply(self, session_id: str, user_message: str) -> Iterator[str]:
@@ -106,12 +111,12 @@ class ChatService:
                 )
 
         try:
-            yield from self._assistant.stream_assistant_reply(
-                thread_id=record.openai_thread_id,
+            yield from self._responses.stream_reply(
+                conversation_id=record.openai_conversation_id,
                 user_message=content,
-                additional_instructions=preload.additional_instructions,
+                instructions=preload.additional_instructions,
             )
-        except AssistantError as exc:
+        except ResponsesError as exc:
             raise ChatServiceError(str(exc)) from exc
         else:
             touch_session(session_id, self.settings)

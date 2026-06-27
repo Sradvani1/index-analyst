@@ -1,8 +1,8 @@
 # Research assistant — operator guide
 
-One-time OpenAI setup, local run commands, and manual E2E checklist for the SPX research assistant (Phases 1–3).
+One-time OpenAI setup, local run commands, and manual E2E checklist for the SPX research assistant (Phases 1–4, Responses API).
 
-**Builds on:** [PR-10](PR-10-research-assistant-phase1.md) · [PR-11](PR-11-research-assistant-phase2.md) · [PR-12](PR-12-research-assistant-phase3.md)
+**Builds on:** [PR-10](PR-10-research-assistant-phase1.md) · [PR-11](PR-11-research-assistant-phase2.md) · [PR-12](PR-12-research-assistant-phase3.md) · [PR-14](PR-14-responses-api-chat.md)
 
 ---
 
@@ -11,12 +11,14 @@ One-time OpenAI setup, local run commands, and manual E2E checklist for the SPX 
 | Component | Where | Purpose |
 |-----------|--------|---------|
 | Vector store | OpenAI account | Historical report **sections** for `file_search` |
-| Assistant | OpenAI account | Threads + `file_search` tool bound to vector store |
+| Chat model | `OPENAI_CHAT_MODEL` in `.env` | Responses API model (default `gpt-5`) |
 | Preload | Python (`chat_preload.py`) | Latest `DailyState` matrix + rolling summary on **every** message |
-| Session index | `memory/chat/sessions.json` | Local UUID → OpenAI `thread_id` map |
+| Session index | `memory/chat/sessions.json` | Local UUID → OpenAI `conversation_id` map |
 | UI | `http://localhost:3000/assistant` | Chat workspace (calls FastAPI on `:8000`) |
 
 **Authority rule:** Present-tense posture answers come from **preload only** (latest `memory/daily_states/{date}-state.json`), never retrieval alone. Historical comparison uses vector-retrieved report sections.
+
+**Runtime:** Chat uses OpenAI **Responses API + Conversations API** (not the deprecated Assistants/Threads API). Instructions are sent inline on every turn via `build_additional_instructions()` — no dashboard Assistant object.
 
 ---
 
@@ -27,7 +29,7 @@ Before OpenAI setup:
 - [ ] Python venv installed (`pip install -r requirements.txt` from `spx-analyst/`)
 - [ ] At least one archived run in `memory/daily_states/` + `memory/daily_reports/` (from a successful `run`, or dev seed — see [README](../README.md#prerequisites--seed-memory))
 - [ ] `ANTHROPIC_API_KEY` in `.env` if you plan to run new analyses (not required for chat-only testing on existing memory)
-- [ ] OpenAI API key with access to **Assistants API** and **Vector Stores**
+- [ ] OpenAI API key with access to **Responses API**, **Conversations API**, and **Vector Stores**
 
 Copy env template:
 
@@ -38,9 +40,9 @@ cp .env.example .env
 
 ---
 
-## Step 1 — Create OpenAI resources (one time)
+## Step 1 — Create OpenAI vector store (one time)
 
-You need a **vector store** (section RAG) and an **assistant** (`file_search` + that store). Choose **Option A** (script) or **Option B** (Platform UI).
+You need a **vector store** for section RAG (`file_search` at chat time). Choose **Option A** (script) or **Option B** (Platform UI).
 
 ### Option A — Setup script (recommended)
 
@@ -48,22 +50,19 @@ From `spx-analyst/` with `OPENAI_API_KEY` set in `.env` (other OpenAI vars can b
 
 ```bash
 source .venv/bin/activate
-python scripts/setup_openai_assistant.py
+python scripts/setup_openai_resources.py
 ```
 
-The script prints two lines to paste into `.env`:
+The script prints lines to paste into `.env`:
 
 ```text
 OPENAI_VECTOR_STORE_ID=vs_...
-OPENAI_ASSISTANT_ID=asst_...
+OPENAI_CHAT_MODEL=gpt-5
 ```
 
-It creates:
+It creates a vector store named `SPX Analyst daily reports` with `max_chunk_size_tokens: 1024`.
 
-- Vector store named `SPX Analyst daily reports` with `max_chunk_size_tokens: 1024`
-- Assistant named `SPX Research Assistant` with `file_search` and base instructions from `framework/chat-assistant-instructions.md`
-
-**Model:** defaults to `gpt-4o`. Override with `OPENAI_SETUP_MODEL=gpt-4o-mini python scripts/setup_openai_assistant.py` if you prefer lower cost for testing.
+**Model:** default `gpt-5`. Adjust `OPENAI_CHAT_MODEL` in `.env` if your account uses a different Responses-capable slug (e.g. `gpt-5.2`).
 
 ### Option B — OpenAI Platform (manual)
 
@@ -72,15 +71,15 @@ It creates:
    - Chunking: static, **1024** max tokens (200 overlap is fine)
    - Copy the `vs_…` id → `OPENAI_VECTOR_STORE_ID` in `.env`
 
-2. **Assistants** → **Create**
-   - Name: `SPX Research Assistant`
-   - Model: `gpt-4o` (or `gpt-4o-mini` for testing)
-   - Instructions: paste contents of `framework/chat-assistant-instructions.md`
-   - Tools: enable **File search**
-   - Attach the vector store from step 1
-   - Copy the `asst_…` id → `OPENAI_ASSISTANT_ID` in `.env`
+2. Set in `.env`:
 
-3. Set `OPENAI_API_KEY=sk-…` in `.env`
+```bash
+OPENAI_API_KEY=sk-...
+OPENAI_VECTOR_STORE_ID=vs_...
+OPENAI_CHAT_MODEL=gpt-5
+```
+
+Base instructions for the assistant persona live in `framework/chat-assistant-instructions.md` and are injected at runtime via preload — you do **not** create a dashboard Assistant.
 
 ---
 
@@ -91,7 +90,7 @@ Minimum for indexing + chat:
 ```bash
 OPENAI_API_KEY=sk-...
 OPENAI_VECTOR_STORE_ID=vs_...
-OPENAI_ASSISTANT_ID=asst_...
+OPENAI_CHAT_MODEL=gpt-5
 ```
 
 Optional path override (defaults shown):
@@ -103,7 +102,7 @@ Optional path override (defaults shown):
 Verify keys load:
 
 ```bash
-python -c "from src.config import get_settings; s=get_settings(); print(s.openai_vector_store_id[:8], s.openai_assistant_id[:8])"
+python -c "from src.config import get_settings; s=get_settings(); print(s.openai_vector_store_id[:8], s.openai_chat_model)"
 ```
 
 ---
@@ -181,7 +180,7 @@ Run these after setup. Mark pass/fail in your notes.
 - [ ] **P3** **New conversation** → sidebar shows session with auto-title from first message
 - [ ] **P4** Send a message → reply **streams** token-by-token; markdown renders (headings, lists)
 - [ ] **P5** Refresh page → same session and messages reload
-- [ ] **P6** **Delete** a session → removed from sidebar; OpenAI thread deleted (best-effort)
+- [ ] **P6** **Delete** a session → removed from sidebar; OpenAI conversation deleted (best-effort)
 - [ ] **P7** Stop FastAPI, send a message → error shown; **no phantom user bubble** after failure
 - [ ] **P8** `memory/chat/sessions.json` exists and updates after successful sends
 
@@ -207,7 +206,7 @@ Use a date you have in `memory/daily_states/`. Check the latest `{date}-state.js
 ### CLI parity (optional)
 
 - [ ] **C1** `python -m src.cli chat` — same preload-backed answers as UI for **A1**
-- [ ] **C2** Resume with `--session-id` — continues thread
+- [ ] **C2** Resume with `--session-id` — continues conversation
 
 ---
 
@@ -216,9 +215,9 @@ Use a date you have in `memory/daily_states/`. Check the latest `{date}-state.js
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | `missing required OpenAI env var(s)` on `run` or `index-rag` | `OPENAI_API_KEY` or `OPENAI_VECTOR_STORE_ID` empty | Complete Step 1–2 |
-| Chat 503 / “missing … OPENAI_ASSISTANT_ID” | Assistant id not set | Set `OPENAI_ASSISTANT_ID`; restart uvicorn |
+| Chat 503 / “missing … OPENAI_CHAT_MODEL” or vector store | Chat env vars incomplete | Set `OPENAI_CHAT_MODEL`, `OPENAI_VECTOR_STORE_ID`; restart uvicorn |
 | `no daily states found in memory` in chat | Empty `memory/daily_states/` | Run analysis or seed memory |
-| Empty assistant reply / tool errors | Assistant missing `file_search` or vector store not attached | Recreate assistant (Step 1) |
+| Empty assistant reply / tool errors | Vector store id missing or not indexed | Run setup + `index-rag --backfill` |
 | Historic questions hallucinate | Backfill not run or date not indexed | `index-rag --backfill`; check `memory/rag/{date}.json` |
 | Index failed after successful `run` | Transient OpenAI error | Paste stderr retry: `index-rag --date YYYY-MM-DD` |
 | UI “Cannot reach API” | FastAPI not on `:8000` | Start uvicorn with `--host 127.0.0.1` |
@@ -264,4 +263,4 @@ data: {"error": "human-readable message"}
 
 - **phase1.1-reindex-cleanup** — delete stale vector store file IDs before re-upload
 - Rename session in UI (PATCH API exists)
-- Message pagination for long threads
+- Message pagination for long conversations
