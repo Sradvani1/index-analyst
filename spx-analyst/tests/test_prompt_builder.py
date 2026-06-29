@@ -165,9 +165,31 @@ def test_report_prompt_exposition_lock_and_divergence_ids(sample_state):
     assert "investor-facing" in body
     assert "conflicting_evidence" in body
     assert "evidence and tensions headings" not in body
-    assert "snake_case" not in body
     assert "do not call tools" in body
     assert "emit_daily_state" in body
+
+
+def test_report_prompt_task_voice_guidance(sample_state):
+    bundle = build_report_prompt(
+        system_role=load_system_role("R"),
+        framework="FW",
+        daily_state=sample_state,
+        manifest=_manifest(),
+        resolved_eps=_context(),
+        analysis_context=sample_analysis_context(),
+        recent_summary=None,
+    )
+    body = bundle.body
+    lower = body.lower()
+    assert "Audience:" in body
+    assert "reading a daily market report" in lower
+    assert "background inputs" in lower
+    assert "do not quote filenames" in lower
+    assert "today's validated posture resolves the tension" in lower
+    assert "framework rule resolves" not in lower
+    assert "Tone:" not in body
+    assert "*.png" in body
+    assert "snake_case" in lower
 
 
 def test_analysis_context_block_rounds_floats():
