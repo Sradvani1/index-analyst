@@ -15,8 +15,8 @@ todos:
     content: "Add tests/test_import_run.py: happy path, wrong count, force+stale precompute purge, close override, non-png rejection, review hardening"
     status: completed
   - id: domain-docs
-    content: Add CONTEXT.md glossary entries (chart pack, import-run, Images intake) and ADR for Images→run boundary
-    status: pending
+    content: Domain glossary doc — cancelled; vocabulary lives in PR docs and README
+    status: cancelled
   - id: readme
     content: Document import-run workflow in spx-analyst/README.md
     status: completed
@@ -48,7 +48,6 @@ python -m src.cli run --date 2026-06-24
 | Single "already imported" error | **Distinct incomplete-import message** | Charts without 15-chart manifest → `incomplete import detected … use --force` |
 | Purge `analysis_context.json` on `--force` only | **Purge on every import** | Safer; any re-import invalidates Step 0 |
 | Stale `market_history.json` on fetch failure + `--close` | **Delete cache on fetch failure** | Prevents precompute from using wrong-day data |
-| `CONTEXT.md` + ADR | Deferred | Lazy domain docs per grilling session |
 
 ## Final pipeline
 

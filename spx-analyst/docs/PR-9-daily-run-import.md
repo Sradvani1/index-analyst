@@ -143,3 +143,18 @@ python -m src.cli run --date 2026-06-24
 - Image resize/optimization (Pass 1/2 in `anthropic_client.py`)
 - HEIC/JPEG conversion (PNG intake only)
 - EPS gating at import (only at `--precompute` / `run`)
+
+---
+
+## OHLC sanitization (post-ship hardening)
+
+**Problem:** `yf.download()` bulk history sometimes returns a last-row stub with NaN OHLC but valid volume, while `Ticker.history()` for the same session returns full prices.
+
+**Fix (`src/market_data.py`):**
+
+1. After every bulk fetch, **sanitize** the dataframe: for each NaN OHLC row, retry that session via `Ticker.history()`.
+2. **Drop** unreparable NaN rows; **fail closed** if the run date session cannot be repaired.
+3. **Refuse to cache** invalid bars; **auto-refetch** if an existing cache contains NaN.
+4. `build_market_data_context` rejects non-finite SPX close.
+
+This keeps the 300-day bulk fetch for SMA/Monte Carlo while making the run-date close reliable.

@@ -4,6 +4,8 @@ import type { DailyState } from "@/lib/types";
 
 interface SignalGridProps {
   state: DailyState;
+  /** Narrow rail layout — 2-col grid instead of 6-col at lg */
+  compact?: boolean;
 }
 
 interface Tile {
@@ -59,12 +61,17 @@ function buildTiles(state: DailyState): Tile[] {
   return tiles;
 }
 
-export function SignalGrid({ state }: SignalGridProps) {
+export function SignalGrid({ state, compact = false }: SignalGridProps) {
   const tiles = buildTiles(state);
   const { signal_alignment: alignment } = state;
 
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-2",
+        compact ? "sm:grid-cols-2" : "sm:grid-cols-3 lg:grid-cols-6",
+      )}
+    >
       {tiles.map((tile) => (
         <div
           key={tile.label}

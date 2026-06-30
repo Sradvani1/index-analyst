@@ -14,3 +14,4 @@ memory/daily_states/*.json
 memory/daily_reports/*.md
 memory/rolling/*
 memory/chat/
+daily_pdfs/*.pdf

@@ -230,6 +230,56 @@ def validate(
         raise typer.Exit(code=1)
 
 
+@app.command("export-report")
+def export_report(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+    input_path: Path = typer.Option(
+        None,
+        "--input",
+        help="Path to markdown report (default: memory/daily_reports/{date}-analysis.md).",
+    ),
+    output: Path = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output PDF path (default: daily_pdfs/{date}-investor-report.pdf).",
+    ),
+    open_file: bool = typer.Option(False, "--open", help="Open the PDF after export."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Render a formatted investor PDF report from daily markdown."""
+    _setup_logging(verbose)
+    date = date or _today()
+    settings = get_settings()
+    settings.daily_pdfs_dir.mkdir(parents=True, exist_ok=True)
+    source = input_path or (settings.daily_reports_dir / f"{date}-analysis.md")
+
+    if not source.is_file():
+        typer.secho(f"Report not found: {source}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    from .investor_report_export import export_investor_report
+
+    dest = export_investor_report(
+        source,
+        output,
+        fallback_date=date,
+        pdf_dir=settings.daily_pdfs_dir,
+    )
+    typer.secho(f"Wrote {dest}", fg=typer.colors.GREEN)
+
+    if open_file:
+        import subprocess
+        import sys
+
+        if sys.platform == "darwin":
+            subprocess.run(["open", str(dest)], check=False)
+        elif sys.platform.startswith("linux"):
+            subprocess.run(["xdg-open", str(dest)], check=False)
+        elif sys.platform == "win32":
+            subprocess.run(["start", "", str(dest)], shell=True, check=False)
+
+
 @app.command("migrate-perplexity")
 def migrate_perplexity(
     history: Path = typer.Option(..., "--history", help="Path to perplexity_analysis_history.md."),

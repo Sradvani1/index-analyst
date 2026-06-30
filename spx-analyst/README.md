@@ -24,6 +24,7 @@ a markdown report plus structured JSON state.
 - [PR-12: Research assistant Phase 3](docs/PR-12-research-assistant-phase3.md) — Next.js `/assistant` UI wired to local FastAPI chat routes
 - [PR-13: Research assistant Phase 4](docs/PR-13-research-assistant-phase4.md) — operator setup guide, E2E checklist, setup script
 - [PR-14: Responses API chat](docs/PR-14-responses-api-chat.md) — migrate chat from Assistants/Threads to Responses + Conversations
+- [PR-18: Pass 2 Task voice](docs/PR-18-pass2-task-voice.md) — investor daily report audience, prose bans, posture-based Evidence resolution in Pass 2 Task
 
 ## How it works
 
@@ -298,13 +299,19 @@ rendered as served (see [PR-7](docs/PR-7-pass2-investor-report-template.md)).
 
 | Route | Purpose |
 |-------|---------|
-| `/` | Redirects to the newest archived run |
-| `/archive` | Full archive grid (optional; primary navigation is the left sidebar) |
-| `/runs/{date}` | Report header, signal grid, and section tabs |
-| `/assistant` | Research assistant (conversation sidebar + streaming chat) |
+| `/` | Editorial homepage — lead story + recent reports |
+| `/archive` | Full archive grid (linked from top nav) |
+| `/runs/{date}` | Scrollable article, hero header, structured right rail |
+| `/assistant` | Research assistant (streaming chat; session Sheet on mobile) |
 | `/about` | Static product note |
 
+**Navigation:** sticky `SiteHeader` in root layout (Archive, Latest, About, Assistant). No persistent run sidebar. `listRuns()` is deduped per request via `React.cache()` in `app/layout.tsx`.
+
+**Field authority:** hero `RunHeader` owns date, close, day change, and recommended action; `ReportRail` owns structural bias, trend regime, valuation, primary tension, signals, matrix snapshot, and Monte Carlo. Each `DailyState` field appears in exactly one surface.
+
 API (FastAPI, port 8000): `GET /api/health`, `GET /api/runs`, `GET /api/runs/{date}`, `GET/POST /api/chat/sessions`, `POST /api/chat/sessions/{id}/messages` (SSE).
+
+See [PR-17](docs/PR-17-publication-viewer-refactor.md) for the full refactor record.
 
 ### Prerequisites — seed `memory/`
 
@@ -359,7 +366,7 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs. Assistant: htt
 |---------|----------------|
 | Empty homepage / archive | No valid pairs in `memory/daily_states` + `memory/daily_reports` |
 | Run missing from list | Orphan state or report; corrupt JSON; schema validation failure (check API logs) |
-| Backend unavailable page | FastAPI not running on `:8000` or `API_BASE_URL` misconfigured |
+| Backend unavailable page | FastAPI not running on `:8000` or `API_BASE_URL` misconfigured — use copyable `uvicorn` command on error page |
 | Chat 503 / missing OpenAI vars | Complete [operator guide](docs/research-assistant-operator-guide.md) Steps 1–2 |
 
 ## Project layout

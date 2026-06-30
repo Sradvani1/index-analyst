@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { MetadataChipFromText } from "@/components/archive/metadata-chip";
-import { humanizeAction, formatClose, formatDateLong } from "@/lib/format";
+import { humanizeAction, formatClose, formatDateLong, runCardSummary } from "@/lib/format";
 import { toneFor } from "@/lib/report";
 import type { RunSummary } from "@/lib/types";
 
@@ -34,10 +34,9 @@ export function ArchiveCard({ run }: ArchiveCardProps) {
           <MetadataChipFromText text={run.structural_bias} />
         )}
         <MetadataChipFromText text={action} tone={toneFor(run.recommended_action)} />
-        <MetadataChipFromText text={run.valuation_bucket} />
       </div>
 
-      <p className="line-clamp-2 text-sm leading-relaxed text-ink-500">{run.trend_regime}</p>
+      <p className="line-clamp-3 text-sm leading-relaxed text-ink-500">{runCardSummary(run)}</p>
     </Link>
   );
 }

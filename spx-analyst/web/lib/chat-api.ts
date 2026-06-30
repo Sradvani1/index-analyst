@@ -83,15 +83,21 @@ export interface StreamChatHandlers {
   onDone: () => void;
 }
 
+export interface StreamChatOptions {
+  signal?: AbortSignal;
+}
+
 export async function streamChatMessage(
   sessionId: string,
   content: string,
   handlers: StreamChatHandlers,
+  options?: StreamChatOptions,
 ): Promise<void> {
   const response = await fetch(`${apiBase()}/api/chat/sessions/${sessionId}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content }),
+    signal: options?.signal,
   });
 
   if (!response.ok) {

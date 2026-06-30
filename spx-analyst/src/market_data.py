@@ -38,6 +38,161 @@ def _parse_run_date(date_str: str) -> date:
     return date.fromisoformat(date_str)
 
 
+def _session_date_from_index(idx: object) -> date:
+    if hasattr(idx, "date"):
+        return idx.date()  # type: ignore[union-attr]
+    return _parse_run_date(str(idx)[:10])
+
+
+def _finite(value: float) -> bool:
+    return math.isfinite(value)
+
+
+def _bar_is_valid(bar: PriceBar) -> bool:
+    return all(_finite(v) for v in (bar.open, bar.high, bar.low, bar.close))
+
+
+def series_has_valid_bars(series: MarketSeries) -> bool:
+    """True when every bar has finite OHLC (cache integrity check)."""
+    return bool(series.bars) and all(_bar_is_valid(b) for b in series.bars)
+
+
+def _cache_covers_run_date(series: MarketSeries, run_date: str) -> bool:
+    """True when cached VIX/TNX/SPX extend through the run date with finite values."""
+    target = _parse_run_date(run_date)
+    if not series_has_valid_bars(series) or not len(series.vix) or not len(series.tnx):
+        return False
+    if not _finite(float(series.vix.iloc[-1])) or not _finite(float(series.tnx.iloc[-1])):
+        return False
+    vix_last = max(series.vix.index)
+    tnx_last = max(series.tnx.index)
+    spx_last = series.bars[-1].session_date
+    return spx_last >= target and vix_last >= target and tnx_last >= target
+
+
+def _fetch_session_ohlc(ticker: str, session: date) -> dict[str, float] | None:
+    """Fetch one session via Ticker.history (repairs bulk-download NaN rows)."""
+    import yfinance as yf
+
+    end = session + timedelta(days=1)
+    df = yf.Ticker(ticker).history(
+        start=session.isoformat(),
+        end=end.isoformat(),
+        auto_adjust=True,
+    )
+    if df.empty or pd.isna(df.iloc[-1]["Close"]):
+        return None
+    row = df.iloc[-1]
+    return {
+        "Open": float(row["Open"]),
+        "High": float(row["High"]),
+        "Low": float(row["Low"]),
+        "Close": float(row["Close"]),
+    }
+
+
+def _sanitize_ohlc_df(
+    df: pd.DataFrame,
+    ticker: str,
+    *,
+    required_sessions: frozenset[date] | None = None,
+) -> pd.DataFrame:
+    """Repair NaN OHLC rows from bulk download; drop unreparable stubs; fail on required dates."""
+    if df.empty:
+        raise ValueError(f"yfinance returned no data for {ticker}")
+
+    required = required_sessions or frozenset()
+    out = df.copy()
+
+    for idx in out.index:
+        if not pd.isna(out.loc[idx, "Close"]):
+            continue
+        session = _session_date_from_index(idx)
+        logger.warning(
+            "yfinance bulk download returned NaN OHLC for %s on %s; attempting session repair",
+            ticker,
+            session,
+        )
+        repaired = _fetch_session_ohlc(ticker, session)
+        if repaired is None:
+            continue
+        for col, val in repaired.items():
+            out.loc[idx, col] = val
+        logger.info("repaired %s session %s via Ticker.history", ticker, session)
+
+    bad = out["Close"].isna()
+    if bad.any():
+        bad_dates = [_session_date_from_index(idx) for idx in out.index[bad]]
+        for session in bad_dates:
+            if session in required:
+                raise ValueError(
+                    f"yfinance could not obtain OHLC for {ticker} on required session "
+                    f"{session.isoformat()}"
+                )
+        logger.warning(
+            "dropping %d session(s) with NaN close for %s: %s",
+            int(bad.sum()),
+            ticker,
+            [d.isoformat() for d in bad_dates],
+        )
+        out = out.loc[~bad]
+
+    if out.empty:
+        raise ValueError(f"no valid OHLC rows remain for {ticker}")
+    return out
+
+
+def _backfill_close_series_to_target(
+    closes: pd.Series,
+    ticker: str,
+    target: date,
+) -> pd.Series:
+    """Fill sessions missing from bulk download through run date (session-level fetch)."""
+    if closes.empty:
+        raise ValueError(f"empty close series for {ticker}")
+
+    out = closes.sort_index().copy()
+    last_bulk = max(out.index)
+    d = last_bulk + timedelta(days=1)
+    while d <= target:
+        if d.weekday() >= 5:
+            d += timedelta(days=1)
+            continue
+        if d not in out.index or not _finite(float(out[d])):
+            ohlc = _fetch_session_ohlc(ticker, d)
+            if ohlc is not None:
+                logger.info(
+                    "backfilled %s session %s via Ticker.history (missing in bulk)",
+                    ticker,
+                    d.isoformat(),
+                )
+                out[d] = ohlc["Close"]
+        d += timedelta(days=1)
+
+    if target not in out.index or not _finite(float(out[target])):
+        raise ValueError(
+            f"yfinance could not obtain {ticker} close for required session "
+            f"{target.isoformat()}"
+        )
+    return out.sort_index()
+
+
+def _close_series_from_bulk(
+    df: pd.DataFrame,
+    ticker: str,
+    target: date,
+    *,
+    tail_sessions: int | None = None,
+) -> pd.Series:
+    """Build a close series from bulk download, backfilled through run date."""
+    sanitized = _sanitize_ohlc_df(df, ticker, required_sessions=frozenset())
+    if tail_sessions is not None:
+        sanitized = sanitized.tail(tail_sessions)
+    closes = sanitized["Close"].copy()
+    closes.index = pd.to_datetime(closes.index).date
+    return _backfill_close_series_to_target(closes, ticker, target)
+
+
 def _bars_from_df(df: pd.DataFrame) -> list[PriceBar]:
     bars: list[PriceBar] = []
     for idx, row in df.iterrows():
@@ -73,6 +228,17 @@ def _fetch_ticker(ticker: str, start: date, end: date) -> pd.DataFrame:
     return df
 
 
+def _fetch_ticker_sanitized(
+    ticker: str,
+    start: date,
+    end: date,
+    *,
+    required_sessions: frozenset[date] | None = None,
+) -> pd.DataFrame:
+    df = _fetch_ticker(ticker, start, end)
+    return _sanitize_ohlc_df(df, ticker, required_sessions=required_sessions)
+
+
 def fetch_market_series(
     run_date: str,
     *,
@@ -82,23 +248,27 @@ def fetch_market_series(
     target = _parse_run_date(run_date)
     start = target - timedelta(days=int(GSPC_LOOKBACK_DAYS * 1.6))
 
-    gspc_df = _fetch_ticker(settings.spx_ticker, start, target)
+    gspc_df = _fetch_ticker_sanitized(
+        settings.spx_ticker, start, target, required_sessions=frozenset({target})
+    )
     gspc_df = gspc_df.tail(GSPC_LOOKBACK_DAYS)
 
     vix_start = target - timedelta(days=int(VIX_LOOKBACK_DAYS * 1.6))
-    vix_df = _fetch_ticker(settings.vix_ticker, vix_start, target).tail(VIX_LOOKBACK_DAYS)
+    vix_df = _fetch_ticker(settings.vix_ticker, vix_start, target)
+    vix = _close_series_from_bulk(
+        vix_df, settings.vix_ticker, target, tail_sessions=VIX_LOOKBACK_DAYS
+    )
 
     tnx_start = target - timedelta(days=int(TNX_LOOKBACK_SESSIONS * 2))
-    tnx_df = _fetch_ticker(settings.treasury_ticker, tnx_start, target).tail(TNX_LOOKBACK_SESSIONS)
+    tnx_df = _fetch_ticker(settings.treasury_ticker, tnx_start, target)
+    tnx = _close_series_from_bulk(
+        tnx_df, settings.treasury_ticker, target, tail_sessions=TNX_LOOKBACK_SESSIONS
+    )
 
     bars = _bars_from_df(gspc_df)
+    if not bars or not _bar_is_valid(bars[-1]):
+        raise ValueError(f"SPX series for {run_date} has no valid closing bar")
     as_of = bars[-1].session_date
-
-    vix = vix_df["Close"].copy()
-    vix.index = pd.to_datetime(vix.index).date
-
-    tnx = tnx_df["Close"].copy()
-    tnx.index = pd.to_datetime(tnx.index).date
 
     return MarketSeries(bars=bars, vix=vix, tnx=tnx, as_of_date=as_of)
 
@@ -121,6 +291,12 @@ def market_series_from_cache(payload: dict) -> MarketSeries:
 
 
 def cache_market_series(run_dir: Path, series: MarketSeries) -> None:
+    if not series_has_valid_bars(series):
+        raise ValueError("refusing to cache market series with invalid OHLC bars")
+    if len(series.vix) == 0 or len(series.tnx) == 0:
+        raise ValueError("refusing to cache market series with empty VIX/TNX history")
+    if not _finite(float(series.vix.iloc[-1])) or not _finite(float(series.tnx.iloc[-1])):
+        raise ValueError("refusing to cache market series with invalid VIX/TNX close")
     payload = {
         "as_of_date": series.as_of_date.isoformat(),
         "bars": [
@@ -152,7 +328,13 @@ def load_or_fetch_market_series(
     if cache_path.exists() and not force_fetch:
         from .files import read_json
 
-        return market_series_from_cache(read_json(cache_path))
+        cached = market_series_from_cache(read_json(cache_path))
+        if series_has_valid_bars(cached) and _cache_covers_run_date(cached, run_date):
+            return cached
+        logger.warning(
+            "cached %s is stale or invalid; refetching from yfinance",
+            cache_path.name,
+        )
     series = fetch_market_series(run_date, settings=settings)
     cache_market_series(run_dir, series)
     return series
@@ -181,6 +363,8 @@ def build_market_data_context(
 ) -> MarketDataContext:
     closes = np.array([b.close for b in series.bars], dtype=float)
     spx_close = float(closes[-1])
+    if not _finite(spx_close):
+        raise ValueError("market series last SPX close is not finite")
     warnings: list[str] = []
 
     as_of = series.as_of_date.isoformat()

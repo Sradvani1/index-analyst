@@ -5,8 +5,10 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from src.config import Settings
+from src.schemas import DailyState
 from src.web.app import app
 from tests.conftest import SAMPLE_STATE, make_settings, write_state
+from tests.fixtures.investor_report import assembled_report_for_state
 
 
 def _write_report(settings: Settings, date: str, body: str = "# Report\n\nBody.") -> None:
@@ -96,6 +98,24 @@ def test_get_run_success(tmp_path, monkeypatch) -> None:
     assert data["report_markdown"] == report_body
     assert data["daily_state"]["date"] == date
     assert data["daily_state"]["spx_close"] == SAMPLE_STATE["spx_close"]
+
+
+def test_list_runs_includes_posture_lead_from_report(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    date = "2026-06-12"
+    write_state(settings, date)
+    state = DailyState.model_validate({**SAMPLE_STATE, "date": date})
+    _write_report(settings, date, assembled_report_for_state(state, date=date))
+
+    client = TestClient(app)
+    response = client.get("/api/runs")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["posture_lead"].startswith("Mid Bull regime with hold and monitor posture")
+    assert "narrative_summary" not in data[0]
 
 
 def test_get_run_not_found(tmp_path, monkeypatch) -> None:

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { MetadataChipFromText } from "@/components/archive/metadata-chip";
-import { humanizeAction, formatClose, formatDateLong } from "@/lib/format";
+import { humanizeAction, formatClose, formatDateLong, runCardSummary } from "@/lib/format";
 import { toneFor } from "@/lib/report";
 import type { RunSummary } from "@/lib/types";
 
@@ -26,10 +26,11 @@ export function LeadStory({ run }: LeadStoryProps) {
       <div className="mt-5 flex flex-wrap gap-2">
         {run.structural_bias && <MetadataChipFromText text={run.structural_bias} />}
         <MetadataChipFromText text={action} tone={toneFor(run.recommended_action)} />
-        <MetadataChipFromText text={run.valuation_bucket} />
       </div>
 
-      <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-700">{run.trend_regime}</p>
+      <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-700">
+        {runCardSummary(run)}
+      </p>
 
       <Link
         href={`/runs/${run.date}`}

@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import {
   ApiError,
   HealthResponse,
@@ -29,9 +31,9 @@ export async function getHealth(): Promise<HealthResponse> {
   return fetchJson<HealthResponse>("/api/health");
 }
 
-export async function listRuns(): Promise<RunSummary[]> {
+export const listRuns = cache(async (): Promise<RunSummary[]> => {
   return fetchJson<RunSummary[]>("/api/runs");
-}
+});
 
 export async function getRun(date: string): Promise<RunDetail> {
   return fetchJson<RunDetail>(`/api/runs/${date}`);

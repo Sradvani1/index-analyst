@@ -1,0 +1,25 @@
+{
+  "date": "2026-06-29",
+  "system_role_chars": 2204,
+  "framework_chars": 16645,
+  "body_chars": 23066,
+  "pass2_attached_images": [
+    "01_spx_intraday.png",
+    "02_spx_5day.png",
+    "03_spx_1month.png",
+    "04_spx_3month.png",
+    "09_fear_greed_momentum.png",
+    "10_breadth_52wk_highs_lows.png",
+    "11_breadth_mcclellan.png",
+    "14_safe_haven_demand.png",
+    "15_junk_bond_spread.png"
+  ],
+  "pass2_reference_only": [
+    "05_spx_6month.png",
+    "06_spx_1year.png",
+    "07_spx_3year.png",
+    "08_fear_greed_index.png",
+    "12_put_call_ratio.png",
+    "13_vix_volatility.png"
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "date": "2026-06-24",
+  "market_data": {
+    "spx_close": 7358.22021484375,
+    "vix": 18.6299991607666,
+    "us10y": 4.451000213623047,
+    "as_of_date": "2026-06-24",
+    "pct_above_200dma": 6.3872,
+    "realized_vol_20d": 0.171294,
+    "sma_50": 7349.0058,
+    "sma_200": 6916.4543,
+    "precompute_warnings": [
+      "active leg fully retraced: close 7358.22 <= prior downside target 7407.89 (fib_500); re-anchored downside to 7350.58 (reanchor_liquidation) for Monte Carlo straddle validity"
+    ]
+  },
+  "valuation": {
+    "forward_pe": 19.89,
+    "trailing_pe": 25.37,
+    "forward_earnings_yield": 0.050284,
+    "erp": 0.005774,
+    "erp_trend": "stable",
+    "erp_reentry_floor_at_0_5pct": 7473.24
+  },
+  "structure": {
+    "active_swing_high_date": "2026-06-15",
+    "active_swing_high_price": 7577.919921875,
+    "swing_high_confirmation": "five_sessions",
+    "active_swing_low_date": "2026-06-09",
+    "active_swing_low_price": 7237.85009765625,
+    "swing_low_confirmation": "above_50dma",
+    "fib_236": 7497.66,
+    "fib_382": 7448.01,
+    "fib_500": 7407.89,
+    "fib_618": 7367.76,
+    "liquidation_caution": 7350.58,
+    "liquidation_nervous": 7199.02,
+    "liquidation_margin_call": 6820.13,
+    "liquidation_cascade": 6441.23,
+    "upside_target": 7577.92,
+    "upside_target_rule": "active_swing_high",
+    "downside_target": 7350.58,
+    "downside_target_rule": "reanchor_liquidation"
+  },
+  "monte_carlo": {
+    "sigma": 0.171294,
+    "mu": 0.07,
+    "rally_exhaustion_score": "Low",
+    "exhaustion_discount": 0.0,
+    "upside_target": 7577.919921875,
+    "downside_target": 7350.58232421875,
+    "upside_target_rule": "active_swing_high",
+    "downside_target_rule": "reanchor_liquidation",
+    "prob_up_first_raw": 0.214,
+    "prob_down_first_raw": 0.786,
+    "prob_up_first_adjusted": 0.214,
+    "prob_down_first_adjusted": 0.786,
+    "cascades": "If 7351 breaks, P(7199)=78%; If 7578 breaks, P(7673)=87%",
+    "median_days": "upside 12d / downside 1d",
+    "drift_path": "5d=7366.30; 10d=7374.39; 20d=7390.60; 30d=7406.85; 60d=7455.80",
+    "cash_drag_prob": 0.0981,
+    "threshold_evaluation": {
+      "65": {
+        "adjusted_prob_up_first": 0.214,
+        "actionable": false
+      },
+      "70": {
+        "adjusted_prob_up_first": 0.214,
+        "actionable": false
+      },
+      "75": {
+        "adjusted_prob_up_first": 0.214,
+        "actionable": false
+      }
+    }
+  }
+}

@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     data_dir_raw: str = Field(default="data", alias="SPX_DATA_DIR")
     memory_dir_raw: str = Field(default="memory", alias="SPX_MEMORY_DIR")
     output_dir_raw: str = Field(default="output", alias="SPX_OUTPUT_DIR")
+    daily_pdfs_dir_raw: str = Field(default="daily_pdfs", alias="SPX_DAILY_PDFS_DIR")
     eps_history_path_raw: str = Field(
         default="data/master/eps_history.json",
         alias="SPX_EPS_HISTORY_PATH",
@@ -122,6 +123,10 @@ class Settings(BaseSettings):
     @property
     def output_dir(self) -> Path:
         return _resolve(self.output_dir_raw)
+
+    @property
+    def daily_pdfs_dir(self) -> Path:
+        return _resolve(self.daily_pdfs_dir_raw)
 
 
 @functools.lru_cache(maxsize=1)

@@ -21,7 +21,7 @@ class RunSummary(BaseModel):
     date: str
     spx_close: float
     structural_bias: str
-    trend_regime: str
+    posture_lead: str
     valuation_bucket: str
     recommended_action: str
     signal_alignment: SignalAlignment

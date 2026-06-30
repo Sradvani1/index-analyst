@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
+import { cache } from "react";
 
+import { SiteHeader } from "@/components/site-header";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { listRuns } from "@/lib/api";
 
 import "./globals.css";
 
@@ -22,15 +25,29 @@ export const metadata: Metadata = {
   description: "Daily SPX tactical analysis — editorial archive and reports",
 };
 
-export default function RootLayout({
+const getShellRuns = cache(async () => {
+  try {
+    const runs = await listRuns();
+    return { runs, backendError: false };
+  } catch {
+    return { runs: [] as Awaited<ReturnType<typeof listRuns>>, backendError: true };
+  }
+});
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { runs, backendError } = await getShellRuns();
+
   return (
     <html lang="en" className={`${inter.variable} ${newsreader.variable} h-full antialiased`}>
       <body className="min-h-full bg-background font-sans text-foreground">
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          <SiteHeader runs={runs} backendError={backendError} />
+          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+        </TooltipProvider>
       </body>
     </html>
   );

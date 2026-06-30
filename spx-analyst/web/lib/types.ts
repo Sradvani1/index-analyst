@@ -22,7 +22,7 @@ export interface RunSummary {
   date: string;
   spx_close: number;
   structural_bias?: StructuralBias;
-  trend_regime: string;
+  posture_lead: string;
   valuation_bucket: string;
   recommended_action: string;
   signal_alignment: SignalAlignment;

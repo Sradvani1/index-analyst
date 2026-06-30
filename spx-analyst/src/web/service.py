@@ -12,6 +12,7 @@ from ..config import Settings, get_settings
 from ..files import InputError, read_json, read_text
 from ..schemas import DailyState
 from .models import RunDetail, RunSummary
+from .report_parse import extract_posture_lead
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +49,12 @@ def _load_state(path: Path) -> DailyState:
     return DailyState.model_validate(read_json(path))
 
 
-def _state_to_summary(state: DailyState) -> RunSummary:
+def _state_to_summary(state: DailyState, report_markdown: str) -> RunSummary:
     return RunSummary(
         date=state.date,
         spx_close=state.spx_close,
         structural_bias=state.structural_bias,
-        trend_regime=state.trend_regime,
+        posture_lead=extract_posture_lead(report_markdown),
         valuation_bucket=state.valuation_bucket,
         recommended_action=state.decision_matrix.recommended_action,
         signal_alignment=state.signal_alignment,
@@ -66,7 +67,9 @@ def _try_load_summary(settings: Settings, date: str) -> RunSummary | None:
     if not state_path.exists() or not report_path.exists():
         return None
     try:
-        return _state_to_summary(_load_state(state_path))
+        state = _load_state(state_path)
+        report_markdown = read_text(report_path)
+        return _state_to_summary(state, report_markdown)
     except (InputError, ValidationError, ValueError) as exc:
         logger.warning("skipping unreadable state for %s: %s", date, exc)
         return None

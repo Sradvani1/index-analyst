@@ -1,0 +1,43 @@
+{
+  "date": "2026-06-26",
+  "vector_store_id": "vs_6a3f1518540081919dd70877e9391014",
+  "sections": [
+    {
+      "section": "Today's Posture",
+      "openai_file_id": "file-1d3CK7LQRGRzyhSfohAXNp"
+    },
+    {
+      "section": "Market Regime",
+      "openai_file_id": "file-2yLLghs9Yh5zxMTgnzrZJg"
+    },
+    {
+      "section": "Price and Trend",
+      "openai_file_id": "file-NXLaFisGaAgwQzaZC9BsYk"
+    },
+    {
+      "section": "Technicals and Sentiment",
+      "openai_file_id": "file-6KLi1fYRx5GdxekaoZ71py"
+    },
+    {
+      "section": "Valuation and ERP",
+      "openai_file_id": "file-BVuGitHLM1yaKugVNtnwZg"
+    },
+    {
+      "section": "Risk and Monte Carlo",
+      "openai_file_id": "file-2mVnFQFjrYuLR1QGGMFar6"
+    },
+    {
+      "section": "Tactical Levels and Next Session Plan",
+      "openai_file_id": "file-1g7oNenEwtgbNwTnDP2qYN"
+    },
+    {
+      "section": "Evidence and Tensions",
+      "openai_file_id": "file-LGmQusyhCKktT4j1iSeQXX"
+    },
+    {
+      "section": "Updated Decision Matrix",
+      "openai_file_id": "file-L7DkZW39nHxY8ugG6cwppq"
+    }
+  ],
+  "indexed_at": "2026-06-27T22:15:09.153248+00:00"
+}

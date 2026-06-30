@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -136,6 +137,11 @@ def _resolve_close(
         series = fetch_market_series(date, settings=settings)
         cache_market_series(run_dir, series)
         fetched_close = float(series.bars[-1].close)
+        if not math.isfinite(fetched_close):
+            raise InputError(
+                f"market data for {date} has non-finite SPX close after fetch/repair. "
+                "Pass --close to set manifest.close manually after checking data sources."
+            )
         if series.as_of_date.isoformat() != date:
             msg = (
                 f"run date ({date}) is not the latest yfinance session "

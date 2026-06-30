@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPX Daily Analysis — 2026-06-29</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+  <style>:root {
+  --ink-900: #151922;
+  --ink-700: #2b3443;
+  --ink-500: #5e6a7d;
+  --paper-50: #faf8f3;
+  --paper-100: #f3f0e8;
+  --surface-0: #ffffff;
+  --surface-1: #f7f5ef;
+  --border-soft: #e6e0d4;
+  --market-green: #0e6b57;
+  --signal-blue: #295c9b;
+  --caution-amber: #a56a17;
+  --risk-red: #a23a3a;
+  --shadow-2: 0 6px 18px rgba(18, 24, 32, 0.06);
+  --max-width: 52rem;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  margin: 0;
+  background: var(--paper-50);
+  color: var(--ink-900);
+  font-family: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+  line-height: 1.72;
+}
+
+.report {
+  max-width: calc(var(--max-width) + 4rem);
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.hero {
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 0.875rem;
+  box-shadow: var(--shadow-2);
+  padding: 1.75rem 1.75rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.framework-tag {
+  margin: 0 0 0.75rem;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+
+.hero-date {
+  margin: 0;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.hero h1 {
+  margin: 0.35rem 0 0;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: clamp(1.65rem, 4vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.hero-close { text-align: right; }
+
+.close-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.close-value {
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.close-change {
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.close-label {
+  margin: 0.15rem 0 0;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.72rem;
+  color: var(--ink-500);
+}
+
+.hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.tone-bull { color: var(--market-green); background: color-mix(in srgb, var(--market-green) 12%, white); }
+.tone-bear { color: var(--risk-red); background: color-mix(in srgb, var(--risk-red) 10%, white); }
+.tone-caution { color: var(--caution-amber); background: color-mix(in srgb, var(--caution-amber) 12%, white); }
+.tone-neutral { color: var(--ink-700); background: var(--surface-1); border-color: var(--border-soft); }
+
+.posture-lead {
+  margin: 1.25rem 0 0;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--border-soft);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--ink-700);
+}
+
+.toc {
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.toc-label {
+  margin: 0 0 0.5rem;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.toc ol {
+  margin: 0;
+  padding-left: 1.15rem;
+  columns: 2;
+  column-gap: 1.5rem;
+}
+
+.toc li {
+  margin: 0.15rem 0;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.88rem;
+}
+
+.toc a {
+  color: var(--signal-blue);
+  text-decoration: none;
+}
+
+.toc a:hover { text-decoration: underline; }
+
+.section {
+  margin-bottom: 2.25rem;
+  scroll-margin-top: 1rem;
+}
+
+.section h2 {
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 2px solid var(--border-soft);
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.section-body {
+  max-width: var(--max-width);
+  font-size: 1.05rem;
+}
+
+.section-body p { margin: 0 0 1rem; }
+.section-body p:last-child { margin-bottom: 0; }
+
+.section-body h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.section-body ul, .section-body ol {
+  margin: 0 0 1rem;
+  padding-left: 1.35rem;
+}
+
+.section-body li { margin: 0.25rem 0; }
+
+.section-body strong { font-weight: 600; }
+
+.section-body table:not(.matrix) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.92rem;
+}
+
+.section-body th,
+.section-body td {
+  border: 1px solid var(--border-soft);
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.matrix-wrap {
+  overflow-x: auto;
+  margin: 0.5rem 0 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 0.65rem;
+  background: var(--surface-0);
+}
+
+table.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.82rem;
+}
+
+table.matrix th {
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+table.matrix td {
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+table.matrix tr:last-child td { border-bottom: none; }
+
+.matrix-row.matrix-action td {
+  font-weight: 600;
+}
+
+.matrix-row.matrix-action.tone-bull td { background: color-mix(in srgb, var(--market-green) 8%, white); }
+.matrix-row.matrix-action.tone-bear td { background: color-mix(in srgb, var(--risk-red) 8%, white); }
+.matrix-row.matrix-action.tone-caution td { background: color-mix(in srgb, var(--caution-amber) 8%, white); }
+
+.report-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-soft);
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.78rem;
+  color: var(--ink-500);
+}
+
+@media print {
+  body { background: white; }
+  .report { padding: 0; max-width: none; }
+  .hero, .toc { box-shadow: none; break-inside: avoid; }
+  .section { break-inside: avoid-page; }
+  .toc a { color: var(--ink-700); text-decoration: none; }
+}
+
+@media (max-width: 640px) {
+  .hero-top { flex-direction: column; align-items: flex-start; }
+  .hero-close { text-align: left; }
+  .close-row { justify-content: flex-start; }
+  .toc ol { columns: 1; }
+}</style>
+</head>
+<body>
+  <article class="report">
+    <header class="hero">
+  <p class="framework-tag">Framework daily-2026-06</p>
+  <div class="hero-top">
+    <div class="hero-title-block">
+      <p class="hero-date">2026-06-29 · S&amp;P 500</p>
+      <h1>SPX Daily Tactical Analysis</h1>
+    </div>
+    <div class="hero-close">
+      <div class="close-row">
+        <span class="close-value">7,440.43</span>
+        
+      </div>
+      <p class="close-label">SPX close</p>
+    </div>
+  </div>
+  <div class="hero-chips"><span class="chip tone-bull">Late Bull / Topping</span><span class="chip tone-bear">Defensive — trim bias</span></div>
+  <p class="posture-lead">The posture for the next session is Defensive — trim bias. Today&#x27;s sharp snap-back is a tradeable bounce, not a re-entry signal, and the disciplined response is to use strength toward overhead resistance to lighten exposure rather than chase it.</p>
+</header>
+    <nav class="toc" aria-label="Report sections">
+  <p class="toc-label">Contents</p>
+  <ol><li><a href="#today-s-posture">Posture</a></li>
+<li><a href="#market-regime">Regime</a></li>
+<li><a href="#price-and-trend">Price &amp; Trend</a></li>
+<li><a href="#technicals-and-sentiment">Technicals</a></li>
+<li><a href="#valuation-and-erp">Valuation</a></li>
+<li><a href="#risk-and-monte-carlo">Risk / MC</a></li>
+<li><a href="#tactical-levels-and-next-session-plan">Tactical</a></li>
+<li><a href="#evidence-and-tensions">Evidence</a></li>
+<li><a href="#updated-decision-matrix">Matrix</a></li></ol>
+</nav>
+    <main>
+      <section class="section" id="today-s-posture">
+  <h2>Today&#x27;s Posture</h2>
+  <div class="section-body"><p>Price reclaimed the flattening 50-day SMA, the 50% fib (7,408) and contested the 38.2% fib (7,448) on a strong top-third close — a genuine improvement in short-term structure after the late-June breakdown. But three layers continue to argue against pressing long. The equity risk premium has collapsed to roughly zero as price rallied into a static 10-year yield, leaving no valuation cushion and the 0.5% ERP re-entry floor (7,591) sitting well above spot. Breadth (McClellan near its lows, net new highs at +1.46%) and credit (junk spreads elevated at 1.37%) have now refused to confirm price for 12-plus sessions. And the Monte Carlo edge — while less extreme than recent days — remains 65.9% down-first and fails every regime threshold.</p>
+<p>Net: a mechanically intact bull skeleton is being defended by buyers, but into a zero-cushion valuation backdrop with persistently weak internals and the swing-high band (7,578) overhead. Trim into the bounce, do not add, and require breadth and credit confirmation before treating any pullback zone as an actionable re-entry.</p></div>
+</section>
+<section class="section" id="market-regime">
+  <h2>Market Regime</h2>
+  <div class="section-body"><p>The structural bias remains <strong>Late Bull / Topping</strong>, holding for a seventh consecutive session. The mechanical skeleton of the bull market is intact: the 50-day SMA (7,371) sits well above the 200-day (6,930), and price closed +7.4% over the 200-day — moderate-to-elevated extension, not a stretched blow-off but enough to argue against assuming full long-run drift. The 125-day MA at 7,041 confirms the longer trend still slopes higher beneath price.</p>
+<p>What keeps this firmly in topping territory rather than a healthy mid-bull is the persistent disconnect between price and its internals. Breadth has been deteriorating throughout late June. The McClellan Volume Summation Index reads near 900, hovering close to its recent lows and well off the 1,200-1,600 readings that accompanied earlier rallies — market breadth is weak. Net new 52-week highs on the NYSE have faded to just +1.46%, sliding back toward the zero line after the spring's washout. These are not the participation readings of a market making durable new highs.</p>
+<p>Credit echoes the warning. The junk-to-investment-grade yield spread sits at 1.37%, elevated and toward the higher end of its multi-month range — a credit market that is not confirming equity risk appetite. Safe-haven demand shows bonds outperforming stocks by 3.25% over the trailing 20 days, a defensive rotation flagged as Extreme Fear.</p>
+<p>The contradiction defines the regime: a flattening 50-day, a zero-cushion ERP, and falling participation against a still-rising 200-day. That combination — high-ish extension, no valuation cushion, breadth divergence, credit warning — is the textbook Late Bull / Topping signature. The 23.6% fib is a hard pause zone here, not a deployment level.</p></div>
+</section>
+<section class="section" id="price-and-trend">
+  <h2>Price and Trend</h2>
+  <div class="section-body"><p>Price closed at 7,440.43, up roughly 1.2% from the prior ~7,354 print — a decisive snap-back that reversed the late-June slide. The bounce reclaimed three pieces of structure that had given way: the flattening 50-day SMA (now a +0.94% cushion versus the prior -0.13% discount), the 50% fib (7,408), and it pushed up to contest the 38.2% fib (7,448). The intraday chart shows steady accumulation off the morning lows into a close in the top third of the daily range — a strong finish, not a fade.</p>
+<p>The trend regime is <strong>bullish but maturing</strong>. The 50-day over the 200-day arrangement remains constructive, but the 50-day has clearly flattened over the recovery arc, losing the upward slope that characterizes a healthy trend. Price is +7.4% over the 200-day, comfortably extended but not extreme.</p>
+<p>The active leg runs from the 6/09 swing low (7,237.85) to the 6/15 swing high (7,577.92). Today's close sits between the 38.2% and 23.6% fibs after fully retracing earlier in the month — the bounce has clawed back roughly two-thirds of the active leg's drawdown. The structural lid remains the swing-high band at 7,578, which has rejected price twice this month. Until that band is reclaimed with confirmation, rallies into it are trim opportunities.</p></div>
+</section>
+<section class="section" id="technicals-and-sentiment">
+  <h2>Technicals and Sentiment</h2>
+  <div class="section-body"><p>Momentum is neutral and improving but not yet a green light. RSI(14) reads roughly 55 — squarely neutral, turning up from the depressed late-June readings but nowhere near the trim zone above 70 or a buy-zone reset below 30. The 1-month and 3-month panels show RSI recovering off its lows in step with price. MFI sits near 72, in the caution/approach-trim band (70-80) — money flow has firmed on the bounce, which is constructive, but it is approaching levels where rallies historically tire rather than levels that signal a fresh oversold launch.</p>
+<p>On the Bollinger structure, price recovered off the lower-band region toward the middle and upper band, and has reclaimed and is holding above the 20-day SMA — a meaningful short-term improvement after the breakdown. This passes the near-term regime test.</p>
+<p>Sentiment, however, undercuts the technical thaw. The Fear &amp; Greed headline sits at 27 — Fear — with several internal components in Extreme Fear: breadth, McClellan, safe-haven demand, and the junk spread. The put/call ratio at 0.85 is unremarkable, neither complacent nor in heavy-hedging contrarian-buy territory. The pattern of a price bounce with sentiment stuck in Fear and breadth refusing to lift is the hallmark of narrow leadership — exactly the topping warning the framework flags. Momentum is healing on the surface while participation stays thin underneath.</p></div>
+</section>
+<section class="section" id="valuation-and-erp">
+  <h2>Valuation and ERP</h2>
+  <div class="section-body"><p>Valuation is the cleanest argument against chasing this bounce. Forward P/E at 20.1x lands in the cautious-buying band, where adds are justified only at strong confluence — and today's rally into resistance is the opposite of a confluence buy point. Trailing P/E at 25.7x underscores that the index is not cheap.</p>
+<p>The equity risk premium is the binding constraint. With the forward earnings yield at 4.97% against a 10-year Treasury at 4.37%, the ERP has compressed to roughly 0.60% per the read-only inputs — and the rally into a static 10-year has effectively erased the cushion stocks offer over risk-free yield. This sits at the bottom of the valuation-ceiling band, where the framework calls for a trim bias and no aggressive adds. Critically, the price level at which ERP would rebuild to a 0.5% cushion sits at 7,591 — above spot and above the swing-high band. In other words, there is no valuation-confirmed support beneath current price; the market would need to fall, not rise, to restore a buyable cushion.</p>
+<p>The practical read: every point of upside from here is bought at a thinner and thinner valuation margin. That is a structural cap on durable gains and reinforces selling strength rather than buying it.</p>
+<p><strong>Key valuation levels:</strong></p>
+<ul>
+<li>Forward P/E: <strong>20.11x</strong> (bucket: Forward PE 20.1x (cautious buying only at strong confluence); ERP 0.01% — valuation ceiling, trim bias, no aggressive adds.)</li>
+<li>Trailing P/E: <strong>25.66x</strong></li>
+<li>Forward earnings yield: <strong>4.97%</strong></li>
+<li>10-year Treasury yield: <strong>4.374%</strong></li>
+<li>ERP: <strong>0.60%</strong> (stable)</li>
+<li>ERP re-entry floor at 0.5% ERP: <strong>7,591.30</strong></li>
+</ul></div>
+</section>
+<section class="section" id="risk-and-monte-carlo">
+  <h2>Risk and Monte Carlo</h2>
+  <div class="section-body"><p>The probability picture has eased but still does not support adding. The simulation, run on 20-day realized volatility of 0.1753 and a drift of 0.07, returns a 34.1% probability of tagging the upside target (the 7,578 swing high) before the downside target (the 7,408 fib), versus 65.9% down-first. That down-skew has improved materially from the ~80% readings of the prior six sessions — the bounce has rebalanced the odds — but at 34.1% up-first the setup fails all three regime thresholds (65/70/75). For a Late Bull / Topping regime requiring a 70% bar, this is not actionable.</p>
+<p>The conditional cascades define the asymmetry: if 7,408 breaks, there is a 94% probability of reaching the 7,368 fib next; if the 7,578 swing high breaks to the upside, an 88% chance of extending to 7,673. Median time-to-target is telling — 7 days up versus just 2 days down, reflecting how quickly downside resolves relative to grinding upside. The drift path projects only gradual gains (5-day ~7,449, 30-day ~7,489, 60-day ~7,538), keeping price beneath the swing high across the horizon.</p>
+<p>On leverage and liquidation: VIX at 17.65 sits just below its 50-day MA (17.81), benign and below the 20 risk threshold — the late-June uptick has reversed, and there is no forced-selling pressure. The caution zone (7,351) and nervous zone (7,199) were not breached on the close. Risk is contained, but the probability edge tilts down.</p>
+<p><strong>Probability snapshot:</strong></p>
+<ul>
+<li>σ (20d realized vol): <strong>0.1753</strong> | μ (drift): <strong>0.0700</strong></li>
+<li>Raw up-first: <strong>34.1%</strong> | Raw down-first: <strong>65.9%</strong></li>
+<li>Adjusted up-first: <strong>34.1%</strong> | Adjusted down-first: <strong>65.9%</strong></li>
+<li>Effective threshold (70%): <strong>below threshold</strong></li>
+<li>Rally exhaustion: <strong>Low</strong> (discount 0%)</li>
+<li>Upside target: <strong>7,577.92</strong> (active_swing_high) | Downside target: <strong>7,407.89</strong> (fib_500)</li>
+<li>Median days: upside 7d / downside 2d</li>
+<li>Conditional cascade: If 7408 breaks, P(7368)=94%; If 7578 breaks, P(7673)=88%</li>
+<li>Drift path: 5d=7448.50; 10d=7456.58; 20d=7472.76; 30d=7488.98; 60d=7537.84 | Cash-drag probability: 13%</li>
+</ul></div>
+</section>
+<section class="section" id="tactical-levels-and-next-session-plan">
+  <h2>Tactical Levels and Next Session Plan</h2>
+  <div class="section-body"><p>The map for the next session is straightforward. The active leg runs from the 7,237.85 swing low to the 7,577.92 swing high, yielding fib levels at 23.6% (7,497.66), 38.2% (7,448.01), 50% (7,407.89), and 61.8% (7,367.76).</p>
+<p>To the upside, the first hurdle is the 38.2% fib (7,448), which price is contesting at the close; above it, the 23.6% fib (7,498) is the next resistance and the framework's hard pause zone in this regime — a primary trim target, not a buy zone. The swing-high band at 7,578 is the structural ceiling overhead.</p>
+<p>To the downside, the 50% fib (7,408) is the pivot that today's bounce reclaimed; a daily close back below it re-arms the 94% conditional cascade toward the 61.8% fib (7,368) and the 7,351 caution/liquidation zone. Below that, the nervous zone sits at 7,199.</p>
+<p>The SMA/fib structure has the flattening 50-day SMA (7,371) sitting near the 61.8% fib (7,368) — a convergence zone that becomes the highest-priority support to watch on any pullback, and the line that defines whether this bounce holds.</p>
+<p><strong>Plan:</strong> Trim into strength toward the 23.6% fib / swing-high band. Do not chase the bounce and do not add — valuation, breadth, and the probability edge all argue against it. Before treating any pullback as an actionable re-entry, require the confirmation checklist: a close above the prior high, RSI turning up from depressed levels, breadth improving, and ideally a VIX reversal. With breadth and credit still diverging, patience is the default.</p>
+<p><strong>Tactical levels:</strong></p>
+<ul>
+<li>Active swing high: <strong>7,577.92</strong> (2026-06-15)</li>
+<li>Active swing low: <strong>7,237.85</strong> (2026-06-09)</li>
+<li>Fibonacci: 23.6% <strong>7,497.66</strong> | 38.2% <strong>7,448.01</strong> | 50% <strong>7,407.89</strong> | 61.8% <strong>7,367.76</strong></li>
+<li>Liquidation zones: caution <strong>7,350.58</strong> | nervous <strong>7,199.02</strong> | margin call <strong>6,820.13</strong> | cascade <strong>6,441.23</strong></li>
+<li>Monte Carlo targets: upside <strong>7,577.92</strong> | downside <strong>7,407.89</strong></li>
+</ul></div>
+</section>
+<section class="section" id="evidence-and-tensions">
+  <h2>Evidence and Tensions</h2>
+  <div class="section-body"><p>The primary tension is a sharp mechanical snap-back — reclaim of the flattening 50-day SMA, the 50% and 38.2% fibs on a strong top-third close with a benign sub-18 VIX — colliding with a zero-cushion ERP, 12-plus sessions of weak breadth and elevated credit, and a Monte Carlo edge that remains down-first. The confirming evidence is real: the 50d-over-200d skeleton is intact, price is +7.4% over the 200-day, the 20-day SMA has been reclaimed, and the down-first probability has eased from ~80% toward 66%. But each bullish thread runs into a structural counterweight.</p>
+<p><strong>Breadth/credit vs. the bounce (high).</strong> The bullish read is that buyers defended the trend, snapping price back above the 50-day and mid-fib band. The bearish read, supported by the McClellan (~900, near lows), net new highs (+1.46%, Fear), and the junk spread (1.37%, elevated), is that internals have refused to confirm for 12-plus sessions — classic narrow leadership. The framework resolves this decisively: when breadth and credit both diverge from price, elevate caution even if price has not broken down. Caution prevails.</p>
+<p><strong>ERP ceiling vs. the rally (high).</strong> The bullish read is that the rally reclaimed key structure with momentum turning up. The bearish read is that ERP collapsed to roughly zero as price rallied into a static 4.37% 10-year, leaving no cushion and the 0.5% re-entry floor (7,591) above spot. The rule is unambiguous: a 0.0–0.5% ERP is a valuation ceiling — trim bias, no aggressive adds.</p>
+<p><strong>Monte Carlo vs. the intact skeleton (medium).</strong> The bullish read leans on the intact skeleton, reclaimed 50-day, and benign VIX. The bearish read is that probabilities remain 65.9% down-first and fail all thresholds, with a 94% cascade to 7,368 if 7,408 breaks. The framework rule — never use Monte Carlo in isolation, and if the adjusted probability misses the regime threshold the setup is not actionable — confirms the setup is not a buy. All three tensions resolve the same way: trim bias into strength, patience on re-entry.</p></div>
+</section>
+<section class="section" id="updated-decision-matrix">
+  <h2>Updated Decision Matrix</h2>
+  <div class="section-body"><div class="matrix-wrap"><table class="matrix">
+<thead><tr>
+<th>Signal Layer</th>
+<th>Current Reading</th>
+<th>Signal</th>
+</tr></thead><tbody>
+<tr class="matrix-row tone-bull">
+<td>Structural Bias</td>
+<td>Late Bull / Topping</td>
+<td>Late Bull / Topping</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Monte Carlo Threshold</td>
+<td>70%</td>
+<td>70%</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Volatility Input</td>
+<td>0.1753</td>
+<td>σ=0.1753</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Drift Input</td>
+<td>0.0700</td>
+<td>μ=0.0700</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Rally Exhaustion Score</td>
+<td>Low</td>
+<td>Low</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Trend Regime</td>
+<td>50d (7,371) &gt; 200d (6,930), 50d flattening; price +7.4% over 200d, reclaimed 50d</td>
+<td>Bullish but maturing</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Intraday Close Position</td>
+<td>Top third of range — strong close on bounce day</td>
+<td>Bullish near-term</td>
+</tr>
+<tr class="matrix-row tone-caution">
+<td>RSI / MFI State</td>
+<td>RSI ~55 (neutral, turning up); MFI ~72 (caution/approach trim)</td>
+<td>Neutral-to-caution</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>20-Day SMA Status</td>
+<td>Reclaimed and holding above 20-day SMA after late-June breakdown</td>
+<td>Short-term structure improving</td>
+</tr>
+<tr class="matrix-row tone-caution">
+<td>Bollinger Band State</td>
+<td>Recovered off lower-band region toward middle/upper band</td>
+<td>Neutral, regime test passed near-term</td>
+</tr>
+<tr class="matrix-row tone-caution">
+<td>ERP State and Trend</td>
+<td>ERP 0.60% / stable</td>
+<td>neutral</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Credit Condition</td>
+<td>Junk spread 1.37%, elevated/widening (Extreme Fear)</td>
+<td>Credit warning — diverging</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Breadth Condition</td>
+<td>McClellan ~900 near lows; net new highs +1.46% (Fear)</td>
+<td>Narrow/deteriorating — diverging</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>VIX Regime</td>
+<td>VIX 17.65, just below 50-day MA (17.81); standard regime, below 20</td>
+<td>Benign</td>
+</tr>
+<tr class="matrix-row tone-neutral">
+<td>Leverage Risk State</td>
+<td>Price reclaimed 50d; caution zone 7,351, nervous 7,199; no thresholds breached on close</td>
+<td>Contained</td>
+</tr>
+<tr class="matrix-row tone-caution">
+<td>Monte Carlo Edge</td>
+<td>34%</td>
+<td>monitor below threshold</td>
+</tr>
+<tr class="matrix-row tone-bear">
+<td>Overall Signal Balance</td>
+<td>Bounce reclaim and benign VIX vs zero-cushion ERP, diverging breadth/credit, down-first MC</td>
+<td>Mixed, trim-biased</td>
+</tr>
+<tr class="matrix-row tone-bear matrix-action">
+<td>Recommended Action</td>
+<td>Trim bias into strength toward the 23.6% fib / swing-high band; do not chase the bounce; re-entry requires breadth/credit confirmation</td>
+<td>Defensive — trim bias</td>
+</tr>
+</tbody></table></div></div>
+</section>
+    </main>
+    <footer class="report-footer">Generated from SPX Daily Analysis — 2026-06-29. For informational analysis only — not investment advice.</footer>
+  </article>
+</body>
+</html>
