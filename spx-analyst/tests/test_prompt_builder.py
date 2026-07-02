@@ -184,6 +184,10 @@ def test_report_prompt_task_voice_guidance(sample_state):
     assert "Audience:" in body
     assert "reading a daily market report" in lower
     assert "background inputs" in lower
+    assert "attributing conclusions to" in lower
+    assert "state conclusions directly" in lower
+    assert "2–3 short paragraphs" in body
+    assert "requires/flags/rules" not in lower
     assert "do not quote filenames" in lower
     assert "today's validated posture resolves the tension" in lower
     assert "framework rule resolves" not in lower
