@@ -365,6 +365,69 @@ def index_rag(
     )
 
 
+@app.command("fetch-fear-greed")
+def fetch_fear_greed_cmd(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+    output_dir: str = typer.Option(
+        None, help="Output folder for PNGs (default: ../Images/<date>)."
+    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Fetch CNN Fear & Greed data and generate all 8 chart images (08–15)."""
+    _setup_logging(verbose)
+    date = date or _today()
+    from .import_run import default_images_dir
+    from .fear_greed import fetch_and_generate
+
+    out = Path(output_dir) if output_dir else default_images_dir(date)
+    try:
+        paths = fetch_and_generate(out)
+    except Exception as exc:
+        typer.secho(f"Failed: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    raw_path = out / "fear_greed_raw.json"
+    typer.secho(f"Fear & Greed charts → {out}", fg=typer.colors.GREEN)
+    typer.echo(f"  Raw data:  {raw_path.name} ({raw_path.stat().st_size // 1000} KB)" if raw_path.is_file() else "")
+    for name in sorted(paths):
+        p = paths[name]
+        if p.is_file():
+            typer.echo(f"  {name} ({p.stat().st_size // 1000} KB)")
+        else:
+            typer.echo(f"  {name} (skipped)")
+
+
+@app.command("generate-price-charts")
+def generate_price_charts_cmd(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+    output_dir: str = typer.Option(
+        None, help="Output folder for PNGs (default: ../Images/<date>)."
+    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Fetch SPX price data and generate all 7 chart images (01–07)."""
+    _setup_logging(verbose)
+    run_date = dt.date.fromisoformat(date) if date else dt.date.today()
+    from .chart_pack import CANONICAL_CHART_FILES
+    from .import_run import default_images_dir
+    from .price_charts import fetch_and_generate
+
+    out = Path(output_dir) if output_dir else default_images_dir(run_date.isoformat())
+    try:
+        paths = fetch_and_generate(out, run_date)
+    except Exception as exc:
+        typer.secho(f"Failed: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    typer.secho(f"Price charts → {out}", fg=typer.colors.GREEN)
+    for name in CANONICAL_CHART_FILES[:7]:
+        p = out / name
+        if p.is_file():
+            typer.echo(f"  {name} ({p.stat().st_size // 1000} KB)")
+        else:
+            typer.echo(f"  {name} (skipped)")
+
+
 @app.command()
 def chat(
     session_id: str = typer.Option(None, help="Resume an existing session id."),
