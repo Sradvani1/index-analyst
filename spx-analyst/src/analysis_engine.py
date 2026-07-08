@@ -20,7 +20,7 @@ from .pass2_images import Pass2ImagePlan, resolve_pass2_images
 from .precompute import run_precompute
 from .prompts import build_report_prompt, build_state_prompt, load_system_role
 from .report_assembly import assemble_investor_report, extract_prose_sections
-from .schemas import AnalysisContext, DailyState, ValidationIssue, ValidationReport
+from .schemas import AnalysisContext, DailyState, ValidationIssue, ValidationReport, flat_to_nested
 from .state_enforcement import apply_precomputed_fields, audit_enforcement_issues
 from .state_normalize import resolve_pass1_daily_state
 from .validation import validate_report, validation_errors_text
@@ -106,13 +106,15 @@ def run_daily_analysis(
         recent_summary=recent_summary,
     )
     state_call = client.run_structured_state(state_bundle, image_paths)
+    raw_tool_input = state_call.tool_input or {}
+    nested_tool_input = flat_to_nested(raw_tool_input)
 
     def _repair(invalid: dict, errors: str):
         repair_call = client.repair_structured_state(invalid, errors)
         return repair_call.tool_input or {}, repair_call.raw_response
 
     pass1 = resolve_pass1_daily_state(
-        state_call.tool_input or {},
+        nested_tool_input,
         date,
         repair_fn=_repair,
     )
@@ -279,7 +281,7 @@ def _pass1_response_raw(
 ) -> dict[str, object]:
     payload: dict[str, object] = {
         "state_pass": state_call.raw_response,
-        "state_pass_original": pass1.original_tool_input,
+        "state_pass_original": state_call.tool_input or {},
     }
     if pass1.normalized:
         payload["state_pass_normalized"] = pass1.normalized_tool_input

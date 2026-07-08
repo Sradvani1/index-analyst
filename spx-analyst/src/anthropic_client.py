@@ -25,7 +25,7 @@ from tenacity import (
 
 from .config import Settings, get_settings
 from .prompts import EVIDENCE_AND_TENSIONS_HEADING, PASS2_PROSE_SECTIONS, PromptBundle
-from .schemas import DailyState
+from .schemas import DailyState, EmitDailyStateInput
 
 logger = logging.getLogger(__name__)
 
@@ -95,11 +95,16 @@ def _system_blocks(bundle: PromptBundle, cache_enabled: bool) -> list[dict[str, 
 
 
 def _state_tool() -> dict[str, Any]:
-    """The emit_daily_state tool for Pass 1 (and optional Pass 2 cache prefix)."""
+    """The emit_daily_state tool for Pass 1 (and optional Pass 2 cache prefix).
+
+    Uses the flat ``EmitDailyStateInput`` schema to avoid Claude's XML-string
+    serialization of nested object properties. The repair pass
+    (``repair_structured_state``) still uses the nested ``DailyState`` schema.
+    """
     return {
         "name": STATE_TOOL_NAME,
         "description": "Emit the structured daily analysis state for the session.",
-        "input_schema": DailyState.model_json_schema(),
+        "input_schema": EmitDailyStateInput.model_json_schema(),
     }
 
 

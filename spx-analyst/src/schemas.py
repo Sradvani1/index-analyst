@@ -304,6 +304,105 @@ class MonteCarloDetail(BaseModel):
     cash_drag_prob: float = Field(..., ge=0.0, le=1.0)
 
 
+class EmitDailyStateInput(BaseModel):
+    """Flat input schema for the emit_daily_state tool boundary.
+
+    Nested wrapper objects (signals, monte_carlo, decision_matrix,
+    signal_alignment) are flattened to top-level fields. The flat_to_nested()
+    mapper reconstructs the nested DailyState-shaped dict before validation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    date: str
+    framework_version: str
+    spx_close: float
+    structural_bias: StructuralBias
+    base_case: str
+    trend_regime: str
+    valuation_bucket: str
+    what_changed_today: List[str]
+    narrative_summary: str
+    open_questions: List[str]
+    confirming_evidence: List[str]
+    primary_tension: str
+    conflicting_evidence: List[Divergence]
+
+    signals_pct_vs_50dma: Optional[float] = None
+    signals_pct_vs_200dma: Optional[float] = None
+    signals_bollinger_position: Optional[str] = None
+    signals_rsi14: Optional[float] = None
+    signals_mfi: Optional[float] = None
+    signals_vix_regime: Optional[str] = None
+    signals_fear_greed: Optional[int] = None
+    signals_fear_greed_zone: Optional[str] = None
+    signals_put_call: Optional[float] = None
+    signals_high_yield_spread: Optional[float] = None
+    signals_intraday_close_position: Optional[str] = None
+    signals_middle_band_regime: Optional[str] = None
+
+    mc_effective_threshold: EffectiveThreshold
+    mc_meets_threshold: bool
+    mc_prob_up_first_raw: float
+    mc_prob_down_first_raw: float
+    mc_prob_up_first_adjusted: float
+    mc_prob_down_first_adjusted: float
+    mc_sigma: float
+    mc_mu: float
+    mc_upside_target: float
+    mc_downside_target: float
+    mc_rally_exhaustion_score: RallyExhaustionScore
+    mc_conditional_cascade: str
+    mc_median_days: str
+    mc_drift_path: str
+    mc_cash_drag_prob: float
+
+    decision_matrix_rows: List[DecisionMatrixRow]
+    trim_signals_met: int = Field(..., ge=0, le=5)
+    buy_signals_met: int = Field(..., ge=0, le=5)
+    overall: SignalAlignmentOverall
+
+
+def flat_to_nested(flat: dict) -> dict:
+    """Convert flat emit_daily_state input to nested DailyState-shaped dict.
+
+    Idempotent: if *flat* already has ``signals`` as a dict, returns *flat*
+    unchanged (safe on repair-pass output that still uses the nested schema).
+
+    Missing flat groups produce empty nested containers (``signals`` → ``{}``,
+    ``monte_carlo`` → ``{}``, ``decision_matrix`` → ``{"rows": []}``).
+    Non-prefixed fields pass through unmodified. No values are silently invented.
+    This is an intentional validation-boundary rule: the downstream
+    ``DailyState.model_validate()`` enforces domain completeness.
+    """
+    if isinstance(flat.get("signals"), dict):
+        return flat
+
+    result: dict[str, object] = {}
+    signals: dict[str, object] = {}
+    monte_carlo: dict[str, object] = {}
+
+    for k, v in flat.items():
+        if k.startswith("signals_"):
+            signals[k.removeprefix("signals_")] = v
+        elif k.startswith("mc_"):
+            monte_carlo[k.removeprefix("mc_")] = v
+        elif k in ("decision_matrix_rows", "trim_signals_met", "buy_signals_met", "overall"):
+            continue
+        else:
+            result[k] = v
+
+    result["signals"] = signals
+    result["monte_carlo"] = monte_carlo
+    result["decision_matrix"] = {"rows": flat.get("decision_matrix_rows", [])}
+    result["signal_alignment"] = {
+        "trim_signals_met": flat.get("trim_signals_met"),
+        "buy_signals_met": flat.get("buy_signals_met"),
+        "overall": flat.get("overall"),
+    }
+    return result
+
+
 class DailyState(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
