@@ -106,8 +106,7 @@ def run_daily_analysis(
         recent_summary=recent_summary,
     )
     state_call = client.run_structured_state(state_bundle, image_paths)
-    raw_tool_input = state_call.tool_input or {}
-    nested_tool_input = flat_to_nested(raw_tool_input)
+    nested_tool_input = flat_to_nested(state_call.tool_input or {})
 
     def _repair(invalid: dict, errors: str):
         repair_call = client.repair_structured_state(invalid, errors)
