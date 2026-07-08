@@ -7,11 +7,13 @@ venv/
 .pytest_cache/
 .DS_Store
 
+docs/archive/
 # Run artifacts (keep directory structure via .gitkeep)
 output/*/
-data/runs/*/charts/
+data/runs/*/
 memory/daily_states/*.json
 memory/daily_reports/*.md
 memory/rolling/*
 memory/chat/
+memory/rag/
 daily_pdfs/*.pdf
