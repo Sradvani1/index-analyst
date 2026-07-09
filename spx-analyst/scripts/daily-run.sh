@@ -27,4 +27,15 @@ else
     python -m src.cli run --date "$TODAY"
 fi
 
+echo "=== $TODAY: generating PDF ==="
+python -m src.cli export-report --date "$TODAY" || echo "  (PDF export skipped)"
+
+echo "=== $TODAY: copying PDF to iCloud ==="
+PDF_SRC="$PROJECT_DIR/daily_pdfs/$TODAY-investor-report.pdf"
+ICLOUD_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/SPX"
+if [ -f "$PDF_SRC" ]; then
+    mkdir -p "$ICLOUD_DIR" 2>/dev/null
+    cp "$PDF_SRC" "$ICLOUD_DIR/" && echo "  copied to iCloud/SPX/$TODAY-investor-report.pdf"
+fi
+
 echo "=== $TODAY: done ==="
