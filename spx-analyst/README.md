@@ -25,6 +25,8 @@ a markdown report plus structured JSON state.
 - [PR-13: Research assistant Phase 4](docs/PR-13-research-assistant-phase4.md) — operator setup guide, E2E checklist, setup script
 - [PR-14: Responses API chat](docs/PR-14-responses-api-chat.md) — migrate chat from Assistants/Threads to Responses + Conversations
 - [PR-18: Pass 2 Task voice](docs/PR-18-pass2-task-voice.md) — investor daily report audience, prose bans, posture-based Evidence resolution in Pass 2 Task
+- [PR-19: Chart generation engine](docs/PR-19-chart-generation-engine.md) — automated SPX price charts + CNN Fear & Greed charts
+- [PR-20: Prepare-run workflow](docs/PR-20-prepare-run-workflow.md) — two-step `prepare` → `run` eliminates separate generation + import steps
 
 ## How it works
 
@@ -163,13 +165,20 @@ python -m src.cli show-eps --date 2026-06-10   # verify before run
 # Optional: preview Step 0 precompute when EPS resolves
 python -m src.cli setup-run --date 2026-06-12 --precompute
 
+# Primary two-step workflow: prepare → run (auto-generates all 15 charts)
+python -m src.cli prepare --date 2026-07-08          # generates charts + precompute
+python -m src.cli run --date 2026-07-08               # two-pass Claude analysis
+
+# Force regenerate an already-prepared date
+python -m src.cli prepare --date 2026-07-08 --force
+
 # Import 15 PNG screenshots from Images/<date>/ (repo root) into the run directory
 python -m src.cli import-run --date 2026-06-24
 
 # Optional: chain Step 0 precompute after import
 python -m src.cli import-run --date 2026-06-24 --precompute
 
-# Run a full daily analysis (use import-run instead of manual chart copy + manifest edit)
+# Run a full daily analysis from a prepared run directory
 python -m src.cli run --date 2026-06-12
 
 # Force fresh yfinance fetch during precompute
@@ -217,7 +226,7 @@ data/runs/2026-06-12/
     14_safe_haven_demand.png
     15_junk_bond_spread.png
   manifest.json
-  analysis_context.json   # Step 0 precompute (written during run)
+  analysis_context.json   # Step 0 precompute (written during prepare)
   market_history.json     # yfinance cache (optional after first fetch)
 
 data/master/
@@ -225,10 +234,10 @@ data/master/
 ```
 
 `setup-run` creates a **placeholder** 1-chart manifest. For daily production runs,
-use `import-run` to copy the 15-chart pack from `Images/<date>/` at the repo root
-and build a complete `manifest.json` (fetches SPX close from yfinance). Screenshot
-files in intake order — alphabetical filename order maps to chart order 1–15; do not
-rename out of capture sequence.
+use `prepare` to auto-generate all 15 charts and run precompute, or use
+`import-run` to copy a 15-chart pack from `Images/<date>/` at the repo root
+(legacy manual screenshot workflow). Screenshot files in intake order — alphabetical
+filename order maps to chart order 1–15; do not rename out of capture sequence.
 
 `manifest.json` lists charts with unique, contiguous `order` values; Pass 1 sends
 images to the model in that order. Pass 2 sends a subset in the same manifest order

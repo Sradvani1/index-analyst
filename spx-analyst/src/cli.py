@@ -365,7 +365,30 @@ def index_rag(
     )
 
 
-@app.command("fetch-fear-greed")
+@app.command("prepare")
+def prepare_cmd(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+    force: bool = typer.Option(False, help="Regenerate an already-prepared run."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Generate charts, fetch market data, write manifest, and run precompute."""
+    _setup_logging(verbose)
+    date = date or _today()
+    settings = get_settings()
+    from .prepare_run import prepare_run, print_prepare_summary
+
+    try:
+        result = prepare_run(date, force=force, settings=settings)
+    except (InputError, ValueError) as exc:
+        typer.secho(f"Prepare failed: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    print_prepare_summary(result)
+    for warning in result.warnings:
+        typer.secho(warning, fg=typer.colors.YELLOW, err=True)
+
+
+@app.command("fetch-fear-greed", hidden=True)
 def fetch_fear_greed_cmd(
     date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
     output_dir: str = typer.Option(
@@ -397,7 +420,7 @@ def fetch_fear_greed_cmd(
             typer.echo(f"  {name} (skipped)")
 
 
-@app.command("generate-price-charts")
+@app.command("generate-price-charts", hidden=True)
 def generate_price_charts_cmd(
     date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
     output_dir: str = typer.Option(
