@@ -7,15 +7,13 @@ secret-scrubbed request/response snapshots.
 
 from __future__ import annotations
 
-import base64
-import io
+import dataclasses
 import logging
-from dataclasses import dataclass
+import time
 from pathlib import Path
 from typing import Any
 
 import anthropic
-from PIL import Image
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -24,6 +22,8 @@ from tenacity import (
 )
 
 from .config import Settings, get_settings
+from .pipeline_client import CallResult, PassTelemetry
+from .pipeline_utils import encode_image
 from .prompts import EVIDENCE_AND_TENSIONS_HEADING, PASS2_PROSE_SECTIONS, PromptBundle
 from .schemas import DailyState, EmitDailyStateInput
 
@@ -63,28 +63,6 @@ _TRANSIENT_ERRORS = (
 
 class AnthropicError(Exception):
     """Raised when the provider response is missing or unusable."""
-
-
-@dataclass
-class CallResult:
-    text: str | None
-    tool_input: dict[str, Any] | None
-    raw_response: dict[str, Any]
-    request_snapshot: dict[str, Any]
-
-
-def _encode_image(path: Path, max_dim: int) -> dict[str, Any]:
-    with Image.open(path) as img:
-        img = img.convert("RGB")
-        if max(img.size) > max_dim:
-            img.thumbnail((max_dim, max_dim), Image.LANCZOS)
-        buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
-    data = base64.standard_b64encode(buffer.getvalue()).decode("ascii")
-    return {
-        "type": "image",
-        "source": {"type": "base64", "media_type": "image/png", "data": data},
-    }
 
 
 def _system_blocks(bundle: PromptBundle, cache_enabled: bool) -> list[dict[str, Any]]:
@@ -128,7 +106,17 @@ def _user_content(bundle: PromptBundle, image_paths: list[Path], max_dim: int) -
     # Images are NOT cached: they live in the messages layer, and Pass 1 forces the
     # tool while Pass 2 does not — the differing tool_choice invalidates the messages
     # cache, so an image breakpoint would only incur write cost with no read.
-    content: list[dict[str, Any]] = [_encode_image(p, max_dim) for p in image_paths]
+    content: list[dict[str, Any]] = []
+    for p in image_paths:
+        encoded = encode_image(p, max_dim)
+        content.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": encoded.media_type,
+                "data": encoded.base64_data,
+            },
+        })
     content.append({"type": "text", "text": bundle.body})
     return content
 
@@ -141,6 +129,7 @@ def _snapshot(
     image_paths: list[Path],
     tool_name: str | None,
     pass2_audit: dict[str, Any] | None = None,
+    telemetry: PassTelemetry | None = None,
 ) -> dict[str, Any]:
     """Reproducibility metadata. Excludes secrets and raw image bytes."""
     snap: dict[str, Any] = {
@@ -154,6 +143,8 @@ def _snapshot(
         "image_count": len(image_paths),
         "forced_tool": tool_name,
     }
+    if telemetry is not None:
+        snap["telemetry"] = dataclasses.asdict(telemetry)
     if pass2_audit:
         snap.update(pass2_audit)
     return snap
@@ -179,6 +170,7 @@ class AnthropicClient:
         """Pass 1: force the model to emit DailyState via tool use."""
         system_blocks = _system_blocks(bundle, self.settings.prompt_cache_enabled)
         content = _user_content(bundle, image_paths, self.settings.image_max_dimension)
+        t0 = time.monotonic()
         response = self._create(
             model=self.settings.model,
             max_tokens=self.settings.max_output_tokens,
@@ -187,7 +179,21 @@ class AnthropicClient:
             tool_choice={"type": "tool", "name": STATE_TOOL_NAME},
             messages=[{"role": "user", "content": content}],
         )
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
         tool_input = _extract_tool_input(response, STATE_TOOL_NAME)
+        usage = response.usage
+        telemetry = PassTelemetry(
+            provider="anthropic",
+            model=self.settings.model,
+            pass_name="state",
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", None),
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", None),
+            latency_ms=elapsed_ms,
+            image_count=len(image_paths),
+            request_shape_version="1.0",
+        )
         return CallResult(
             text=None,
             tool_input=tool_input,
@@ -198,6 +204,7 @@ class AnthropicClient:
                 body_text=bundle.body,
                 image_paths=image_paths,
                 tool_name=STATE_TOOL_NAME,
+                telemetry=telemetry,
             ),
         )
 
@@ -219,6 +226,7 @@ class AnthropicClient:
             f"Validation errors:\n{errors}\n\n"
             f"Invalid output:\n```json\n{json.dumps(invalid, indent=2)}\n```"
         )
+        t0 = time.monotonic()
         response = self._create(
             model=self.settings.model,
             max_tokens=self.settings.max_output_tokens,
@@ -226,11 +234,27 @@ class AnthropicClient:
             tool_choice={"type": "tool", "name": STATE_TOOL_NAME},
             messages=[{"role": "user", "content": message}],
         )
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        usage = response.usage
+        telemetry = PassTelemetry(
+            provider="anthropic",
+            model=self.settings.model,
+            pass_name="repair",
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", None),
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", None),
+            latency_ms=elapsed_ms,
+            image_count=0,
+            request_shape_version="1.0",
+        )
+        request_snapshot: dict[str, Any] = {"model": self.settings.model, "mode": "repair"}
+        request_snapshot["telemetry"] = dataclasses.asdict(telemetry)
         return CallResult(
             text=None,
             tool_input=_extract_tool_input(response, STATE_TOOL_NAME),
             raw_response=response.model_dump(mode="json"),
-            request_snapshot={"model": self.settings.model, "mode": "repair"},
+            request_snapshot=request_snapshot,
         )
 
     def run_markdown_report(
@@ -256,6 +280,7 @@ class AnthropicClient:
         content = _user_content(bundle, image_paths, max_dim)
         messages = [{"role": "user", "content": content}]
 
+        t0 = time.monotonic()
         response = self._create(
             model=self.settings.model,
             max_tokens=self.settings.max_output_tokens,
@@ -267,6 +292,8 @@ class AnthropicClient:
         text = _extract_text(response)
         stub_retry = False
         tools_in_request = True
+        attempt_count = 1
+        retry_reason: str | None = None
 
         if _is_pass2_stub_response(text):
             logger.warning(
@@ -275,6 +302,9 @@ class AnthropicClient:
             )
             stub_retry = True
             tools_in_request = False
+            attempt_count = 2
+            retry_reason = "stub_response"
+            t0 = time.monotonic()
             response = self._create(
                 model=self.settings.model,
                 max_tokens=self.settings.max_output_tokens,
@@ -287,6 +317,22 @@ class AnthropicClient:
                     f"Pass 2 returned stub markdown after retry ({len(text)} chars)"
                 )
 
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        usage = response.usage
+        telemetry = PassTelemetry(
+            provider="anthropic",
+            model=self.settings.model,
+            pass_name="report",
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", None),
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", None),
+            latency_ms=elapsed_ms,
+            attempt_count=attempt_count,
+            retry_reason=retry_reason,
+            image_count=len(image_paths),
+            request_shape_version="1.0",
+        )
         audit = dict(pass2_audit or {})
         audit["pass2_image_max_dimension_used"] = max_dim
         audit["pass2_tools_in_request"] = tools_in_request
@@ -302,6 +348,7 @@ class AnthropicClient:
                 image_paths=image_paths,
                 tool_name=None,
                 pass2_audit=audit,
+                telemetry=telemetry,
             ),
         )
 
@@ -313,6 +360,7 @@ class AnthropicClient:
             "description": "Emit the structured daily analysis state for the session.",
             "input_schema": DailyState.model_json_schema(),
         }
+        t0 = time.monotonic()
         response = self._create(
             model=self.settings.model,
             max_tokens=self.settings.max_output_tokens,
@@ -320,6 +368,20 @@ class AnthropicClient:
             tools=[tool],
             tool_choice={"type": "tool", "name": STATE_TOOL_NAME},
             messages=[{"role": "user", "content": bundle.body}],
+        )
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        usage = response.usage
+        telemetry = PassTelemetry(
+            provider="anthropic",
+            model=self.settings.model,
+            pass_name="state",
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", None),
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", None),
+            latency_ms=elapsed_ms,
+            image_count=0,
+            request_shape_version="1.0",
         )
         return CallResult(
             text=None,
@@ -331,19 +393,35 @@ class AnthropicClient:
                 body_text=bundle.body,
                 image_paths=[],
                 tool_name=STATE_TOOL_NAME,
+                telemetry=telemetry,
             ),
         )
 
     def run_text_markdown_report(self, bundle: PromptBundle) -> CallResult:
         """Text-only markdown report generation (e.g. Perplexity migration)."""
         system_blocks = _system_blocks(bundle, self.settings.prompt_cache_enabled)
+        t0 = time.monotonic()
         response = self._create(
             model=self.settings.model,
             max_tokens=self.settings.max_output_tokens,
             system=system_blocks,
             messages=[{"role": "user", "content": bundle.body}],
         )
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
         text = _extract_text(response)
+        usage = response.usage
+        telemetry = PassTelemetry(
+            provider="anthropic",
+            model=self.settings.model,
+            pass_name="report",
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", None),
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", None),
+            latency_ms=elapsed_ms,
+            image_count=0,
+            request_shape_version="1.0",
+        )
         return CallResult(
             text=text,
             tool_input=None,
@@ -354,6 +432,7 @@ class AnthropicClient:
                 body_text=bundle.body,
                 image_paths=[],
                 tool_name=None,
+                telemetry=telemetry,
             ),
         )
 

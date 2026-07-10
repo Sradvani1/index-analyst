@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.anthropic_client import CallResult
+from src.pipeline_client import CallResult
 from src.memory import build_recent_summary
 from src.migrate_perplexity import (
     FRAMEWORK_VERSION,

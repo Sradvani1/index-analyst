@@ -10,6 +10,7 @@ from pathlib import Path
 from . import files
 from .anthropic_client import AnthropicClient
 from .config import Settings, get_settings
+from .pipeline_client import PipelineLLMClient
 from .eps_history import eps_resolution_log, require_eps_for_run
 from .memory import (
     build_recent_summary,
@@ -44,12 +45,30 @@ class RunResult:
     warnings: list[str] = field(default_factory=list)
 
 
+def _resolve_pipeline_client(settings: Settings) -> PipelineLLMClient:
+    """Return a pipeline client for the configured provider."""
+    provider = settings.llm_provider.strip().lower()
+    if provider == "openai":
+        from .openai_pipeline_client import OpenAIPipelineClient, OpenAIPipelineError
+
+        try:
+            return OpenAIPipelineClient(settings)
+        except OpenAIPipelineError as exc:
+            raise RunError(str(exc)) from exc
+    if provider != "anthropic":
+        raise RunError(
+            f"Unknown LLM provider: {settings.llm_provider!r}. "
+            "Expected 'anthropic' or 'openai'."
+        )
+    return AnthropicClient(settings)
+
+
 def run_daily_analysis(
     date: str,
     input_dir: str | None = None,
     *,
     settings: Settings | None = None,
-    client: AnthropicClient | None = None,
+    client: PipelineLLMClient | None = None,
     force_fetch: bool = False,
 ) -> RunResult:
     settings = settings or get_settings()
@@ -95,7 +114,14 @@ def run_daily_analysis(
                 f"memory load skipped {mem_stats.skipped_invalid} invalid prior state file(s)"
             )
 
-    client = client or AnthropicClient(settings)
+    configured_provider = settings.llm_provider.strip().lower() or "default"
+    resolved_provider: str
+    if client is not None:
+        resolved_provider = "injected"
+    else:
+        client = _resolve_pipeline_client(settings)
+        provider_name = settings.llm_provider.strip().lower()
+        resolved_provider = provider_name if provider_name in ("anthropic", "openai") else "unknown"
 
     state_bundle = build_state_prompt(
         system_role=system_role,
@@ -187,6 +213,8 @@ def run_daily_analysis(
     run_log: dict[str, object] = {
         "started": started,
         "finished": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "configured_provider": configured_provider,
+        "resolved_provider": resolved_provider,
         "status": "ok",
         "chart_count": len(image_paths),
         "pass1_chart_count": len(image_paths),

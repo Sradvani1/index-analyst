@@ -24,12 +24,16 @@ class Settings(BaseSettings):
         populate_by_name=True,
     )
 
+    # Provider selection
+    llm_provider: str = Field(default="anthropic", alias="SPX_LLM_PROVIDER")
+
     # Anthropic
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
 
     # OpenAI (chat assistant + RAG indexing)
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     openai_chat_model: str = Field(default="gpt-5", alias="OPENAI_CHAT_MODEL")
+    openai_pipeline_model: str = Field(default="", alias="SPX_OPENAI_PIPELINE_MODEL")
     openai_vector_store_id: str = Field(default="", alias="OPENAI_VECTOR_STORE_ID")
     model: str = Field(default="claude-opus-4-20250514", alias="SPX_MODEL")
     prompt_cache_enabled: bool = Field(default=True, alias="SPX_PROMPT_CACHE_ENABLED")

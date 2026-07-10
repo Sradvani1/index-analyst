@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from src.analysis_engine import run_daily_analysis
-from src.anthropic_client import CallResult
+from src.pipeline_client import CallResult
 
 from tests.conftest import SAMPLE_STATE, build_run_dir, write_state
 from tests.fixtures.investor_report import PASS2_PROSE

@@ -444,8 +444,10 @@ def test_downscale_dimensions():
     bundle = PromptBundle(system_role="r", framework="f", body="b")
     paths = [Path("x.png")]
 
-    with patch("src.anthropic_client._encode_image") as mock_encode:
-        mock_encode.return_value = {"type": "image", "source": {}}
+    from src.pipeline_utils import EncodedImage
+
+    fake = EncodedImage(media_type="image/png", base64_data="", width=32, height=32, source_path="x.png")
+    with patch("src.anthropic_client.encode_image", return_value=fake) as mock_encode:
         _user_content(bundle, paths, 1568)
         mock_encode.assert_called_with(paths[0], 1568)
         mock_encode.reset_mock()
@@ -465,10 +467,13 @@ def test_downscale_uses_pass1_dim_when_flag_off():
     bundle = PromptBundle(system_role="r", framework="f", body="b")
     paths = [Path("x.png")]
 
-    with patch("src.anthropic_client._encode_image") as mock_encode, patch.object(
+    from src.pipeline_utils import EncodedImage
+
+    fake = EncodedImage(media_type="image/png", base64_data="", width=32, height=32, source_path="x.png")
+    with patch("src.anthropic_client.encode_image", return_value=fake) as mock_encode, patch.object(
         AnthropicClient, "_create"
     ) as mock_create:
-        mock_encode.return_value = {"type": "image", "source": {}}
+        usage = type("U", (), {"input_tokens": None, "output_tokens": None, "cache_read_input_tokens": None, "cache_creation_input_tokens": None})()
         mock_response = type(
             "R",
             (),
@@ -484,6 +489,7 @@ def test_downscale_uses_pass1_dim_when_flag_off():
                     )()
                 ],
                 "model_dump": lambda self, mode="json": {"ok": True},
+                "usage": usage,
             },
         )()
         mock_create.return_value = mock_response
