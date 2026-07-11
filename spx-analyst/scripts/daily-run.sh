@@ -17,6 +17,19 @@ cd "$PROJECT_DIR"
 source .venv/bin/activate
 set -a; source .env; set +a
 
+echo "=== $TODAY: checking if market is open ==="
+MARKET_STATUS=$(python -c "
+import yfinance as yf
+d = yf.Ticker('^GSPC').history(period='1d')
+print('ok' if not d.empty else 'closed')
+" 2>/dev/null) || MARKET_STATUS='ok'
+
+if [ "$MARKET_STATUS" = "closed" ]; then
+    echo "  market closed — skipping to avoid API waste"
+    echo "=== $TODAY: done ==="
+    exit 0
+fi
+
 echo "=== $TODAY: prepare ==="
 python -m src.cli prepare --date "$TODAY" --force
 
