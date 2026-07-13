@@ -260,11 +260,17 @@ def export_report(
 
     from .investor_report_export import export_investor_report
 
+    run_dir = settings.runs_dir / date
+    if not run_dir.is_dir():
+        run_dir = None
+        typer.secho("Chart run directory not found — PDF will be text-only.", fg=typer.colors.YELLOW)
+
     dest = export_investor_report(
         source,
         output,
         fallback_date=date,
         pdf_dir=settings.daily_pdfs_dir,
+        run_dir=run_dir,
     )
     typer.secho(f"Wrote {dest}", fg=typer.colors.GREEN)
 

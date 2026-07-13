@@ -2,14 +2,99 @@
 
 from __future__ import annotations
 
+import base64
 import html
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .schemas import DailyManifest
 
 import markdown
+from PIL import Image
 
+from .config import get_settings
 from .web.report_parse import split_sections, strip_inline_markdown
+
+# --- Chart pack section mapping ---
+
+_CHART_SECTION_MAP: dict[str, str] = {
+    "01_spx_intraday.png": "Today's Posture",
+    "02_spx_5day.png": "Price and Trend",
+    "03_spx_1month.png": "Price and Trend",
+    "04_spx_3month.png": "Price and Trend",
+    "05_spx_6month.png": "Price and Trend",
+    "06_spx_1year.png": "Market Regime",
+    "07_spx_3year.png": "Market Regime",
+    "08_fear_greed_index.png": "Technicals and Sentiment",
+    "09_fear_greed_momentum.png": "Technicals and Sentiment",
+    "10_breadth_52wk_highs_lows.png": "Technicals and Sentiment",
+    "11_breadth_mcclellan.png": "Technicals and Sentiment",
+    "12_put_call_ratio.png": "Technicals and Sentiment",
+    "13_vix_volatility.png": "Technicals and Sentiment",
+    "14_safe_haven_demand.png": "Valuation and ERP",
+    "15_junk_bond_spread.png": "Valuation and ERP",
+}
+
+_CHART_TITLES: dict[str, str] = {
+    "01_spx_intraday.png": "Intraday Price Action — Session Shape and Key Levels",
+    "02_spx_5day.png": "Five-Day Price and Momentum — Near-Term Trend Bias",
+    "03_spx_1month.png": "One-Month Price Structure — Short-Term Trend and Bollinger Position",
+    "04_spx_3month.png": "Three-Month Price Structure — Medium-Term Confluence",
+    "05_spx_6month.png": "Six-Month Context — Recovery Structure and Extension",
+    "06_spx_1year.png": "One-Year Context — Regime Duration and Moving Average Support",
+    "07_spx_3year.png": "Three-Year Structural Context — The Bull Market Skeleton",
+    "08_fear_greed_index.png": "Fear & Greed Index — Aggregate Sentiment Gauge",
+    "09_fear_greed_momentum.png": "Market Momentum — S&P 500 vs 125-Day Moving Average",
+    "10_breadth_52wk_highs_lows.png": "NYSE 52-Week Highs/Lows — Participation and Breadth",
+    "11_breadth_mcclellan.png": "McClellan Volume Summation Index — Breadth Internals",
+    "12_put_call_ratio.png": "Put/Call Ratio — Options Market Sentiment",
+    "13_vix_volatility.png": "VIX and 50-Day MA — Volatility Regime",
+    "14_safe_haven_demand.png": "Safe Haven Demand — Stock vs Bond Return Divergence",
+    "15_junk_bond_spread.png": "Junk Bond Spread — Credit Conditions and Risk Appetite",
+}
+
+
+def load_chart_data(
+    run_dir: Path,
+    manifest: DailyManifest | None = None,
+    *,
+    max_dim: int = 400,
+) -> dict[str, list[tuple[str, str]]]:
+    """Load, resize, base64-encode, and group chart images by PDF section.
+
+    Returns ``{section_title: [(data_uri, chart_title), ...]}``.
+    Returns empty dict when no charts can be loaded.
+    """
+    if manifest is None:
+        from .files import load_manifest
+        manifest = load_manifest(run_dir)
+
+    section_charts: dict[str, list[tuple[str, str]]] = {}
+    for chart in manifest.ordered_charts():
+        section = _CHART_SECTION_MAP.get(chart.file)
+        if section is None:
+            continue
+        path = (run_dir / "charts" / chart.file).resolve()
+        if not path.is_file():
+            continue
+        try:
+            with Image.open(path) as img:
+                img = img.convert("RGB")
+                if max(img.size) > max_dim:
+                    img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+                from io import BytesIO
+                buf = BytesIO()
+                img.save(buf, format="PNG")
+                b64 = base64.standard_b64encode(buf.getvalue()).decode("ascii")
+        except Exception:
+            continue
+        data_uri = f"data:image/png;base64,{b64}"
+        title = _CHART_TITLES.get(chart.file, chart.label)
+        section_charts.setdefault(section, []).append((data_uri, title))
+    return section_charts
 
 _HEADING_RE = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
 _DATE_IN_TITLE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
@@ -333,11 +418,45 @@ table.matrix tr:last-child td { border-bottom: none; }
 .matrix-row.matrix-action.tone-bear td { background: #faeeee; }
 .matrix-row.matrix-action.tone-caution td { background: #f9f3e8; }
 
+.chart-pack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  page-break-inside: avoid;
+  margin: 0.75rem 0;
+}
+
+.chart-figure {
+  width: 310px;
+  max-width: 48%;
+  text-align: center;
+  margin: 0;
+}
+
+.chart-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.3rem;
+  border: 1px solid var(--border-soft);
+}
+
+.chart-figure figcaption {
+  margin-top: 0.3rem;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink-700);
+  letter-spacing: 0.01em;
+}
+
+
+
 @media print {
   body { background: white; }
   .report { padding: 0; max-width: none; }
   .report-header { break-inside: avoid; }
-  .section { break-inside: avoid-page; }
 }
 
 @page {
@@ -347,8 +466,17 @@ table.matrix tr:last-child td { border-bottom: none; }
 """.strip()
 
 
-def render_investor_report_html(markdown_text: str, *, fallback_date: str | None = None) -> str:
-    """Convert daily report markdown into a self-contained HTML document."""
+def render_investor_report_html(
+    markdown_text: str,
+    *,
+    fallback_date: str | None = None,
+    chart_data: dict[str, list[tuple[str, str]]] | None = None,
+) -> str:
+    """Convert daily report markdown into a self-contained HTML document.
+
+    When *chart_data* is provided (``{section_title: [(data_uri, title), ...]}``),
+    embeds chart figures under their matching sections.
+    """
     meta = parse_report_meta(markdown_text, fallback_date=fallback_date)
     rendered_sections: list[str] = []
 
@@ -358,14 +486,48 @@ def render_investor_report_html(markdown_text: str, *, fallback_date: str | None
         else:
             body_html = _render_markdown(body)
 
-        rendered_sections.append(
-            f"""
-<section class="section">
-  <h2>{html.escape(title)}</h2>
-  <div class="section-body">{body_html}</div>
-</section>
-""".strip()
-        )
+        parts: list[str] = ['<section class="section">']
+        has_charts = bool(chart_data and chart_data.get(title))
+        posture = title == "Today's Posture"
+
+        if posture and has_charts:
+            p_match = re.search(r"</p>\s*", body_html)
+            if p_match:
+                split_at = p_match.end()
+                first_part = body_html[:split_at]
+                rest_part = body_html[split_at:]
+                parts.append(f"  <h2>{html.escape(title)}</h2>")
+                parts.append(f'  <div class="section-body">{first_part}</div>')
+                parts.append('<div class="chart-pack">')
+                data_uri, chart_title = chart_data[title][0]
+                parts.append(
+                    '<figure class="chart-figure">'
+                    f'<img src="{data_uri}" alt="{html.escape(chart_title)}" loading="lazy">'
+                    f'<figcaption>{html.escape(chart_title)}</figcaption>'
+                    "</figure>"
+                )
+                parts.append("</div>")
+                parts.append(f'  <div class="section-body">{rest_part}</div>')
+            else:
+                has_charts = False
+        else:
+            parts.append(f"  <h2>{html.escape(title)}</h2>")
+            parts.append(f'  <div class="section-body">{body_html}</div>')
+
+        if has_charts and not posture:
+            charts = chart_data[title]
+            parts.append('<div class="chart-pack">')
+            for data_uri, chart_title in charts:
+                parts.append(
+                    '<figure class="chart-figure">'
+                    f'<img src="{data_uri}" alt="{html.escape(chart_title)}" loading="lazy">'
+                    f'<figcaption>{html.escape(chart_title)}</figcaption>'
+                    "</figure>"
+                )
+            parts.append("</div>")
+
+        parts.append("</section>")
+        rendered_sections.append("\n".join(parts))
 
     sections_html = "\n".join(rendered_sections)
 
@@ -397,11 +559,19 @@ def render_investor_report_pdf(
     *,
     fallback_date: str | None = None,
     base_url: str | Path | None = None,
+    chart_data: dict[str, list[tuple[str, str]]] | None = None,
 ) -> bytes:
-    """Convert daily report markdown into PDF bytes."""
+    """Convert daily report markdown into PDF bytes.
+
+    When *chart_data* is provided, embeds chart figures under matching sections.
+    """
     from weasyprint import HTML
 
-    html_doc = render_investor_report_html(markdown_text, fallback_date=fallback_date)
+    html_doc = render_investor_report_html(
+        markdown_text,
+        fallback_date=fallback_date,
+        chart_data=chart_data,
+    )
     return HTML(string=html_doc, base_url=str(base_url or Path.cwd())).write_pdf()
 
 
@@ -416,8 +586,13 @@ def export_investor_report(
     *,
     fallback_date: str | None = None,
     pdf_dir: Path | None = None,
+    run_dir: Path | None = None,
 ) -> Path:
-    """Read markdown from ``source`` and write a formatted PDF to ``output``."""
+    """Read markdown from ``source`` and write a formatted PDF to ``output``.
+
+    When *run_dir* points to a valid chart run directory, chart images from
+    the chart pack are embedded under their matching report sections.
+    """
     markdown_text = source.read_text(encoding="utf-8")
     meta = parse_report_meta(markdown_text, fallback_date=fallback_date)
     date = meta.date if meta.date != "unknown" else (fallback_date or "unknown")
@@ -429,10 +604,20 @@ def export_investor_report(
     else:
         dest = output
 
+    chart_data: dict[str, list[tuple[str, str]]] | None = None
+    if run_dir and run_dir.is_dir():
+        try:
+            from .files import load_manifest
+            manifest = load_manifest(run_dir)
+            chart_data = load_chart_data(run_dir, manifest)
+        except Exception:
+            chart_data = None
+
     pdf_bytes = render_investor_report_pdf(
         markdown_text,
         fallback_date=fallback_date,
         base_url=source.parent,
+        chart_data=chart_data,
     )
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(pdf_bytes)
