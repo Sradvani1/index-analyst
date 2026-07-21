@@ -62,7 +62,7 @@ Next.js rewrites `/api/*` → FastAPI at `http://127.0.0.1:8000/api/*`. Both ser
 
 ## PR docs
 
-`spx-analyst/docs/PR-N-<slug>.md` — highest existing: PR-19. Use next integer; decimal for follow-ups (e.g. PR-4.1). Update `spx-analyst/README.md` for substantial changes.
+`spx-analyst/docs/PR-N-<slug>.md` — highest existing: PR-22. Use next integer; decimal for follow-ups (e.g. PR-4.1). Update `spx-analyst/README.md` for substantial changes.
 
 ## Design
 
