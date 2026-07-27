@@ -25,6 +25,11 @@
       "effective_from": "2026-07-20",
       "forward_eps": 377,
       "trailing_eps": 306
+    },
+    {
+      "effective_from": "2026-07-27",
+      "forward_eps": 379,
+      "trailing_eps": 315
     }
   ]
 }
