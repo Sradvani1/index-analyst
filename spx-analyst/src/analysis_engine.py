@@ -11,7 +11,7 @@ from . import files
 from .anthropic_client import AnthropicClient
 from .config import Settings, get_settings
 from .pipeline_client import PipelineLLMClient
-from .eps_history import eps_resolution_log, require_eps_for_run
+from .eps_history import eps_resolution_log, load_eps_history, require_eps_for_run
 from .memory import (
     build_recent_summary,
     load_recent_states_with_stats,
@@ -85,6 +85,7 @@ def run_daily_analysis(
     logger.info("loaded manifest for %s with %d charts", date, len(image_paths))
 
     eps, eps_resolution = require_eps_for_run(date, settings=settings)
+    eps_history = load_eps_history(settings)
 
     analysis_context = run_precompute(
         date,
@@ -130,6 +131,7 @@ def run_daily_analysis(
         resolved_eps=eps,
         analysis_context=analysis_context,
         recent_summary=recent_summary,
+        eps_history=eps_history,
     )
     state_call = client.run_structured_state(state_bundle, image_paths)
     nested_tool_input = flat_to_nested(state_call.tool_input or {})
@@ -192,6 +194,7 @@ def run_daily_analysis(
         pass2_attached=pass2_attached_entries,
         pass2_reference_only=pass2_plan.reference_only,
         pass2_optimization_enabled=settings.pass2_image_optimization_enabled,
+        eps_history=eps_history,
     )
     report_call = client.run_markdown_report(
         report_bundle, pass2_plan.attached, pass2_audit=pass2_audit

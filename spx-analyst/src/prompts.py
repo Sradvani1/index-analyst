@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from .schemas import AnalysisContext, ChartEntry, DailyManifest, DailyState, ResolvedEps
+from .schemas import AnalysisContext, ChartEntry, DailyManifest, DailyState, EpsHistory, ResolvedEps
 
 PRE_STEP = "Structural Regime Classification"
 
@@ -107,6 +107,21 @@ class PromptBundle:
 def _eps_block(eps: ResolvedEps) -> str:
     payload = eps.model_dump(mode="json")
     return "## EPS inputs (resolved from master history)\n```json\n" + json.dumps(payload, indent=2) + "\n```"
+
+
+def _eps_history_block(history: EpsHistory | None) -> str:
+    if history is None:
+        return ""
+    payload = [
+        {k: v for k, v in e.model_dump(mode="json").items() if v is not None}
+        for e in history.entries
+    ]
+    return (
+        "## EPS consensus history (context only — the resolved EPS block above is "
+        "authoritative for this run)\n```json\n"
+        + json.dumps(payload, indent=2)
+        + "\n```"
+    )
 
 
 def _round_floats(obj: object, places: int = 4) -> object:
@@ -258,10 +273,12 @@ def build_state_prompt(
     resolved_eps: ResolvedEps,
     analysis_context: AnalysisContext,
     recent_summary: str | None = None,
+    eps_history: EpsHistory | None = None,
 ) -> PromptBundle:
     parts = [
         _analysis_context_block(analysis_context),
         _eps_block(resolved_eps),
+        _eps_history_block(eps_history),
         _manifest_block(manifest),
     ]
     mem = _optional_memory_block(recent_summary)
@@ -317,6 +334,7 @@ def build_report_prompt(
     pass2_attached: list[ChartEntry] | None = None,
     pass2_reference_only: list[ChartEntry] | None = None,
     pass2_optimization_enabled: bool = True,
+    eps_history: EpsHistory | None = None,
 ) -> PromptBundle:
     state_json = json.dumps(daily_state.model_dump(mode="json"), indent=2)
     section_list = "\n".join(f"{i + 1}. `## {title}`" for i, title in enumerate(PASS2_PROSE_SECTIONS))
@@ -336,6 +354,7 @@ def build_report_prompt(
     parts = [
         _analysis_context_block(analysis_context),
         _eps_block(resolved_eps),
+        _eps_history_block(eps_history),
         chart_block,
         _investor_fact_snippets(analysis_context),
         f"## Validated daily state (immutable)\n```json\n{state_json}\n```",

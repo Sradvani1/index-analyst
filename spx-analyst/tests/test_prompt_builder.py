@@ -7,7 +7,7 @@ from src.prompts import (
     build_state_prompt,
     load_system_role,
 )
-from src.schemas import DailyManifest, ResolvedEps
+from src.schemas import DailyManifest, EpsHistory, ResolvedEps
 
 from tests.sample_analysis_context import sample_analysis_context
 
@@ -94,6 +94,49 @@ def test_memory_block_absent_when_none(sample_state):
         bundle = builder(**kwargs)
         assert "Prior posture snapshot" not in bundle.body
         assert "Optional prior-run narrative context" not in bundle.body
+
+
+def test_eps_history_block_present_when_provided(sample_state):
+    history = EpsHistory.model_validate(
+        {
+            "entries": [
+                {"effective_from": "2026-06-01", "forward_eps": 354, "trailing_eps": 220},
+                {"effective_from": "2026-08-03", "forward_eps": 380, "trailing_eps": 321, "notes": "x"},
+            ]
+        }
+    )
+    for builder in (build_state_prompt, build_report_prompt):
+        kwargs = {
+            "system_role": load_system_role("R"),
+            "framework": "FW",
+            "manifest": _manifest(),
+            "resolved_eps": _context(),
+            "analysis_context": sample_analysis_context(),
+            "eps_history": history,
+        }
+        if builder is build_report_prompt:
+            kwargs["daily_state"] = sample_state
+        body = builder(**kwargs).body
+        assert "EPS consensus history" in body
+        assert '"forward_eps": 354' in body
+        assert '"forward_eps": 380' in body
+        assert "resolved EPS block above is authoritative" in body
+        assert body.index("EPS inputs") < body.index("EPS consensus history")
+
+
+def test_eps_history_block_absent_when_none(sample_state):
+    for builder in (build_state_prompt, build_report_prompt):
+        kwargs = {
+            "system_role": load_system_role("R"),
+            "framework": "FW",
+            "manifest": _manifest(),
+            "resolved_eps": _context(),
+            "analysis_context": sample_analysis_context(),
+        }
+        if builder is build_report_prompt:
+            kwargs["daily_state"] = sample_state
+        body = builder(**kwargs).body
+        assert "EPS consensus history" not in body
 
 
 def test_report_prompt_lists_investor_sections(sample_state):
