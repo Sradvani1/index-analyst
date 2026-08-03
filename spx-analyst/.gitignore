@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.shadow-openai
 .pytest_cache/
 .DS_Store
 
