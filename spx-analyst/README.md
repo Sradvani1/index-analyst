@@ -24,9 +24,12 @@ a markdown report plus structured JSON state.
 - [PR-12: Research assistant Phase 3](docs/PR-12-research-assistant-phase3.md) — Next.js `/assistant` UI wired to local FastAPI chat routes
 - [PR-13: Research assistant Phase 4](docs/PR-13-research-assistant-phase4.md) — operator setup guide, E2E checklist, setup script
 - [PR-14: Responses API chat](docs/PR-14-responses-api-chat.md) — migrate chat from Assistants/Threads to Responses + Conversations
+- [PR-17: Publication viewer refactor](docs/PR-17-publication-viewer-refactor.md) — read-only exposition UI, field-authority routing, API surface
 - [PR-18: Pass 2 Task voice](docs/PR-18-pass2-task-voice.md) — investor daily report audience, prose bans, posture-based Evidence resolution in Pass 2 Task
 - [PR-19: Chart generation engine](docs/PR-19-chart-generation-engine.md) — automated SPX price charts + CNN Fear & Greed charts
 - [PR-20: Prepare-run workflow](docs/PR-20-prepare-run-workflow.md) — two-step `prepare` → `run` eliminates separate generation + import steps
+- [PR-21: Provider abstraction layer](docs/PR-21-provider-abstraction-layer.md) — `PipelineLLMClient` Protocol; Anthropic default, OpenAI opt-in via `SPX_LLM_PROVIDER`
+- [PR-22: OpenAI pipeline client](docs/PR-22-openai-pipeline-client.md) — `OpenAIPipelineClient` on Responses API; Anthropic remains default until OpenAI shadow-run validation
 
 ## How it works
 
@@ -127,7 +130,8 @@ Set these in `.env` (see `.env.example`):
 | `OPENAI_API_KEY` | — | Required for post-run RAG indexing and chat assistant (Phase 2+) |
 | `OPENAI_VECTOR_STORE_ID` | — | Vector store for report section retrieval (chat `file_search` + indexing) |
 | `OPENAI_CHAT_MODEL` | `gpt-5` | Responses API model for chat; create vector store via [operator guide](docs/research-assistant-operator-guide.md) |
-| `SPX_MODEL` | `claude-opus-4-20250514` | Claude model for both passes |
+| `SPX_MODEL` | `claude-opus-5` | Claude model for both passes |
+| `SPX_LLM_PROVIDER` | `anthropic` | LLM provider for both passes; `openai` opts into `OpenAIPipelineClient` (PR-21/PR-22) |
 | `SPX_PROMPT_CACHE_ENABLED` | `true` | Reuse framework + tool schema across passes |
 | `SPX_INCLUDE_MEMORY` | `false` | Inject prior posture snapshot into Pass 1/Pass 2 (rebuild always runs on success; rollup is categorical-only — no historical numerics) |
 | `SPX_IMAGE_MAX_DIMENSION` | `1568` | Long-edge resize for Pass 1 chart images (and Pass 2 when optimization off) |
@@ -383,7 +387,7 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs. Assistant: htt
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime);
              chat-assistant-instructions.md (research assistant)
-docs/        PR-1 through PR-14 implementation records; docs/archive/ for retired specs
+docs/        PR-1 through PR-22 implementation records; docs/archive/ for retired specs
 scripts/     operator utilities (e.g. setup_openai_resources.py)
 data/
   master/    eps_history.json — sole EPS source (append-only)
@@ -419,6 +423,9 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Research assistant Phase 4 — operator guide, setup script, E2E checklist | PR-13 |
 | Responses API chat migration — replace Assistants/Threads runtime | PR-14 |
 | Monte Carlo target straddle guard (downside re-anchor when leg fully retraced) | PR-1 doc + `structure.reanchor_downside_for_straddle()` |
+| Publication viewer refactor — read-only exposition UI, field-authority routing | PR-17 |
+| Provider abstraction layer — `PipelineLLMClient` Protocol, Anthropic default, OpenAI opt-in | PR-21 |
+| OpenAI pipeline client — `OpenAIPipelineClient` on Responses API (default still Anthropic) | PR-22 |
 
 ## Memory migration (one-time)
 
