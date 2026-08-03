@@ -17,6 +17,26 @@ cd "$PROJECT_DIR"
 source .venv/bin/activate
 set -a; source .env; set +a
 
+run_with_retry() {
+    local max_attempts=3
+    local attempt=1
+    local status
+    while true; do
+        if "$@"; then
+            return 0
+        else
+            status=$?
+        fi
+        attempt=$((attempt + 1))
+        if [ "$attempt" -gt "$max_attempts" ]; then
+            echo "  command failed after $max_attempts attempts" >&2
+            return "$status"
+        fi
+        echo "  command failed; retrying ($attempt/$max_attempts) in 30s" >&2
+        sleep 30
+    done
+}
+
 echo "=== $TODAY: checking if market is open ==="
 MARKET_STATUS=$(python -c "
 import yfinance as yf
@@ -37,7 +57,7 @@ if [ -f "$PROJECT_DIR/output/$TODAY/$TODAY-analysis.md" ]; then
     echo "=== $TODAY: output already exists — skipping run ==="
 else
     echo "=== $TODAY: run ==="
-    python -m src.cli run --date "$TODAY"
+    run_with_retry python -m src.cli run --date "$TODAY"
 fi
 
 echo "=== $TODAY: generating PDF ==="

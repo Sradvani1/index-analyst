@@ -58,6 +58,7 @@ _TRANSIENT_ERRORS = (
     anthropic.APIConnectionError,
     anthropic.RateLimitError,
     anthropic.InternalServerError,
+    anthropic.OverloadedError,
 )
 
 
@@ -159,8 +160,8 @@ class AnthropicClient:
 
     @retry(
         retry=retry_if_exception_type(_TRANSIENT_ERRORS),
-        stop=stop_after_attempt(2),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=30),
         reraise=True,
     )
     def _create(self, **kwargs: Any):
