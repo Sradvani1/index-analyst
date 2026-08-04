@@ -95,6 +95,7 @@ def make_settings(tmp_path: Path) -> Settings:
         memory_dir_raw=str(tmp_path / "memory"),
         output_dir_raw=str(tmp_path / "output"),
         eps_history_path_raw=str(tmp_path / "data" / "master" / "eps_history.json"),
+        anchor_state_path_raw=str(tmp_path / "data" / "master" / "anchor_state.json"),
     )
 
 

@@ -203,6 +203,8 @@ Do not analyze only the close. Report where the close occurred within the daily 
 
 Use the most recent meaningful swing high and swing low provided by the current setup.
 
+> **Reference-level reset:** On a confirmed close above the active swing high, the engine re-anchors swing references via `resolve_structure_anchors`. A single new-high session is provisional until confirmed (two qualifying closes total). The report must display the active swing anchor date and price, and must not use a prior high as resistance once price has accepted above it. A failed breakout (close back below the former high before confirmation) retains the previously confirmed anchors.
+
 Calculate:
 - 23.6% retracement
 - 38.2% retracement
@@ -412,6 +414,7 @@ Report:
 - Conditional cascade probabilities
 - Median days to key levels
 - Drift path expectations
+- Probability-regime label, describing the adjusted upside/downside asymmetry independently of the regime-specific action threshold (balanced, upside_tilt, downside_tilt, extreme_upside_asymmetry, extreme_downside_asymmetry)
 - Whether the setup is actionable
 
 ### Step 6: Tactical Matrix

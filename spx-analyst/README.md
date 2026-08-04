@@ -30,6 +30,7 @@ a markdown report plus structured JSON state.
 - [PR-20: Prepare-run workflow](docs/PR-20-prepare-run-workflow.md) — two-step `prepare` → `run` eliminates separate generation + import steps
 - [PR-21: Provider abstraction layer](docs/PR-21-provider-abstraction-layer.md) — `PipelineLLMClient` Protocol; Anthropic default, OpenAI opt-in via `SPX_LLM_PROVIDER`
 - [PR-22: OpenAI pipeline client](docs/PR-22-openai-pipeline-client.md) — `OpenAIPipelineClient` on Responses API; Anthropic remains default until OpenAI shadow-run validation
+- [PR-24: Daily surgical fixes](docs/PR-24-daily-reanchor-probability-regime.md) — swing-high re-anchoring (anchor-authority state machine) + Monte Carlo probability-regime label
 
 ## How it works
 
@@ -387,7 +388,7 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs. Assistant: htt
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime);
              chat-assistant-instructions.md (research assistant)
-docs/        PR-1 through PR-22 implementation records; docs/archive/ for retired specs
+docs/        PR-1 through PR-24 implementation records; docs/archive/ for retired specs
 scripts/     operator utilities (e.g. setup_openai_resources.py)
 data/
   master/    eps_history.json — sole EPS source (append-only)
@@ -426,6 +427,7 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Publication viewer refactor — read-only exposition UI, field-authority routing | PR-17 |
 | Provider abstraction layer — `PipelineLLMClient` Protocol, Anthropic default, OpenAI opt-in | PR-21 |
 | OpenAI pipeline client — `OpenAIPipelineClient` on Responses API (default still Anthropic) | PR-22 |
+| Swing-high re-anchoring + probability-regime label — daily surgical fixes | PR-24 |
 
 ## Memory migration (one-time)
 

@@ -75,10 +75,18 @@ class Settings(BaseSettings):
         default="data/master/eps_history.json",
         alias="SPX_EPS_HISTORY_PATH",
     )
+    anchor_state_path_raw: str = Field(
+        default="data/master/anchor_state.json",
+        alias="SPX_ANCHOR_STATE_PATH",
+    )
 
     @property
     def eps_history_path(self) -> Path:
         return _resolve(self.eps_history_path_raw)
+
+    @property
+    def anchor_state_path(self) -> Path:
+        return _resolve(self.anchor_state_path_raw)
 
     @property
     def framework_path(self) -> Path:

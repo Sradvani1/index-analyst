@@ -120,7 +120,19 @@ DownsideTargetRule = Literal[
     "reanchor_margin_call",
     "reanchor_fallback_pct",
 ]
-SwingConfirmation = Literal["pullback_3pct", "five_sessions", "rally_5pct", "above_50dma"]
+SwingConfirmation = Literal[
+    "pullback_3pct",
+    "five_sessions",
+    "rally_5pct",
+    "above_50dma",
+    "unconfirmed_new_high",
+]
+
+ActiveSwingLowSource = Literal[
+    "intermediate_confirmed",
+    "prior_active_fallback",
+    "unavailable",
+]
 
 
 class ValuationContext(BaseModel):
@@ -155,6 +167,10 @@ class StructureContext(BaseModel):
     upside_target_rule: UpsideTargetRule
     downside_target: float
     downside_target_rule: DownsideTargetRule
+    prior_swing_high_price: Optional[float] = None
+    prior_swing_high_date: Optional[str] = None
+    active_swing_low_source: Optional[ActiveSwingLowSource] = None
+    anchor_version: int = 1
 
 
 class ThresholdEvaluationRow(BaseModel):
@@ -162,6 +178,7 @@ class ThresholdEvaluationRow(BaseModel):
 
     adjusted_prob_up_first: float = Field(..., ge=0.0, le=1.0)
     actionable: bool
+    probability_regime: str = "balanced"
 
 
 class MonteCarloContext(BaseModel):
@@ -183,6 +200,7 @@ class MonteCarloContext(BaseModel):
     median_days: str
     drift_path: str
     cash_drag_prob: float = Field(..., ge=0.0, le=1.0)
+    probability_regime: str = "balanced"
     threshold_evaluation: Dict[str, ThresholdEvaluationRow]
 
 
@@ -302,6 +320,7 @@ class MonteCarloDetail(BaseModel):
     median_days: str
     drift_path: str
     cash_drag_prob: float = Field(..., ge=0.0, le=1.0)
+    probability_regime: str = "balanced"
 
 
 class EmitDailyStateInput(BaseModel):

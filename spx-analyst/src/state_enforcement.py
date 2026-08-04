@@ -26,8 +26,12 @@ def _find_row_index(rows: list[DecisionMatrixRow], layer: str) -> int | None:
     return None
 
 
-def _mc_edge_signal(meets_threshold: bool) -> str:
-    return "actionable" if meets_threshold else "monitor below threshold"
+def _mc_edge_signal(probability_regime: str) -> str:
+    return probability_regime
+
+
+def _mc_threshold_signal(meets_threshold: bool) -> str:
+    return "passes" if meets_threshold else "fails"
 
 
 def _erp_signal(erp_trend: str | None) -> str:
@@ -62,11 +66,11 @@ def sync_matrix_precomputed_rows(
 
     updates: dict[str, tuple[str, str]] = {
         "Structural Bias": (state.structural_bias, state.structural_bias),
-        "Monte Carlo Threshold": (f"{effective_threshold}%", f"{effective_threshold}%"),
+        "Monte Carlo Threshold": (f"{effective_threshold}%", _mc_threshold_signal(meets_threshold)),
         "Volatility Input": (f"{mc.sigma:.4f}", f"σ={mc.sigma:.4f}"),
         "Drift Input": (f"{mc.mu:.4f}", f"μ={mc.mu:.4f}"),
         "Rally Exhaustion Score": (mc.rally_exhaustion_score, mc.rally_exhaustion_score),
-        "Monte Carlo Edge": (f"{pct_edge}%", _mc_edge_signal(meets_threshold)),
+        "Monte Carlo Edge": (f"{pct_edge}%", _mc_edge_signal(mc.probability_regime)),
         "ERP State and Trend": (erp_reading, _erp_signal(val.erp_trend)),
     }
 
@@ -131,6 +135,7 @@ def apply_precomputed_fields(
         median_days=mc.median_days,
         drift_path=mc.drift_path,
         cash_drag_prob=mc.cash_drag_prob,
+        probability_regime=mc.probability_regime,
     )
 
     spx_close = analysis_context.market_data.spx_close

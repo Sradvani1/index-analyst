@@ -115,6 +115,32 @@ def test_validate_report_missing_primary_tension():
     assert any(i.code == "missing_primary_tension" for i in report.errors)
 
 
+def test_validate_report_paraphrased_long_tension_passes():
+    long_tension = (
+        "A fully restored record-setting technical skeleton (new all-time high at 7,600.50, "
+        "upper-band walk, 50-day above a rising 200-day, VIX 15.86, junk spread tightening to "
+        "1.28, Monte Carlo back to 56.23% up-first, Low exhaustion) is colliding with the most "
+        "severe internal non-confirmation: McClellan breadth stuck at its 874.59 cycle-low shelf, "
+        "ERP pinned at 0.31% inside the valuation-ceiling band on a 4.686% 10-year, and the "
+        "Monte Carlo edge still failing the 70% threshold for an eighth consecutive session."
+    )
+    state = DailyState.model_validate({**SAMPLE_STATE, "primary_tension": long_tension})
+    paraphrased = (
+        "## Evidence and Tensions\n"
+        "Record price versus stale internals defines today's picture, and the validated posture "
+        "respects the move without funding it. The S&P 500 printed a new all-time high at 7,600 "
+        "riding the upper price band with credit spreads confirming, yet the McClellan volume "
+        "summation measure sits on a cycle-low shelf while net fresh 52-week highs slip, and the "
+        "ERP stays pinned inside the valuation ceiling band on a 4.7% ten-year. The Monte Carlo "
+        "model's up-first probability once more fails the 70% threshold a late-bull regime asks "
+        "for, an eighth consecutive session without a bullish edge; volatility reads docile but "
+        "no capitulation washout confirms the recent swing low.\n"
+    )
+    md = GOOD_REPORT.replace(TENSIONS_SECTION, paraphrased)
+    report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
+    assert report.passed
+
+
 def test_validate_report_contradicting_structural_bias():
     state = DailyState.model_validate(SAMPLE_STATE)  # Mid Bull
     md = GOOD_REPORT.replace("Mid Bull", "Bear Market")

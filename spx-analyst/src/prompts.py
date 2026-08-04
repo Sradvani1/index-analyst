@@ -227,6 +227,7 @@ def _investor_fact_snippets(analysis_context: AnalysisContext) -> str:
         else "- ERP re-entry floor: n/a",
         "",
         "**Risk and Monte Carlo (section 6):**",
+        f"- Probability regime: {mc.probability_regime}",
         f"- σ (20d realized vol): {mc.sigma:.4f} | μ (drift): {mc.mu:.4f}",
         f"- Raw up-first: {mc.prob_up_first_raw:.1%} | Raw down-first: {mc.prob_down_first_raw:.1%}",
         f"- Adjusted up-first: {mc.prob_up_first_adjusted:.1%} | Adjusted down-first: {mc.prob_down_first_adjusted:.1%}",
@@ -238,10 +239,25 @@ def _investor_fact_snippets(analysis_context: AnalysisContext) -> str:
         "**Tactical levels (section 7):**",
         f"- Active swing high: {s.active_swing_high_price:,.2f} ({s.active_swing_high_date})",
         f"- Active swing low: {s.active_swing_low_price:,.2f} ({s.active_swing_low_date})",
-        f"- Fib 23.6%: {s.fib_236:,.2f} | 38.2%: {s.fib_382:,.2f} | 50%: {s.fib_500:,.2f} | 61.8%: {s.fib_618:,.2f}",
-        f"- Liquidation caution: {s.liquidation_caution:,.2f} | nervous: {s.liquidation_nervous:,.2f}",
-        f"- Margin call: {s.liquidation_margin_call:,.2f} | cascade: {s.liquidation_cascade:,.2f}",
     ]
+    if s.prior_swing_high_price is not None:
+        lines.append(
+            f"- Prior swing high (now reclaimed support): {s.prior_swing_high_price:,.2f} "
+            f"({s.prior_swing_high_date or 'n/a'})"
+        )
+    if s.active_swing_low_source is not None:
+        lines.append(f"- Fib-low source: {s.active_swing_low_source}")
+    if s.active_swing_low_source == "unavailable":
+        lines.append("**Fib ladder unavailable: no confirmed structural low.**")
+        lines.append("- Liquidation caution (high-only) computed from the new swing high.")
+    else:
+        lines.extend(
+            [
+                f"- Fib 23.6%: {s.fib_236:,.2f} | 38.2%: {s.fib_382:,.2f} | 50%: {s.fib_500:,.2f} | 61.8%: {s.fib_618:,.2f}",
+                f"- Liquidation caution: {s.liquidation_caution:,.2f} | nervous: {s.liquidation_nervous:,.2f}",
+                f"- Margin call: {s.liquidation_margin_call:,.2f} | cascade: {s.liquidation_cascade:,.2f}",
+            ]
+        )
     return "\n".join(lines)
 
 

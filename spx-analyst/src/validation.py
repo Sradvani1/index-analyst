@@ -178,17 +178,24 @@ def _evidence_and_tensions_section(report_md: str) -> str:
 
 
 def _mentions_tension(report_md: str, tension: str) -> bool:
+    """True if primary_tension's substance appears in the Evidence section.
+
+    Token-based so the report can paraphrase the tension rather than echo it
+    verbatim; requires a third of the tension's distinct significant tokens to
+    appear within the reconciliation section. Tokens are deduplicated so a
+    repeated phrase in a long tension does not inflate the required count.
+    """
     section = _evidence_and_tensions_section(report_md)
     if not section.strip() or not tension.strip():
         return False
     lowered = section.lower()
     if tension.lower() in lowered:
         return True
-    tokens = [t for t in re.findall(r"[a-z0-9]+", tension.lower()) if len(t) >= 4]
+    tokens = list(dict.fromkeys(t for t in re.findall(r"[a-z0-9]+", tension.lower()) if len(t) >= 4))
     if not tokens:
         return tension.lower() in lowered
     hits = sum(1 for t in tokens if t in lowered)
-    return hits >= max(2, (len(tokens) + 1) // 2)
+    return hits >= max(2, (len(tokens) + 2) // 3)
 
 
 def _conflict_addressed(report_md: str, divergence_id: str, bullish: str, bearish: str) -> bool:
@@ -214,7 +221,7 @@ def _matrix_uniformly_directional(report_md: str) -> bool:
     mixed_markers = ("mixed", "caution", "monitor", "insufficient", "neutral", "within")
     if any(m in tail.lower() for m in mixed_markers):
         return False
-    bullish = sum(1 for w in ("bull", "greed", "actionable", "attractive") if w in tail.lower())
+    bullish = sum(1 for w in ("bull", "greed", "actionable", "attractive", "upside", "extreme") if w in tail.lower())
     bearish = sum(1 for w in ("bear", "fear", "trim", "ceiling") if w in tail.lower())
     return bullish >= 3 and bearish == 0
 

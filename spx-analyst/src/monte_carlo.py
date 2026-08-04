@@ -52,6 +52,21 @@ def select_sigma(realized_vol_20d: float, vix: float) -> float:
     return vix / 100.0
 
 
+def _probability_regime(prob_up_adj: float, prob_down_adj: float) -> str:
+    """Label the shape of the probability distribution (threshold-independent).
+
+    Extreme asymmetry is checked first so a 90/10 reading reads as extreme,
+    not as a mere tilt.
+    """
+    if max(prob_up_adj, prob_down_adj) >= 0.85:
+        return "extreme_upside_asymmetry" if prob_up_adj >= prob_down_adj else "extreme_downside_asymmetry"
+    if prob_up_adj >= 0.70:
+        return "upside_tilt"
+    if prob_down_adj >= 0.70:
+        return "downside_tilt"
+    return "balanced"
+
+
 def compute_exhaustion_score(inputs: ExhaustionInputs) -> tuple[RallyExhaustionScore, float]:
     elevated = 0
     if inputs.move_magnitude_pct >= 15:
@@ -198,6 +213,7 @@ def run_monte_carlo(
     prob_up_raw, prob_down_raw = _first_hit_up_down(paths, upside, downside)
     prob_up_adj = max(0.0, min(1.0, prob_up_raw - exhaustion_discount))
     prob_down_adj = 1.0 - prob_up_adj
+    regime = _probability_regime(prob_up_adj, prob_down_adj)
 
     # Cascades
     if structure.downside_target_rule == "fib_382":
@@ -236,6 +252,7 @@ def run_monte_carlo(
         threshold_eval[str(th)] = ThresholdEvaluationRow(
             adjusted_prob_up_first=round(prob_up_adj, 4),
             actionable=prob_up_adj >= threshold,
+            probability_regime=regime,
         )
 
     return MonteCarloContext(
@@ -255,5 +272,6 @@ def run_monte_carlo(
         median_days=median_days,
         drift_path=_drift_path(s0, mu, sigma),
         cash_drag_prob=round(cash_drag, 4),
+        probability_regime=regime,
         threshold_evaluation=threshold_eval,
     )

@@ -28,6 +28,7 @@ def test_apply_precomputed_fields_overwrites_close_and_monte_carlo():
     assert enforced.monte_carlo.prob_up_first_adjusted == ctx.monte_carlo.prob_up_first_adjusted
     assert enforced.monte_carlo.effective_threshold == 65
     assert enforced.monte_carlo.meets_threshold == ctx.monte_carlo.threshold_evaluation["65"].actionable
+    assert enforced.monte_carlo.probability_regime == ctx.monte_carlo.probability_regime
     assert any("decision_matrix" in w for w in warnings)
 
 
@@ -82,5 +83,5 @@ def test_apply_precomputed_fields_syncs_matrix_rows():
         r for r in enforced.decision_matrix.rows if r.signal_layer == "Monte Carlo Edge"
     )
     assert edge.current_reading == f"{round(ctx.monte_carlo.prob_up_first_adjusted * 100)}%"
-    assert edge.signal == "monitor below threshold"
+    assert edge.signal == ctx.monte_carlo.probability_regime
     assert any("decision_matrix" in w for w in warnings)

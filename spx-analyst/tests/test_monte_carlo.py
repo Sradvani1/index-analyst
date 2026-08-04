@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from src.monte_carlo import RNG_SEED, run_monte_carlo, select_mu, select_sigma
+from src.monte_carlo import RNG_SEED, _probability_regime, run_monte_carlo, select_mu, select_sigma
 from src.structure import PriceBar, compute_structure
 import numpy as np
 import pytest
@@ -87,3 +87,40 @@ def test_adjusted_probs_complement_after_discount():
         max(0.0, mc.prob_up_first_raw - 0.05), abs=1e-4
     )
     assert mc.prob_down_first_adjusted == pytest.approx(1.0 - mc.prob_up_first_adjusted, abs=1e-4)
+
+
+def test_probability_regime_extreme_checked_first():
+    assert _probability_regime(0.90, 0.10) == "extreme_upside_asymmetry"
+    assert _probability_regime(0.10, 0.90) == "extreme_downside_asymmetry"
+    assert _probability_regime(0.72, 0.28) == "upside_tilt"
+    assert _probability_regime(0.30, 0.70) == "downside_tilt"
+    assert _probability_regime(0.55, 0.45) == "balanced"
+
+
+def test_probability_regime_populates_rows_and_context():
+    bars = _flat_bars(6000.0, 120)
+    for i, b in enumerate(bars):
+        bars[i] = PriceBar(
+            session_date=date(2025, 1, 1),
+            open=6000 + i,
+            high=6050 + i,
+            low=5950,
+            close=6000 + i * 0.5,
+        )
+    sma50 = np.full(len(bars), 5900.0)
+    structure = compute_structure(bars, sma50=sma50, pct_above_200dma=5.0)
+    mc = run_monte_carlo(
+        s0=6000.0,
+        mu=select_mu(5.0),
+        sigma=select_sigma(0.18, 20.0),
+        structure=structure,
+        exhaustion_score="Low",
+        exhaustion_discount=0.0,
+        bars=bars,
+    )
+    expected = _probability_regime(
+        mc.prob_up_first_adjusted, mc.prob_down_first_adjusted
+    )
+    assert mc.probability_regime == expected
+    for row in mc.threshold_evaluation.values():
+        assert row.probability_regime == expected

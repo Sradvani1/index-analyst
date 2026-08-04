@@ -99,7 +99,7 @@ def render_monte_carlo_facts_block(
             f"- Adjusted up-first: **{mc_ctx.prob_up_first_adjusted:.1%}** | "
             f"Adjusted down-first: **{mc_ctx.prob_down_first_adjusted:.1%}**"
         ),
-        f"- Effective threshold ({threshold}%): **{'actionable' if mc_state.meets_threshold else 'below threshold'}**",
+        f"- Effective threshold ({threshold}%): **{mc_state.probability_regime}** ({'passes' if mc_state.meets_threshold else 'fails'})",
         f"- Rally exhaustion: **{mc_ctx.rally_exhaustion_score}** (discount {mc_ctx.exhaustion_discount:.0%})",
         (
             f"- Upside target: **{_format_close(mc_ctx.upside_target)}** ({mc_ctx.upside_target_rule}) | "
@@ -115,16 +115,23 @@ def render_monte_carlo_facts_block(
 
 def render_tactical_levels_block(*, analysis_context: AnalysisContext) -> str:
     s = analysis_context.structure
+    fib_unavailable = s.active_swing_low_source == "unavailable"
     lines = [
         "**Tactical levels:**",
         "",
         f"- Active swing high: **{_format_close(s.active_swing_high_price)}** ({s.active_swing_high_date})",
-        f"- Active swing low: **{_format_close(s.active_swing_low_price)}** ({s.active_swing_low_date})",
+        (
+            f"- Active swing low: **{_format_close(s.active_swing_low_price)}** ({s.active_swing_low_date})"
+            if not fib_unavailable
+            else "- Active swing low: **n/a**"
+        ),
         (
             f"- Fibonacci: 23.6% **{_format_close(s.fib_236)}** | "
             f"38.2% **{_format_close(s.fib_382)}** | "
             f"50% **{_format_close(s.fib_500)}** | "
             f"61.8% **{_format_close(s.fib_618)}**"
+            if not fib_unavailable
+            else "**Fib ladder unavailable: no confirmed structural low.**"
         ),
         (
             f"- Liquidation zones: caution **{_format_close(s.liquidation_caution)}** | "
@@ -138,6 +145,15 @@ def render_tactical_levels_block(*, analysis_context: AnalysisContext) -> str:
         ),
         "",
     ]
+    if s.prior_swing_high_price is not None:
+        lines.insert(
+            3,
+            (
+                f"- Prior swing high (now reclaimed support): "
+                f"**{_format_close(s.prior_swing_high_price)}** ({s.prior_swing_high_date or 'n/a'})"
+            ),
+        )
+    lines.append("")
     return "\n".join(lines)
 
 

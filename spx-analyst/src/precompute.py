@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+import json
 import logging
 from pathlib import Path
 
@@ -27,7 +29,12 @@ from .schemas import (
     ResolvedEps,
     StructureContext,
 )
-from .structure import compute_structure, reanchor_downside_for_straddle
+from .structure import (
+    StructureAnchorState,
+    compute_structure,
+    reanchor_downside_for_straddle,
+    resolve_structure_anchors,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +59,48 @@ def _structure_to_schema(result) -> StructureContext:
         upside_target_rule=result.upside_target_rule,
         downside_target=round(result.downside_target, 2),
         downside_target_rule=result.downside_target_rule,
+        prior_swing_high_price=result.prior_swing_high_price,
+        prior_swing_high_date=result.prior_swing_high_date,
+        active_swing_low_source=result.active_swing_low_source,
+        anchor_version=result.anchor_version,
+    )
+
+
+def _load_anchor_state(settings: Settings) -> StructureAnchorState | None:
+    """Load persisted anchor state; None when missing, corrupt, or empty anchors."""
+    path = settings.anchor_state_path
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        state = StructureAnchorState(**raw)
+    except (json.JSONDecodeError, TypeError, ValueError, AttributeError) as exc:
+        logger.warning("anchor state unreadable at %s (%s); will re-initialize", path, exc)
+        return None
+    if state.active_swing_high_price is None:
+        return None
+    return state
+
+
+def _save_anchor_state(state: StructureAnchorState, settings: Settings) -> None:
+    settings.anchor_state_path.parent.mkdir(parents=True, exist_ok=True)
+    settings.anchor_state_path.write_text(
+        json.dumps(dataclasses.asdict(state), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _seed_anchor_state(result, low_source: str | None) -> StructureAnchorState:
+    return StructureAnchorState(
+        active_swing_high_price=result.active_swing_high_price,
+        active_swing_high_date=result.active_swing_high_date,
+        active_swing_low_price=result.active_swing_low_price,
+        active_swing_low_date=result.active_swing_low_date,
+        active_swing_low_source=low_source,
+        swing_high_confirmation=result.swing_high_confirmation,
+        swing_low_confirmation=result.swing_low_confirmation,
+        status="none",
+        anchor_version=1,
     )
 
 
@@ -86,6 +135,26 @@ def run_precompute(
         sma50=sma50,
         pct_above_200dma=market.pct_above_200dma,
     )
+
+    # --- Anchor-authority resolution (PR-24) ---
+    anchor_state = _load_anchor_state(settings)
+    if anchor_state is None:
+        anchor_state = _seed_anchor_state(structure_result, "intermediate_confirmed")
+        market.precompute_warnings.append(
+            "Anchor state initialized from current structural computation"
+        )
+
+    structure_result, anchor_state, anchor_warnings = resolve_structure_anchors(
+        structure_result,
+        series.bars,
+        anchor_state,
+        sma50,
+        pct_above_200dma=market.pct_above_200dma,
+    )
+    for warning in anchor_warnings:
+        logger.warning("anchor resolver: %s", warning)
+        market.precompute_warnings.append(warning)
+    _save_anchor_state(anchor_state, settings)
 
     tnx_history = [float(v) for v in series.tnx.values]
     from .valuation import compute_valuation_context

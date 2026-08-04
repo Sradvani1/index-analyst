@@ -184,7 +184,7 @@ def print_prepare_summary(result: PrepareRunResult) -> None:
         f"({ctx.valuation.erp_trend})"
     )
     typer.echo(
-        f"  Monte Carlo:   65% threshold {'MET' if meets else 'NOT met'} "
+        f"  Monte Carlo:   {mc.probability_regime}, 65% threshold {'MET' if meets else 'NOT met'} "
         f"(P_up_adj={prob_adj:.1%}), "
         f"exhaustion: {mc.rally_exhaustion_score}"
     )

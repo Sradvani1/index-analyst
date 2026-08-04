@@ -11,6 +11,7 @@ from src.market_data import MarketSeries
 from src.precompute import run_precompute
 from src.schemas import ResolvedEps
 from src.structure import PriceBar
+from src.files import load_manifest
 
 from tests.conftest import build_run_dir
 
@@ -39,8 +40,6 @@ def test_run_precompute_writes_analysis_context(mock_load, tmp_path, settings):
     run_dir = build_run_dir(tmp_path, date=run_date, n=2)
     mock_load.return_value = _mock_market_series(run_date)
 
-    from src.files import load_manifest
-
     manifest = load_manifest(run_dir)
     external = ResolvedEps(forward_eps=354.0, trailing_eps=220.0, effective_from="2026-06-01")
 
@@ -52,6 +51,41 @@ def test_run_precompute_writes_analysis_context(mock_load, tmp_path, settings):
     assert ctx.monte_carlo.prob_up_first_raw > 0
     assert "65" in ctx.monte_carlo.threshold_evaluation
     mock_load.assert_called_once()
+
+    # Anchor state persisted and round-trips into StructureContext.
+    assert settings.anchor_state_path.exists()
+    assert ctx.structure.anchor_version == 1
+    assert ctx.structure.active_swing_low_source is not None
+
+
+@patch("src.precompute.load_or_fetch_market_series")
+def test_run_precompute_reuses_persisted_anchor_state(mock_load, tmp_path, settings):
+    run_date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=run_date, n=2)
+    mock_load.return_value = _mock_market_series(run_date)
+    manifest = load_manifest(run_dir)
+    external = ResolvedEps(forward_eps=354.0, trailing_eps=220.0, effective_from="2026-06-01")
+
+    # Seed a published anchor state (e.g. after a prior breakout) before the run.
+    from src.structure import StructureAnchorState
+
+    settings.anchor_state_path.parent.mkdir(parents=True, exist_ok=True)
+    settings.anchor_state_path.write_text(
+        '{"active_swing_high_price": 8000.0, "active_swing_high_date": "2026-06-01",'
+        ' "active_swing_low_price": 7000.0, "active_swing_low_date": "2026-05-01",'
+        ' "active_swing_low_source": "prior_active_fallback",'
+        ' "swing_high_confirmation": "unconfirmed_new_high",'
+        ' "swing_low_confirmation": "above_50dma",'
+        ' "status": "confirmed_new_high", "candidate_high": null, "candidate_date": null,'
+        ' "closes_above_reference": 0, "anchor_version": 2}',
+        encoding="utf-8",
+    )
+
+    ctx = run_precompute(run_date, run_dir, manifest, external, settings=settings)
+
+    # The persisted anchor (8000) is authoritative even if the legacy observation is lower.
+    assert ctx.structure.anchor_version == 2
+    assert ctx.structure.active_swing_high_price > 7000.0
 
 
 @patch("src.precompute.load_or_fetch_market_series")

@@ -36,7 +36,13 @@ from typing import Literal, Sequence
 
 import numpy as np
 
-SwingConfirmation = Literal["pullback_3pct", "five_sessions", "rally_5pct", "above_50dma"]
+SwingConfirmation = Literal[
+    "pullback_3pct",
+    "five_sessions",
+    "rally_5pct",
+    "above_50dma",
+    "unconfirmed_new_high",
+]
 UpsideTargetRule = Literal["active_swing_high", "next_local_max", "pct_extension"]
 DownsideTargetRule = Literal[
     "fib_382",
@@ -95,6 +101,37 @@ class StructureResult:
     upside_target_rule: UpsideTargetRule
     downside_target: float
     downside_target_rule: DownsideTargetRule
+    prior_swing_high_price: float | None = None
+    prior_swing_high_date: str | None = None
+    active_swing_low_source: str | None = None
+    anchor_version: int = 1
+
+
+@dataclass(frozen=True)
+class StructureAnchorState:
+    """Persistent authoritative anchor identity + breakout-sequence tracking.
+
+    This is the sole source of the published active anchor geometry. The
+    legacy local-extrema detector in ``compute_structure`` emits observations
+    only; ``resolve_structure_anchors`` decides the published anchors.
+    """
+
+    # Persisted authoritative anchor identity.
+    active_swing_high_price: float | None = None
+    active_swing_high_date: str | None = None
+    active_swing_low_price: float | None = None
+    active_swing_low_date: str | None = None
+    active_swing_low_source: str | None = None
+    swing_high_confirmation: str | None = None
+    swing_low_confirmation: str | None = None
+
+    # Breakout-sequence tracking.
+    status: str = "none"  # none | unconfirmed_new_high | confirmed_new_high | failed_breakout
+    candidate_high: float | None = None
+    candidate_date: str | None = None
+    closes_above_reference: int = 0
+
+    anchor_version: int = 1
 
 
 def _highs(bars: Sequence[PriceBar]) -> np.ndarray:
@@ -408,3 +445,336 @@ def reanchor_downside_for_straddle(
         downside_target_rule=new_rule,
     )
     return updated, warnings
+
+
+def _bar_index_by_date(bars: Sequence[PriceBar], date_str: str) -> int:
+    for i, b in enumerate(bars):
+        if b.session_date.isoformat() == date_str:
+            return i
+    return -1
+
+
+def _find_intermediate_swing_low(
+    bars: Sequence[PriceBar],
+    sma50: np.ndarray,
+    prior_high_date: str,
+    candidate_date: str,
+) -> ConfirmedSwing | None:
+    """Lowest confirmed local minimum strictly between two dated bars.
+
+    Scans the bar range (prior_high_date, candidate_date) exclusive on both
+    ends; never looks beyond the candidate bar. Returns None when no confirmed
+    swing low exists in that window.
+    """
+    start = _bar_index_by_date(bars, prior_high_date)
+    end = _bar_index_by_date(bars, candidate_date)
+    if start < 0 or end < 0 or end - start < 2:
+        return None
+    lows = [c for c in _confirmed_lows(bars, sma50) if start < c.index < end]
+    if not lows:
+        return None
+    return min(lows, key=lambda c: c.price)
+
+
+def _low_source_and_value(
+    bars: Sequence[PriceBar],
+    sma50: np.ndarray,
+    prior_high_date: str,
+    candidate_date: str,
+    anchor_state: StructureAnchorState,
+) -> tuple[float | None, str | None, str]:
+    """Three-tier fib-low selection for a confirmed re-anchor."""
+    inter = _find_intermediate_swing_low(bars, sma50, prior_high_date, candidate_date)
+    if inter is not None:
+        return inter.price, inter.session_date.isoformat(), "intermediate_confirmed"
+    if anchor_state.active_swing_low_price is not None:
+        return (
+            anchor_state.active_swing_low_price,
+            anchor_state.active_swing_low_date,
+            "prior_active_fallback",
+        )
+    return None, None, "unavailable"
+
+
+def _result_from_anchor_state(
+    anchor_state: StructureAnchorState,
+    bars: Sequence[PriceBar],
+    pct_above_200dma: float,
+    *,
+    prior_swing_high_price: float | None = None,
+    prior_swing_high_date: str | None = None,
+) -> StructureResult:
+    """Build the published StructureResult from the authoritative anchor state.
+
+    This is the single place geometry is emitted. Every resolver path —
+    including no-op days — emits from the state's anchors, never from the
+    possibly-stale legacy observation.
+    """
+    close = float(bars[-1].close)
+    new_high = anchor_state.active_swing_high_price
+    new_low = anchor_state.active_swing_low_price
+    new_low_date = anchor_state.active_swing_low_date
+    low_source = anchor_state.active_swing_low_source or "unavailable"
+    new_low_confirmation: SwingConfirmation = (
+        anchor_state.swing_low_confirmation or "above_50dma"
+    ) if anchor_state.swing_low_confirmation in (
+        "pullback_3pct",
+        "five_sessions",
+        "rally_5pct",
+        "above_50dma",
+        "unconfirmed_new_high",
+    ) else "above_50dma"
+    new_high_confirmation: SwingConfirmation = (
+        anchor_state.swing_high_confirmation or "five_sessions"
+    ) if anchor_state.swing_high_confirmation in (
+        "pullback_3pct",
+        "five_sessions",
+        "rally_5pct",
+        "above_50dma",
+        "unconfirmed_new_high",
+    ) else "five_sessions"
+
+    assert new_high is not None, "published anchor state must carry an active swing high"
+    liq_caution, liq_nervous, liq_margin, liq_cascade = _liquidation_zones(new_high)
+
+    if new_low is not None:
+        fib_236, fib_382, fib_500, fib_618 = _fib_levels(new_high, new_low)
+        downside, downside_rule = _downside_target(
+            close,
+            fib_382,
+            fib_500,
+            liq_margin,
+            pct_above_200dma,
+        )
+    else:
+        # No fib low (unavailable): suppress the ladder but keep a sane
+        # downside target so Monte Carlo never degenerates to 0.
+        fib_236 = fib_382 = fib_500 = fib_618 = 0.0
+        downside = close * (1.0 - EXTENSION_FALLBACK_PCT)
+        downside_rule = "reanchor_fallback_pct"
+
+    active_high = ConfirmedSwing(
+        index=_bar_index_by_date(bars, anchor_state.active_swing_high_date or ""),
+        price=new_high,
+        session_date=(
+            bars[0].session_date
+            if _bar_index_by_date(bars, anchor_state.active_swing_high_date or "") < 0
+            else bars[_bar_index_by_date(bars, anchor_state.active_swing_high_date or "")].session_date
+        ),
+        confirmation=new_high_confirmation,
+    )
+    upside, upside_rule = _nearest_resistance_above(close, bars, active_high)
+
+    return StructureResult(
+        active_swing_high_date=anchor_state.active_swing_high_date or "",
+        active_swing_high_price=new_high,
+        swing_high_confirmation=new_high_confirmation,
+        active_swing_low_date=new_low_date or "",
+        active_swing_low_price=new_low if new_low is not None else 0.0,
+        swing_low_confirmation=new_low_confirmation,
+        fib_236=fib_236,
+        fib_382=fib_382,
+        fib_500=fib_500,
+        fib_618=fib_618,
+        liquidation_caution=liq_caution,
+        liquidation_nervous=liq_nervous,
+        liquidation_margin_call=liq_margin,
+        liquidation_cascade=liq_cascade,
+        upside_target=upside,
+        upside_target_rule=upside_rule,
+        downside_target=downside,
+        downside_target_rule=downside_rule,
+        prior_swing_high_price=prior_swing_high_price,
+        prior_swing_high_date=prior_swing_high_date,
+        active_swing_low_source=low_source,
+        anchor_version=anchor_state.anchor_version,
+    )
+
+
+def resolve_structure_anchors(
+    result: StructureResult,
+    bars: Sequence[PriceBar],
+    anchor_state: StructureAnchorState,
+    sma50: np.ndarray,
+    *,
+    pct_above_200dma: float,
+) -> tuple[StructureResult, StructureAnchorState, list[str]]:
+    """Sole publisher of active anchor geometry for a session.
+
+    ``anchor_state.active_swing_high_price`` is the authoritative reference
+    (not ``result.active_swing_high_price``, the legacy observation). Applies
+    the conventional-swing path and the two-close breakout machine; publishes
+    at most one anchor transition and one ``anchor_version`` increment. Every
+    path emits geometry from the authoritative anchor state, never from the
+    possibly-stale legacy observation.
+    """
+    warnings: list[str] = []
+    close = float(bars[-1].close)
+    session_high = float(bars[-1].high)
+    session_date = bars[-1].session_date.isoformat()
+    reference = anchor_state.active_swing_high_price
+
+    def emit(
+        state: StructureAnchorState,
+        *,
+        prior_high: float | None = None,
+        prior_date: str | None = None,
+    ) -> tuple[StructureResult, StructureAnchorState, list[str]]:
+        return (
+            _result_from_anchor_state(
+                state,
+                bars,
+                pct_above_200dma,
+                prior_swing_high_price=prior_high,
+                prior_swing_high_date=prior_date,
+            ),
+            state,
+            warnings,
+        )
+
+    # --- Conventional-swing path: legacy detector confirms a higher swing high ---
+    if (
+        reference is not None
+        and result.active_swing_high_price is not None
+        and result.active_swing_high_price > reference
+    ):
+        low_price, low_date, low_source = _low_source_and_value(
+            bars,
+            sma50,
+            anchor_state.active_swing_high_date or "",
+            result.active_swing_high_date,
+            anchor_state,
+        )
+        if low_source == "unavailable":
+            warnings.append("Fib ladder unavailable: no confirmed structural low")
+        new_version = anchor_state.anchor_version + 1
+        new_state = StructureAnchorState(
+            active_swing_high_price=result.active_swing_high_price,
+            active_swing_high_date=result.active_swing_high_date,
+            active_swing_low_price=low_price,
+            active_swing_low_date=low_date,
+            active_swing_low_source=low_source,
+            swing_high_confirmation=result.swing_high_confirmation,
+            swing_low_confirmation=(
+                "rally_5pct" if low_source == "intermediate_confirmed" else result.swing_low_confirmation
+            ),
+            status="none",
+            anchor_version=new_version,
+        )
+        warnings.append(
+            f"conventional swing confirmed: active swing high re-anchored "
+            f"{reference:.2f} -> {result.active_swing_high_price:.2f} (anchor_version={new_version})"
+        )
+        return emit(new_state, prior_high=reference, prior_date=anchor_state.active_swing_high_date)
+
+    # --- Breakout path ---
+    if reference is None:
+        warnings.append("no authoritative anchor reference; returning legacy observation")
+        return result, anchor_state, warnings
+
+    # Pending: close exactly at reference.
+    if close == reference:
+        return emit(anchor_state)
+
+    # Failure: unconfirmed breakout closes back below the reference.
+    if close < reference:
+        if anchor_state.status == "unconfirmed_new_high":
+            new_state = replace(anchor_state, status="failed_breakout")
+            warnings.append(
+                f"breakout above {reference:.2f} failed; prior anchors retained"
+            )
+            return emit(new_state)
+        return emit(anchor_state)
+
+    # close > reference
+    if anchor_state.status == "none":
+        new_state = replace(
+            anchor_state,
+            status="unconfirmed_new_high",
+            candidate_high=session_high,
+            candidate_date=session_date,
+            closes_above_reference=1,
+        )
+        warnings.append(
+            f"new high {session_high:.2f} above active swing high {reference:.2f}; "
+            "unconfirmed — provisional"
+        )
+        return emit(new_state)
+
+    if anchor_state.status == "unconfirmed_new_high":
+        count = anchor_state.closes_above_reference + 1
+        prior_cand = anchor_state.candidate_high
+        prior_cand_date = anchor_state.candidate_date
+        # Only ratchet (candidate_high/candidate_date) on a strictly higher session high.
+        if prior_cand is None or session_high > prior_cand:
+            cand = session_high
+            cand_date = session_date
+        else:
+            cand = prior_cand
+            cand_date = prior_cand_date if prior_cand_date is not None else session_date
+        if count < 2:
+            new_state = replace(
+                anchor_state,
+                status="unconfirmed_new_high",
+                candidate_high=cand,
+                candidate_date=cand_date,
+                closes_above_reference=count,
+            )
+            return emit(new_state)
+        # Confirm on second close.
+        low_price, low_date, low_source = _low_source_and_value(
+            bars,
+            sma50,
+            anchor_state.active_swing_high_date or "",
+            cand_date,
+            anchor_state,
+        )
+        if low_source == "unavailable":
+            warnings.append("Fib ladder unavailable: no confirmed structural low")
+        new_version = anchor_state.anchor_version + 1
+        new_state = StructureAnchorState(
+            active_swing_high_price=cand,
+            active_swing_high_date=cand_date,
+            active_swing_low_price=low_price,
+            active_swing_low_date=low_date,
+            active_swing_low_source=low_source,
+            swing_high_confirmation="unconfirmed_new_high",
+            swing_low_confirmation="above_50dma",
+            status="confirmed_new_high",
+            anchor_version=new_version,
+        )
+        warnings.append(
+            f"breakout confirmed: active swing high re-anchored "
+            f"{reference:.2f} -> {cand:.2f} (anchor_version={new_version})"
+        )
+        return emit(new_state, prior_high=reference, prior_date=anchor_state.active_swing_high_date)
+
+    if anchor_state.status == "failed_breakout":
+        new_state = replace(
+            anchor_state,
+            status="unconfirmed_new_high",
+            candidate_high=session_high,
+            candidate_date=session_date,
+            closes_above_reference=1,
+        )
+        warnings.append(
+            f"new breakout attempt above {reference:.2f}; unconfirmed — provisional"
+        )
+        return emit(new_state)
+
+    # confirmed_new_high: ratchet the high without a version increment.
+    if anchor_state.status == "confirmed_new_high":
+        if session_high <= (anchor_state.active_swing_high_price or session_high):
+            return emit(anchor_state)
+        new_state = replace(
+            anchor_state,
+            active_swing_high_price=session_high,
+            active_swing_high_date=session_date,
+        )
+        warnings.append(
+            f"active swing high ratcheted to {session_high:.2f} "
+            "(same leg; anchor_version unchanged)"
+        )
+        return emit(new_state)
+
+    return emit(anchor_state)
