@@ -82,6 +82,7 @@ def _anchor(
     closes=0,
     version=1,
     confirmation="pullback_3pct",
+    last_processed_date=None,
 ):
     return StructureAnchorState(
         active_swing_high_price=high,
@@ -95,6 +96,7 @@ def _anchor(
         candidate_high=candidate_high,
         candidate_date=candidate_date,
         closes_above_reference=closes,
+        last_processed_date=last_processed_date,
         anchor_version=version,
     )
 
@@ -301,7 +303,8 @@ def test_conventional_not_strictly_above_is_noop():
 
     conv_obs = dc_replace(obs, active_swing_high_price=5000.0)
     result, new_state, warnings = _resolve(anchor, close=4950.0, high=4960.0, obs=conv_obs)
-    assert new_state is anchor
+    assert new_state.status == "none"
+    assert new_state.anchor_version == 1
     assert warnings == []
 
 
@@ -499,3 +502,68 @@ def test_no_future_fib_leakage():
         rows, sma, rows[50].session_date.isoformat(), rows[60].session_date.isoformat()
     )
     assert low is None or low.index < 60
+
+
+# --- Idempotency: prepare + run both call precompute on the same session ---------
+
+
+def test_same_session_processed_twice_does_not_double_count():
+    # daily-run.sh runs `prepare` then `run`, each invoking run_precompute. A single
+    # session's close must count only once toward two-close confirmation.
+    from dataclasses import replace as dc_replace
+
+    anchor = _anchor(
+        high=5000.0,
+        low=4900.0,
+        status="none",
+        version=1,
+        last_processed_date=None,
+    )
+    bars = _session_bars(5040.0, 5050.0)
+    obs = _observation()
+
+    # prepare
+    _, a1, w1 = resolve_structure_anchors(obs, bars, anchor, _sma50(bars), pct_above_200dma=5.0)
+    assert a1.status == "unconfirmed_new_high"
+    assert a1.closes_above_reference == 1
+    assert a1.last_processed_date is not None
+
+    # run (same session, persisted state now carries last_processed_date)
+    r2, a2, w2 = resolve_structure_anchors(obs, bars, a1, _sma50(bars), pct_above_200dma=5.0)
+    assert a2.status == "unconfirmed_new_high"
+    assert a2.closes_above_reference == 1
+    assert a2.anchor_version == 1
+    assert w2 == []
+    assert r2.active_swing_high_price == 5000.0  # geometry NOT re-anchored
+
+
+def test_distinct_sessions_confirm_on_second_qualifying_close():
+    from dataclasses import replace as dc_replace
+
+    # Session 1 (prepare+run on day1): unconfirmed, closes=1.
+    anchor = _anchor(
+        high=5000.0,
+        low=4900.0,
+        status="none",
+        version=1,
+        last_processed_date=None,
+    )
+    bars1 = _session_bars(5040.0, 5050.0)
+    obs1 = _observation()
+    _, a1, _ = resolve_structure_anchors(obs1, bars1, anchor, _sma50(bars1), pct_above_200dma=5.0)
+    assert a1.status == "unconfirmed_new_high" and a1.closes_above_reference == 1
+
+    # Session 2 (a DIFFERENT session date): qualifies again -> confirm.
+    # Rebuild bars with a distinct last-session date via the same helper shape.
+    from datetime import date
+
+    base = _session_bars(5060.0, 5070.0)
+    bars2 = base[:-1] + [
+        PriceBar(session_date=date(2026, 3, 16), open=5060.0, high=5070.0, low=5050.0, close=5060.0)
+    ]
+    obs2 = _observation()
+    r2, a2, w2 = resolve_structure_anchors(obs2, bars2, a1, _sma50(bars2), pct_above_200dma=5.0)
+    assert a2.status == "confirmed_new_high"
+    assert a2.anchor_version == 2
+    assert a2.active_swing_high_price == 5070.0
+    assert any("breakout confirmed" in w for w in w2)

@@ -131,6 +131,11 @@ class StructureAnchorState:
     candidate_date: str | None = None
     closes_above_reference: int = 0
 
+    # Idempotency: the session date the state was last advanced on. A single
+    # trading day's precompute may run more than once (prepare + run), so the
+    # machine must not count the same session twice.
+    last_processed_date: str | None = None
+
     anchor_version: int = 1
 
 
@@ -614,21 +619,32 @@ def resolve_structure_anchors(
     session_date = bars[-1].session_date.isoformat()
     reference = anchor_state.active_swing_high_price
 
+    # Idempotency: a single session may be precomputed more than once in one
+    # pipeline (prepare + run both call run_precompute). Never re-advance the
+    # state machine for a session that has already been resolved.
+    if anchor_state.last_processed_date == session_date:
+        return (
+            _result_from_anchor_state(anchor_state, bars, pct_above_200dma),
+            anchor_state,
+            warnings,
+        )
+
     def emit(
         state: StructureAnchorState,
         *,
         prior_high: float | None = None,
         prior_date: str | None = None,
     ) -> tuple[StructureResult, StructureAnchorState, list[str]]:
+        stamped = replace(state, last_processed_date=session_date)
         return (
             _result_from_anchor_state(
-                state,
+                stamped,
                 bars,
                 pct_above_200dma,
                 prior_swing_high_price=prior_high,
                 prior_swing_high_date=prior_date,
             ),
-            state,
+            stamped,
             warnings,
         )
 
