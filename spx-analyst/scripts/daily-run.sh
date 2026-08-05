@@ -38,17 +38,81 @@ run_with_retry() {
 }
 
 echo "=== $TODAY: checking if market is open ==="
-MARKET_STATUS=$(python -c "
-import yfinance as yf
-d = yf.Ticker('^GSPC').history(period='1d')
-print('ok' if not d.empty else 'closed')
-" 2>/dev/null) || MARKET_STATUS='ok'
+MARKET_STATUS=$(python - 2>/dev/null <<'PY'
+import datetime as dt
+import time
+from zoneinfo import ZoneInfo
 
-if [ "$MARKET_STATUS" = "closed" ]; then
-    echo "  market closed — skipping to avoid API waste"
-    echo "=== $TODAY: done ==="
-    exit 0
-fi
+import yfinance as yf
+from pandas.tseries.holiday import (
+    AbstractHolidayCalendar,
+    GoodFriday,
+    Holiday,
+    USLaborDay,
+    USMartinLutherKingJr,
+    USMemorialDay,
+    USPresidentsDay,
+    USThanksgivingDay,
+    nearest_workday,
+)
+
+
+class NYSECalendar(AbstractHolidayCalendar):
+    rules = [
+        Holiday("New Year's Day", month=1, day=1, observance=nearest_workday),
+        USMartinLutherKingJr,
+        USPresidentsDay,
+        GoodFriday,
+        USMemorialDay,
+        Holiday("Juneteenth", month=6, day=19, observance=nearest_workday),
+        Holiday("Independence Day", month=7, day=4, observance=nearest_workday),
+        USLaborDay,
+        USThanksgivingDay,
+        Holiday("Christmas", month=12, day=25, observance=nearest_workday),
+    ]
+
+
+today = dt.datetime.now(ZoneInfo("America/New_York")).date()
+
+# Non-trading day (weekend or NYSE holiday) -> skip deterministically.
+if today.weekday() >= 5 or today in set(
+    NYSECalendar().holidays(dt.datetime(today.year, 1, 1), dt.datetime(today.year + 1, 1, 1)).date
+):
+    print("closed")
+    raise SystemExit(0)
+
+# Trading day: wait for yfinance to publish today's daily bar. Right after the
+# 16:00 ET close the bar can be missing for hours; running before it exists
+# makes `prepare` fail on the required session.
+POLL_SECONDS = 15 * 60
+MAX_ATTEMPTS = 16  # up to 4 hours after the scheduled fire time
+for attempt in range(1, MAX_ATTEMPTS + 1):
+    df = yf.Ticker("^GSPC").history(
+        start=today.isoformat(),
+        end=(today + dt.timedelta(days=1)).isoformat(),
+        auto_adjust=True,
+    )
+    if not df.empty and df.index[-1].date() == today:
+        print("ok")
+        raise SystemExit(0)
+    if attempt < MAX_ATTEMPTS:
+        time.sleep(POLL_SECONDS)
+print("nodata")
+PY
+) || MARKET_STATUS='error'
+
+case "$MARKET_STATUS" in
+    closed)
+        echo "  market closed — skipping to avoid API waste"
+        echo "=== $TODAY: done ==="
+        exit 0
+        ;;
+    nodata|error)
+        echo "  market data for $TODAY not available after 4h — run aborted"
+        echo "=== $TODAY: done (failed) ==="
+        exit 1
+        ;;
+esac
 
 echo "=== $TODAY: prepare ==="
 python -m src.cli prepare --date "$TODAY" --force
