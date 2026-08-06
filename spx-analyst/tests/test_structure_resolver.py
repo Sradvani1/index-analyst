@@ -567,3 +567,39 @@ def test_distinct_sessions_confirm_on_second_qualifying_close():
     assert a2.anchor_version == 2
     assert a2.active_swing_high_price == 5070.0
     assert any("breakout confirmed" in w for w in w2)
+
+
+def test_idempotent_reemit_preserves_prior_swing_high():
+    # After a breakout confirm, `run` re-precomputes the same session and hits the
+    # idempotency guard. The re-emitted context must still carry prior_swing_high
+    # (reclaimed support), not drop it.
+    from dataclasses import replace as dc_replace
+
+    # Session 1 (prepare): unconfirmed.
+    anchor = _anchor(high=5000.0, low=4900.0, status="none", version=1, last_processed_date=None)
+    bars1 = _session_bars(5040.0, 5050.0)
+    obs1 = _observation()
+    _, a1, _ = resolve_structure_anchors(obs1, bars1, anchor, _sma50(bars1), pct_above_200dma=5.0)
+    assert a1.status == "unconfirmed_new_high"
+
+    # Session 2 (prepare): confirm the breakout.
+    from datetime import date
+
+    base = _session_bars(5060.0, 5070.0)
+    bars2 = base[:-1] + [
+        PriceBar(session_date=date(2026, 3, 16), open=5060.0, high=5070.0, low=5050.0, close=5060.0)
+    ]
+    obs2 = _observation()
+    _, a2, w2 = resolve_structure_anchors(obs2, bars2, a1, _sma50(bars2), pct_above_200dma=5.0)
+    assert a2.status == "confirmed_new_high"
+    assert a2.prior_swing_high_price == 5000.0
+    assert any("breakout confirmed" in w for w in w2)
+
+    # Session 2 (run): idempotent guard — same session, must NOT drop prior.
+    r3, a3, w3 = resolve_structure_anchors(obs2, bars2, a2, _sma50(bars2), pct_above_200dma=5.0)
+    assert a3.status == "confirmed_new_high"
+    assert a3.anchor_version == 2
+    assert a3.prior_swing_high_price == 5000.0
+    assert a3.prior_swing_high_date is not None
+    assert r3.prior_swing_high_price == 5000.0
+    assert w3 == []

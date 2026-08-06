@@ -150,10 +150,17 @@ class StructureAnchorState:
     candidate_high: float | None = None
     candidate_date: str | None = None
     closes_above_reference: int = 0
+    last_processed_date: str | None = None
+    prior_swing_high_price: float | None = None
+    prior_swing_high_date: str | None = None
     anchor_version: int = 1
 ```
 
 Persisted via `json.dumps(dataclasses.asdict(state))`; gitignored (runtime state, not committed). Missing/corrupt file → re-initialized from `compute_structure` at version 1.
+
+**Follow-up fixes after first live runs (2026-08-04/08-05):**
+- `last_processed_date`: idempotency guard so a session's close counts only once toward two-close confirmation (`prepare` + `run` both call `run_precompute`).
+- `prior_swing_high_price/date` persisted in the state (Option C): the idempotency guard re-emits context from the state, so the prior high (reclaimed support) must live in the state — not as a per-call argument — or it is silently dropped on the second precompute call.
 
 ### 6.2 `StructureContext` / `StructureResult` tail fields (optional, backward compatible)
 

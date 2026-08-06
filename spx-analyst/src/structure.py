@@ -124,6 +124,10 @@ class StructureAnchorState:
     active_swing_low_source: str | None = None
     swing_high_confirmation: str | None = None
     swing_low_confirmation: str | None = None
+    # The anchor superseded by the current active high (now reclaimed support).
+    # Persisted so every precompute call in a session emits the same context.
+    prior_swing_high_price: float | None = None
+    prior_swing_high_date: str | None = None
 
     # Breakout-sequence tracking.
     status: str = "none"  # none | unconfirmed_new_high | confirmed_new_high | failed_breakout
@@ -505,9 +509,6 @@ def _result_from_anchor_state(
     anchor_state: StructureAnchorState,
     bars: Sequence[PriceBar],
     pct_above_200dma: float,
-    *,
-    prior_swing_high_price: float | None = None,
-    prior_swing_high_date: str | None = None,
 ) -> StructureResult:
     """Build the published StructureResult from the authoritative anchor state.
 
@@ -589,8 +590,8 @@ def _result_from_anchor_state(
         upside_target_rule=upside_rule,
         downside_target=downside,
         downside_target_rule=downside_rule,
-        prior_swing_high_price=prior_swing_high_price,
-        prior_swing_high_date=prior_swing_high_date,
+        prior_swing_high_price=anchor_state.prior_swing_high_price,
+        prior_swing_high_date=anchor_state.prior_swing_high_date,
         active_swing_low_source=low_source,
         anchor_version=anchor_state.anchor_version,
     )
@@ -631,19 +632,10 @@ def resolve_structure_anchors(
 
     def emit(
         state: StructureAnchorState,
-        *,
-        prior_high: float | None = None,
-        prior_date: str | None = None,
     ) -> tuple[StructureResult, StructureAnchorState, list[str]]:
         stamped = replace(state, last_processed_date=session_date)
         return (
-            _result_from_anchor_state(
-                stamped,
-                bars,
-                pct_above_200dma,
-                prior_swing_high_price=prior_high,
-                prior_swing_high_date=prior_date,
-            ),
+            _result_from_anchor_state(stamped, bars, pct_above_200dma),
             stamped,
             warnings,
         )
@@ -674,6 +666,8 @@ def resolve_structure_anchors(
             swing_low_confirmation=(
                 "rally_5pct" if low_source == "intermediate_confirmed" else result.swing_low_confirmation
             ),
+            prior_swing_high_price=reference,
+            prior_swing_high_date=anchor_state.active_swing_high_date,
             status="none",
             anchor_version=new_version,
         )
@@ -681,7 +675,7 @@ def resolve_structure_anchors(
             f"conventional swing confirmed: active swing high re-anchored "
             f"{reference:.2f} -> {result.active_swing_high_price:.2f} (anchor_version={new_version})"
         )
-        return emit(new_state, prior_high=reference, prior_date=anchor_state.active_swing_high_date)
+        return emit(new_state)
 
     # --- Breakout path ---
     if reference is None:
@@ -756,6 +750,8 @@ def resolve_structure_anchors(
             active_swing_low_source=low_source,
             swing_high_confirmation="unconfirmed_new_high",
             swing_low_confirmation="above_50dma",
+            prior_swing_high_price=reference,
+            prior_swing_high_date=anchor_state.active_swing_high_date,
             status="confirmed_new_high",
             anchor_version=new_version,
         )
@@ -763,7 +759,7 @@ def resolve_structure_anchors(
             f"breakout confirmed: active swing high re-anchored "
             f"{reference:.2f} -> {cand:.2f} (anchor_version={new_version})"
         )
-        return emit(new_state, prior_high=reference, prior_date=anchor_state.active_swing_high_date)
+        return emit(new_state)
 
     if anchor_state.status == "failed_breakout":
         new_state = replace(
