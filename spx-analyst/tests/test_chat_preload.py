@@ -23,8 +23,6 @@ from src.files import InputError
 from src.memory import build_arc_brief, build_recent_summary, load_recent_states
 from src.schemas import (
     ArcBriefCaps,
-    ChatPreloadBudget,
-    ConstitutionCaps,
     CurrentBrief,
     CurrentBriefCaps,
     CurrentBriefRow,
@@ -44,15 +42,6 @@ def preload_settings(tmp_path):
         update={"chat_assistant_instructions_path_raw": str(instructions)}
     )
     return settings
-
-
-def _count_tokens(text: str) -> int | None:
-    try:
-        import tiktoken
-    except ImportError:
-        return None
-    enc = tiktoken.get_encoding("o200k_base")
-    return len(enc.encode(text))
 
 
 def _live_settings_or_skip():
@@ -99,7 +88,7 @@ def test_render_current_brief_has_table_not_json(sample_state, preload_settings)
     assert "| Signal Layer | Signal |" in rendered
     assert "decision_matrix.rows (JSON)" not in rendered
     assert "what_changed_today:" not in rendered
-    assert len(rendered) <= CurrentBriefCaps.MAX_RENDERED_CHARS
+    assert len(rendered) > 0
 
 
 def test_build_additional_instructions_three_layer_stack(preload_settings, sample_state):
@@ -168,21 +157,17 @@ def test_arc_brief_shorter_than_recent_summary(preload_settings, sample_state):
     assert len(arc_rendered) < len(full_summary) * 0.5
 
 
-def test_live_memory_budget_caps():
+def test_live_preload_renders_full_without_truncation():
     settings = _live_settings_or_skip()
     context = build_additional_instructions(settings)
     rendered_current = render_current_brief(context.current_brief)
     rendered_arc = render_arc_brief(context.arc_brief)
 
-    assert len(context.instructions) <= ConstitutionCaps.MAX_RENDERED_CHARS
-    assert len(rendered_current) <= CurrentBriefCaps.MAX_RENDERED_CHARS
-    assert len(rendered_arc) <= ArcBriefCaps.MAX_RENDERED_CHARS
-    assert len(context.additional_instructions) <= ChatPreloadBudget.MAX_ADDITIONAL_INSTRUCTIONS_CHARS
-
-    tokens = _count_tokens(context.additional_instructions)
-    # Per-layer token figures are approx targets (doc-table only); char caps are enforced.
-    if tokens is not None:
-        assert tokens <= ChatPreloadBudget.MAX_ADDITIONAL_INSTRUCTIONS_TOKENS
+    assert context.instructions
+    assert rendered_current
+    assert rendered_arc
+    assert len(context.arc_brief.session_snapshots) <= ArcBriefCaps.MAX_SESSIONS
+    assert "Still open:" in rendered_arc
 
     assert "decision_matrix.rows (JSON)" not in context.additional_instructions
     assert "what_changed_today:" not in context.additional_instructions
@@ -257,16 +242,15 @@ def test_trend_regime_row_uses_state_field_not_matrix_signal(sample_state):
     assert trend_row.signal != "from-matrix-signal"
 
 
-def test_load_instructions_truncates_constitution(preload_settings):
+def test_load_instructions_preserves_full_constitution(preload_settings):
     long_text = "x" * 2500
     path = preload_settings.chat_assistant_instructions_path
     path.write_text(long_text, encoding="utf-8")
     loaded = load_instructions(preload_settings)
-    assert len(loaded) == ConstitutionCaps.MAX_RENDERED_CHARS
-    assert loaded.endswith("…")
+    assert len(loaded) == len(long_text)
 
 
-def test_render_current_brief_truncates_when_over_cap():
+def test_render_current_brief_preserves_long_signals():
     long_signal = "S" * 500
     brief = CurrentBrief(
         latest_run_date="2026-06-12",
@@ -288,8 +272,8 @@ def test_render_current_brief_truncates_when_over_cap():
         ],
     )
     rendered = render_current_brief(brief)
-    assert len(rendered) == CurrentBriefCaps.MAX_RENDERED_CHARS
-    assert rendered.endswith("…")
+    assert long_signal in rendered
+    assert "…" not in rendered
 
 
 def test_render_current_brief_formats_prices(preload_settings, sample_state):
@@ -337,12 +321,13 @@ def test_risk_bullets_title_case_all_caps_marginal_change(sample_state):
     assert "DOWNSIDE TARGET TAGGED" not in brief.key_risks_or_tensions[0]
 
 
-def test_real_constitution_fits_cap_without_truncation():
+def test_real_constitution_is_fully_present():
     loaded = load_instructions(get_settings())
-    assert len(loaded) <= ConstitutionCaps.MAX_RENDERED_CHARS
     assert not loaded.endswith("…")
-    assert "Authority stack" in loaded
-    assert "house analyst" in loaded.lower()
+    assert len(loaded) > 3000
+    assert "investor-facing SPX market-structure analyst" in loaded
+    assert "market-structure review, not a market prediction exercise" in loaded
+    assert "SPX Daily Analysis Framework" not in loaded
 
 
 def test_format_event_headline_title_cases_all_caps_label():

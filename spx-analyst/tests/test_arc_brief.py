@@ -48,7 +48,6 @@ def test_build_arc_brief_deterministic_from_states():
     assert [s.date for s in arc.session_snapshots] == ["2026-06-10", "2026-06-11", "2026-06-12"]
     assert arc.session_snapshots[-1].bias == "Late Bull / Topping"
     assert arc.session_snapshots[0].tension_fragment.startswith("Recovery extended")
-    assert len(arc.session_snapshots[0].tension_fragment) <= ArcBriefCaps.MAX_TENSION_FRAGMENT_CHARS
 
 
 def test_arc_session_fragment_prefers_what_changed_today():
@@ -70,23 +69,23 @@ def test_arc_session_fragment_falls_back_to_tension_when_no_changes():
 
 
 def test_build_arc_brief_respects_max_sessions(settings):
-    dates = [f"2026-06-{day:02d}" for day in range(10, 17)]
+    dates = [f"2026-06-{day:02d}" for day in range(10, 22)]
     for date in dates:
         write_state(settings, date)
     from src.memory import load_recent_states
 
-    states = load_recent_states(settings=settings)
+    states = load_recent_states(limit=ArcBriefCaps.MAX_SESSIONS, settings=settings)
     arc = build_arc_brief(states)
 
-    assert len(arc.session_snapshots) <= ArcBriefCaps.MAX_SESSIONS
+    assert len(arc.session_snapshots) == ArcBriefCaps.MAX_SESSIONS
     assert arc.session_snapshots[-1].date == states[0].date
 
 
-def test_build_arc_brief_tension_fragment_capped():
+def test_build_arc_brief_preserves_long_tension_fragment():
     long_tension = "A" * 200 + ". Tail sentence."
     states = [_state(date="2026-06-12", what_changed_today=[], primary_tension=long_tension)]
     arc = build_arc_brief(states)
-    assert len(arc.session_snapshots[0].tension_fragment) <= ArcBriefCaps.MAX_TENSION_FRAGMENT_CHARS
+    assert arc.session_snapshots[0].tension_fragment == "A" * 200 + "."
 
 
 def test_build_arc_brief_includes_latest_session():

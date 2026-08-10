@@ -54,6 +54,7 @@ def test_state_prompt_contains_blocks(sample_state):
     assert "put_call_zone" in bundle.body
     assert "`what_changed_today` contract" in bundle.body
     assert "Must be a JSON array of 3–5 strings" in bundle.body
+    assert "List items in descending importance" in bundle.body
     assert "conflicting_evidence" in bundle.body
     assert "rsi_divergence" in bundle.body
 

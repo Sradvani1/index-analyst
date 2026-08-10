@@ -327,6 +327,8 @@ def build_state_prompt(
         "- `signals_put_call`: numeric ratio only; no `signals_put_call_zone`.\n\n"
         "`what_changed_today` contract:\n"
         "- Must be a JSON array of 3–5 strings (never a single string).\n"
+        "- List items in descending importance: the first item is the most material to "
+        "today's posture and recommended action.\n"
         "- Each item: one material change vs prior session (price structure, VIX, "
         "breadth/credit, valuation, Monte Carlo).\n"
         "- Compare against prior posture snapshot when memory is present.\n\n"

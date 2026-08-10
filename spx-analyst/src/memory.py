@@ -392,7 +392,7 @@ def _build_still_open_bullets(states: list[DailyState]) -> list[str]:
     for wording in _select_unresolved_questions(
         states, limit=ArcBriefCaps.MAX_STILL_OPEN_BULLETS
     ):
-        bullets.append(_truncate(wording, ArcBriefCaps.MAX_STILL_OPEN_BULLET_CHARS))
+        bullets.append(wording)
     return bullets
 
 
@@ -403,12 +403,7 @@ def _build_inflection_bullets(states: list[DailyState]) -> list[str]:
         if not state.what_changed_today:
             continue
         headline = format_event_headline(state.what_changed_today[0].strip())
-        bullets.append(
-            _truncate(
-                f"{state.date}: {headline}",
-                ArcBriefCaps.MAX_INFLECTION_BULLET_CHARS,
-            )
-        )
+        bullets.append(f"{state.date}: {headline}")
         if len(bullets) >= ArcBriefCaps.MAX_INFLECTION_BULLETS:
             break
     return bullets
@@ -423,18 +418,14 @@ def first_sentence(text: str) -> str:
     return parts[0]
 
 
-def _tension_fragment(text: str, max_len: int | None = None) -> str:
-    cap = max_len if max_len is not None else ArcBriefCaps.MAX_TENSION_FRAGMENT_CHARS
-    return _truncate(first_sentence(text), cap)
+def _tension_fragment(text: str) -> str:
+    return first_sentence(text)
 
 
 def _arc_session_fragment(state: DailyState) -> str:
     """Marginal change headline for arc timeline (not full tension replay)."""
     if state.what_changed_today:
-        return _truncate(
-            format_event_headline(state.what_changed_today[0].strip()),
-            ArcBriefCaps.MAX_TENSION_FRAGMENT_CHARS,
-        )
+        return format_event_headline(state.what_changed_today[0].strip())
     return _tension_fragment(state.primary_tension)
 
 

@@ -14,7 +14,6 @@ from .schemas import (
     ArcBrief,
     ArcBriefCaps,
     ChatPreloadContext,
-    ConstitutionCaps,
     CurrentBrief,
     CurrentBriefCaps,
     CurrentBriefRow,
@@ -51,13 +50,6 @@ def load_latest_daily_state(settings: Settings | None = None) -> DailyState:
     return DailyState.model_validate(read_json(path))
 
 
-def _truncate(text: str, max_len: int) -> str:
-    text = text.strip()
-    if len(text) <= max_len:
-        return text
-    return text[: max_len - 1].rstrip() + "…"
-
-
 def load_instructions(settings: Settings | None = None) -> str:
     settings = settings or get_settings()
     path = settings.chat_assistant_instructions_path
@@ -66,8 +58,6 @@ def load_instructions(settings: Settings | None = None) -> str:
     text = read_text(path).strip()
     if not text:
         raise InputError(f"chat assistant instructions are empty: {path}")
-    if len(text) > ConstitutionCaps.MAX_RENDERED_CHARS:
-        text = _truncate(text, ConstitutionCaps.MAX_RENDERED_CHARS)
     return text
 
 
@@ -124,40 +114,28 @@ def _matrix_signal(state: DailyState, layer_name: str, *, fallback: str = "n/a")
 
 
 def _opening_house_view(brief: DailyState) -> str:
-    opening = (
+    return (
         f"As of {brief.date} (SPX close {format_price(brief.spx_close)}): "
         f"{brief.structural_bias} — "
         f"{_matrix_signal(brief, 'Recommended Action', fallback=brief.decision_matrix.recommended_action)}. "
         f"Signal balance: {_matrix_signal(brief, 'Overall Signal Balance')}."
     )
-    return _truncate(opening, CurrentBriefCaps.MAX_OPENING_CHARS)
 
 
 def _setup_tension_sentence(state: DailyState) -> str:
-    tension = first_sentence(state.primary_tension) or state.primary_tension.strip()
-    return _truncate(tension, CurrentBriefCaps.MAX_SETUP_TENSION_CHARS)
+    return first_sentence(state.primary_tension) or state.primary_tension.strip()
 
 
 def _risk_bullets(state: DailyState) -> list[str]:
     bullets: list[str] = []
     if state.what_changed_today:
-        bullets.append(
-            _truncate(
-                format_event_headline(state.what_changed_today[0].strip()),
-                CurrentBriefCaps.MAX_RISK_BULLET_CHARS,
-            )
-        )
+        bullets.append(format_event_headline(state.what_changed_today[0].strip()))
     else:
         tension = first_sentence(state.primary_tension)
         if tension:
-            bullets.append(_truncate(tension, CurrentBriefCaps.MAX_RISK_BULLET_CHARS))
+            bullets.append(tension)
     for divergence in select_top_conflicts(state.conflicting_evidence):
-        bullets.append(
-            _truncate(
-                divergence.framework_rule.strip(),
-                CurrentBriefCaps.MAX_RISK_BULLET_CHARS,
-            )
-        )
+        bullets.append(divergence.framework_rule.strip())
     return bullets[: CurrentBriefCaps.MAX_RISK_BULLETS]
 
 
@@ -167,7 +145,7 @@ def _view_change_bullets(state: DailyState) -> list[str]:
         text = question.strip()
         if not text:
             continue
-        bullets.append(_truncate(text, CurrentBriefCaps.MAX_VIEW_CHANGE_BULLET_CHARS))
+        bullets.append(text)
         if len(bullets) >= CurrentBriefCaps.MAX_VIEW_CHANGE_BULLETS:
             break
     return bullets
@@ -179,21 +157,17 @@ def _trigger_levels(state: DailyState) -> list[str]:
     levels.append(f"MC upside: {format_price(mc.upside_target)}")
     levels.append(f"MC downside: {format_price(mc.downside_target)}")
     if mc.conditional_cascade.strip():
-        levels.append(
-            f"MC cascade: {_truncate(mc.conditional_cascade, CurrentBriefCaps.MAX_TRIGGER_BULLET_CHARS)}"
-        )
+        levels.append(f"MC cascade: {mc.conditional_cascade.strip()}")
     leverage = _matrix_row(state, "Leverage Risk State")
     if leverage is not None:
         snippet = leverage.signal or leverage.current_reading
         if snippet:
-            levels.append(
-                f"Leverage: {_truncate(snippet, CurrentBriefCaps.MAX_TRIGGER_BULLET_CHARS)}"
-            )
+            levels.append(f"Leverage: {snippet.strip()}")
     return levels[: CurrentBriefCaps.MAX_TRIGGER_BULLETS]
 
 
 def _authoritative_rows(state: DailyState) -> list[CurrentBriefRow]:
-    trend_regime = _truncate(state.trend_regime, CurrentBriefCaps.MAX_TREND_REGIME_CHARS)
+    trend_regime = state.trend_regime
     leverage = _matrix_row(state, "Leverage Risk State")
     mc_edge = _matrix_row(state, "Monte Carlo Edge")
     rows = [
@@ -287,8 +261,6 @@ def render_current_brief(brief: CurrentBrief) -> str:
         lines.extend(f"- {item}" for item in brief.view_change_bullets)
 
     rendered = "\n".join(lines)
-    if len(rendered) > CurrentBriefCaps.MAX_RENDERED_CHARS:
-        rendered = _truncate(rendered, CurrentBriefCaps.MAX_RENDERED_CHARS)
     return rendered
 
 
@@ -312,8 +284,6 @@ def render_arc_brief(arc: ArcBrief) -> str:
         lines.extend(["", "Still open:"])
         lines.extend(f"- {item}" for item in arc.still_open_bullets)
     rendered = "\n".join(lines)
-    if len(rendered) > ArcBriefCaps.MAX_RENDERED_CHARS:
-        rendered = _truncate(rendered, ArcBriefCaps.MAX_RENDERED_CHARS)
     return rendered
 
 
@@ -326,7 +296,7 @@ def build_additional_instructions(settings: Settings | None = None) -> ChatPrelo
     for warning in validate_report_matrix_section(daily_state.date, daily_state, settings):
         logger.warning(warning)
 
-    states = load_recent_states(settings=settings)
+    states = load_recent_states(limit=ArcBriefCaps.MAX_SESSIONS, settings=settings)
     brief = build_current_brief(daily_state)
     arc = build_arc_brief(states)
 

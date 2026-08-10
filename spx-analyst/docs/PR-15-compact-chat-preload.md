@@ -9,7 +9,7 @@
 
 Replace the monolithic every-turn preload (~18,350 chars / ~4,837 tokens) with a fixed three-layer contract on every turn: **constitution + current brief + arc brief**, with `file_search` unchanged. Prompt compaction only — no routing, no new architecture.
 
-Measured on 2026-06-25 live memory (post–PR-16 voice; [payload example](chat-api-payload-example-2026-06-25.md)): **4,016 chars** at prior layer caps. **Expanded caps (current):** **5,388 chars** on the same run — richer dialogue fields; all caps still pass under the 6,500 total budget.
+Measured on 2026-08-04 live memory (post-PR-15/16; character caps removed): **11,504 chars / ~3,195 tokens** — 10-session arc with full text. Prior measured runs: 4,016 chars (2026-06-25, tighter caps) and 5,388 chars (2026-06-25, expanded caps).
 
 ## Problem / motivation
 
@@ -88,30 +88,28 @@ class ChatPreloadContext(BaseModel):
 
 `LatestRunState` and `MonteCarloSummary` removed from `schemas.py` in the PR-15 review follow-up (no remaining callers).
 
-## Layer budgets
+## Layer sizes
 
-**Chars are the hard contract** (enforced via `*Caps.MAX_RENDERED_CHARS` and truncation). **Token figures are approx targets** for planning only — documented in markdown tables, not enforced at runtime and not stored as schema constants.
+**Selection counts bound the size; character caps are removed.** Each section shows the chosen items in full — no `…` truncation anywhere in the preload. Selection counts: 6 matrix rows, ≤4 risk bullets, ≤5 trigger bullets, ≤3 view-change bullets, 10 arc sessions, ≤3 still-open bullets, ≤3 inflection bullets.
 
-| Layer | Chars (cap) | Tokens (approx target) |
-|-------|------------:|------------------------|
-| Constitution | 2,000 | ~500 |
-| Current house view | 2,100 | ~525 |
-| Recent arc | 1,800 | ~450 |
-| **Total `additional_instructions`** | **6,500** | **~1,500** |
+| Layer | Measured 2026-08-04 | Tokens (approx) |
+|-------|--------------------:|----------------:|
+| Constitution | 3,387 | ~640 |
+| Current house view | 2,868 | ~780 |
+| Recent arc (10 sessions) | 5,245 | ~1,775 |
+| **Total `additional_instructions`** | **11,504** | **~3,195** |
 
-Measured on 2026-06-25 live memory (expanded caps; [payload example](chat-api-payload-example-2026-06-25.md)): **5,388 chars** total (Constitution 1,655 · current house view 1,930 · recent arc 1,799). Prior PR-16 voice at tighter caps was 4,016 chars on the same run.
-
-Overflow truncates with `…` at build/render/load time; never raises in production. Constitution is capped in `load_instructions()`; brief layers in their renderers.
+Measured on 2026-08-04 live memory (full text, no truncation). Prior PR-16 voice at the old char caps was 5,388 chars on the 2026-06-25 run.
 
 ### Current house view fields
 
 Built from latest `DailyState` only:
 
-- Opening house-view sentence (≤220 chars): date, `spx_close`, bias, action, signal balance
-- Setup / tension sentence (≤260 chars): first sentence of `primary_tension`
-- Max 4 risk bullets (≤160 chars): first `what_changed_today` headline, then top conflict `framework_rule` lines only (no divergence IDs)
-- Max 5 trigger bullets (≤100 chars): MC upside/downside, cascade, leverage snippet
-- Max 3 “what changes the view” bullets (≤110 chars): from `open_questions`
+- Opening house-view sentence: date, `spx_close`, bias, action, signal balance
+- Setup / tension sentence: first sentence of `primary_tension`
+- Max 4 risk bullets: first `what_changed_today` headline, then top conflict `framework_rule` lines only (no divergence IDs)
+- Max 5 trigger bullets: MC upside/downside, cascade, leverage snippet
+- Max 3 “what changes the view” bullets: from `open_questions`
 - Six authoritative table rows: Structural Bias, Overall Signal Balance, Trend Regime (`state.trend_regime` only), Recommended Action, Leverage Risk State, Monte Carlo Edge
 
 **Never** matrix JSON in assembled prompt.
@@ -121,9 +119,9 @@ Built from latest `DailyState` only:
 Built in **`memory.py`** via `build_arc_brief(states)`:
 
 - `regime_arc` from `_regime_arc(states)`
-- Session snapshots: `{date} | {bias} | {action} | {fragment}` — max **8** sessions, **110** chars per fragment
-- `still_open_bullets`: up to **3** eligible `open_questions` (≤140 chars each)
-- `inflection_bullets`: up to **3** recent `{date}: {headline}` marginal-change lines (≤130 chars each)
+- Session snapshots: `{date} | {bias} | {action} | {fragment}` — max **10** sessions, fragment is the full first change bullet (no char cap)
+- `still_open_bullets`: up to **3** eligible `open_questions` (full text)
+- `inflection_bullets`: up to **3** recent `{date}: {headline}` marginal-change lines (full text)
 
 **Forbidden** in rendered arc brief: `changed:`, `signals: F&G`, `conflicts:`, `decision_matrix.rows (JSON)`, full PR-3 per-day blocks, `recent_summary.md` replay.
 
@@ -134,13 +132,13 @@ Built in **`memory.py`** via `build_arc_brief(states)`:
 | Module | Change |
 |--------|--------|
 | `src/formatting.py` | **New** — `format_price()` shared by report + preload |
-| `src/schemas.py` | `CurrentBrief`, `ArcBrief`, cap constants; migrate `ChatPreloadContext` |
+| `src/schemas.py` | `CurrentBrief`, `ArcBrief`, selection-count constants (char caps removed); migrate `ChatPreloadContext` |
 | `src/memory.py` | **`build_arc_brief()`**, `_arc_session_fragment()`, public `first_sentence()`, `select_top_conflicts()` |
-| `src/chat_preload.py` | `build_current_brief`, renderers, compact assembly; constitution cap; presentation formatting |
+| `src/chat_preload.py` | `build_current_brief`, renderers, compact assembly; full-text constitution load |
 | `framework/chat-assistant-instructions.md` | Three-layer constitution |
-| `tests/test_chat_preload.py` | Budget + authority + forbidden-content guards; fifth-row rule; trend_regime source; truncate fixtures |
+| `tests/test_chat_preload.py` | Selection-count + forbidden-content guards; full-text fixtures |
 | `tests/test_arc_brief.py` | **New** |
-| `tests/test_web_chat_api.py` | Budget check |
+| `tests/test_web_chat_api.py` | Preload shape check |
 
 **Unchanged:** `chat_service.py`, `openai_responses.py`, `rag_index.py`, `rebuild_rolling_summary()`, Next.js UI.
 
@@ -155,9 +153,10 @@ pytest tests/test_chat_preload.py tests/test_arc_brief.py tests/test_web_chat_ap
 
 With seeded memory, confirm:
 
-- Total `additional_instructions` ≤ 5,000 chars
+- All 10 arc sessions present with `Still open:` + `Inflection points:` footers intact
 - No `decision_matrix.rows (JSON)`, `changed:`, `signals: F&G`, or full rolling summary blocks
 - Arc brief rendered size < 50% of `build_recent_summary(states)` on same states
+- No `…` truncation markers anywhere in `additional_instructions`
 
 Payload example: [chat-api-payload-example-2026-06-25.md](chat-api-payload-example-2026-06-25.md)
 
@@ -167,14 +166,14 @@ Payload example: [chat-api-payload-example-2026-06-25.md](chat-api-payload-examp
 - [x] `build_arc_brief()` lives in `memory.py` only
 - [x] PR-10 authority: present-tense posture from `current_brief` without vector retrieval
 - [x] PR-3 continuity: arc brief from rolling memory primitives; not `recent_summary.md` replay
-- [x] Caps enforced on 2026-06-25 live memory
+- [x] Caps removed 2026-08-04: full-text rendering, 10-session arc, selection counts only
 - [x] Schema migration: `current_brief` + `arc_brief`; `latest_run` + `rolling_summary` removed
 - [x] No duplicate matrix JSON in assembled prompt
 - [x] `file_search` unchanged — always enabled
 
 ## Polish pass (prompt voice)
 
-- [x] Char caps enforced; token figures doc-table only as **approx target** (never "cap" in token column)
+- [x] Selection counts bound size; full text (no char truncation)
 - [x] Prices rendered with `format_price()` (two decimals, thousands separator)
 - [x] Risk bullets: marginal `what_changed_today` headline + `framework_rule` only (no divergence IDs)
 - [x] Arc snapshots: first change bullet per day, not repeated tension skeleton
@@ -182,7 +181,7 @@ Payload example: [chat-api-payload-example-2026-06-25.md](chat-api-payload-examp
 ## Review follow-up (earlier PR-15 pass)
 
 - Fifth risk row keyword check uses Leverage **`signal` only** (not `current_reading`)
-- Constitution truncated at load when `chat-assistant-instructions.md` exceeds 2,000 chars
+- Constitution loaded in full (no 2,000-char truncation)
 - Removed orphaned `LatestRunState` / `MonteCarloSummary` from `schemas.py`
 - Shared `first_sentence()` / `select_top_conflicts()` exported from `memory.py`
 
