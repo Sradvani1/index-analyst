@@ -11,11 +11,12 @@ import tempfile
 from pathlib import Path
 from typing import Any, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from .config import Settings, get_settings
 from .files import read_text
 from .prompts import INVESTOR_REPORT_SECTIONS
+from .schemas import ArcBriefCaps
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,12 @@ class RagIndexManifest(BaseModel):
 class OpenAIUploadClient(Protocol):
     def upload_section(self, *, filename: str, content: str) -> str:
         """Upload one section file; return OpenAI file id."""
+
+    def delete_file(self, file_id: str) -> None:
+        """Delete one file (removes it from the vector store)."""
+
+    def list_vector_store_files(self) -> list[str]:
+        """Return all file IDs currently attached to the vector store."""
 
 
 def split_report_sections(report_md: str) -> dict[str, str]:
@@ -135,6 +142,31 @@ class LiveOpenAIUploadClient:
         finally:
             temp_path.unlink(missing_ok=True)
 
+    def delete_file(self, file_id: str) -> None:
+        try:
+            self._client.vector_stores.files.delete(
+                vector_store_id=self._vector_store_id,
+                file_id=file_id,
+            )
+        except RagIndexError:
+            raise
+        except Exception as exc:
+            raise RagIndexError(f"OpenAI delete failed for {file_id}: {exc}") from exc
+
+    def list_vector_store_files(self) -> list[str]:
+        file_ids: list[str] = []
+        cursor: str | None = None
+        while True:
+            kwargs: dict[str, str] = {"vector_store_id": self._vector_store_id}
+            if cursor:
+                kwargs["after"] = cursor
+            page = self._client.vector_stores.files.list(**kwargs)
+            file_ids.extend(f.id for f in page.data)
+            if not page.has_more:
+                break
+            cursor = page.data[-1].id
+        return file_ids
+
 
 def index_report_rag(
     date: str,
@@ -156,6 +188,17 @@ def index_report_rag(
         )
 
     upload_client = client or LiveOpenAIUploadClient(settings)
+    manifest_path = settings.rag_dir / f"{date}.json"
+    old_ids: list[str] = []
+    if manifest_path.is_file():
+        try:
+            old = RagIndexManifest.model_validate_json(
+                manifest_path.read_text(encoding="utf-8")
+            )
+            old_ids = [e.openai_file_id for e in old.sections]
+        except (ValidationError, ValueError):
+            logger.warning("could not read prior manifest %s; skipping cleanup", manifest_path)
+
     entries: list[RagSectionEntry] = []
     for section in INVESTOR_REPORT_SECTIONS:
         body = sections[section]
@@ -180,8 +223,22 @@ def index_report_rag(
         sections=entries,
         indexed_at=dt.datetime.now(dt.timezone.utc).isoformat(),
     )
-    manifest_path = settings.rag_dir / f"{date}.json"
     _atomic_write_json(manifest_path, manifest.model_dump(mode="json"))
+
+    for file_id in old_ids:
+        try:
+            upload_client.delete_file(file_id)
+        except RagIndexError as exc:
+            logger.warning("could not delete superseded file %s: %s", file_id, exc)
+
+    pruned = prune_retention(settings=settings, client=upload_client)
+    if pruned:
+        logger.info("retention pruned %d old date(s): %s", len(pruned), ", ".join(pruned))
+
+    swept = sweep_store_orphans(settings=settings, client=upload_client)
+    if swept:
+        logger.info("store sweep removed %d orphan file(s)", len(swept))
+
     logger.info("indexed %d sections for %s → %s", len(entries), date, manifest_path)
     return manifest
 
@@ -208,6 +265,86 @@ def backfill_rag_index(
     for date in list_report_dates(settings):
         manifests.append(index_report_rag(date, settings=settings, client=client))
     return manifests
+
+
+def prune_retention(
+    *,
+    settings: Settings | None = None,
+    client: OpenAIUploadClient | None = None,
+    keep: int | None = None,
+) -> list[str]:
+    """Delete manifests (and their vector-store files) older than the newest ``keep`` dates.
+
+    ``keep`` defaults to ``ArcBriefCaps.MAX_SESSIONS`` so the retrievable window stays
+    aligned with the chat assistant's recent arc. Unreadable manifests are removed
+    without file deletion (their files surface as orphans in the cleanup sweep).
+    """
+    settings = settings or get_settings()
+    if keep is None:
+        keep = ArcBriefCaps.MAX_SESSIONS
+    if keep < 1:
+        raise ValueError("keep must be >= 1")
+
+    dates = sorted(
+        (p.name[: -len(".json")] for p in settings.rag_dir.glob("*.json")),
+        reverse=True,
+    )
+    stale = dates[keep:]
+    if not stale:
+        return []
+
+    upload_client = client or LiveOpenAIUploadClient(settings)
+    pruned: list[str] = []
+    for date in stale:
+        path = settings.rag_dir / f"{date}.json"
+        try:
+            manifest = RagIndexManifest.model_validate_json(
+                path.read_text(encoding="utf-8")
+            )
+        except (ValidationError, ValueError, OSError):
+            logger.warning("could not read manifest %s; removing without file cleanup", path)
+        else:
+            for entry in manifest.sections:
+                try:
+                    upload_client.delete_file(entry.openai_file_id)
+                except RagIndexError as exc:
+                    logger.warning(
+                        "could not delete pruned file %s: %s", entry.openai_file_id, exc
+                    )
+        path.unlink(missing_ok=True)
+        pruned.append(date)
+    return pruned
+
+
+def sweep_store_orphans(
+    *,
+    settings: Settings | None = None,
+    client: OpenAIUploadClient | None = None,
+) -> list[str]:
+    """Delete vector-store files not referenced by any manifest.
+
+    Reconciles the physical store to the current manifest corpus so the store
+    holds exactly the retained dates. Runs after every successful index.
+    """
+    settings = settings or get_settings()
+    keep_ids: set[str] = set()
+    for path in settings.rag_dir.glob("*.json"):
+        try:
+            manifest = RagIndexManifest.model_validate_json(
+                path.read_text(encoding="utf-8")
+            )
+        except (ValidationError, ValueError, OSError):
+            continue
+        keep_ids.update(entry.openai_file_id for entry in manifest.sections)
+
+    upload_client = client or LiveOpenAIUploadClient(settings)
+    orphan_ids = sorted(set(upload_client.list_vector_store_files()) - keep_ids)
+    for file_id in orphan_ids:
+        try:
+            upload_client.delete_file(file_id)
+        except RagIndexError as exc:
+            logger.warning("could not delete orphan file %s: %s", file_id, exc)
+    return orphan_ids
 
 
 def format_index_failure_message(date: str) -> str:
