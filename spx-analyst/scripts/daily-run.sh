@@ -114,6 +114,9 @@ case "$MARKET_STATUS" in
         ;;
 esac
 
+echo "=== $TODAY: syncing EPS ==="
+python -m src.cli sync-eps --date "$TODAY"
+
 echo "=== $TODAY: prepare ==="
 python -m src.cli prepare --date "$TODAY" --force
 

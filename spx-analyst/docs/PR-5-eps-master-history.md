@@ -1,11 +1,11 @@
 # PR-5: EPS master history
 
-**Status:** Complete  
+**Status:** Superseded by [PR-26](PR-26-streetstats-eps-sync.md) for live daily updates
 **Builds on:** [PR-1](PR-1-spx-daily-framework-migration.md) · [PR-3.1 backfill](PR-3.1-perplexity-backfill.md)
 
 ## Summary
 
-Forward/trailing EPS now live in a single append-only master file — `data/master/eps_history.json` — instead of per-run `external_context.json` files. EPS is resolved deterministically by run date and passed in-memory through precompute and prompts. Provenance is recorded in `run_log.eps_resolution` only.
+Forward/trailing EPS live in a single master file — `data/master/eps_history.json` — instead of per-run `external_context.json` files. The resolver and file contract remain active, but live daily population is now handled by the StreetStats sync described in PR-26.
 
 ## Master file
 
@@ -27,7 +27,7 @@ Forward/trailing EPS now live in a single append-only master file — `data/mast
 }
 ```
 
-When consensus changes, **append** a new row. Do not edit historical rows. Both `forward_eps` and `trailing_eps` must be positive.
+The historical file must contain positive EPS rows and unique `effective_from` values. The StreetStats sync replaces the complete normalized file after a successful source response; failed syncs leave the previous valid file unchanged.
 
 ## Resolution
 
@@ -58,15 +58,15 @@ Completed runs record the exact EPS pair in `output/<date>/run_log.json` → `ep
 # Inspect resolution
 python -m src.cli show-eps --date 2026-06-10
 
-# Daily — no per-run EPS files
+# Local resolution remains available without a network call
 python -m src.cli setup-run --date 2026-06-21
 python -m src.cli run --date 2026-06-21
 ```
 
-When EPS changes, append to `data/master/eps_history.json`:
+For live daily updates, use the sync command before preparation:
 
-```json
-{ "effective_from": "2026-06-15", "forward_eps": 358, "trailing_eps": 222 }
+```bash
+python -m src.cli sync-eps --date 2026-06-15
 ```
 
 ## Code changes

@@ -98,11 +98,18 @@ def test_memory_block_absent_when_none(sample_state):
 
 
 def test_eps_history_block_present_when_provided(sample_state):
+    import datetime as dt
+
+    weekly_dates = [dt.date(2026, 3, 6) + dt.timedelta(days=7 * i) for i in range(13)]
     history = EpsHistory.model_validate(
         {
             "entries": [
-                {"effective_from": "2026-06-01", "forward_eps": 354, "trailing_eps": 220},
-                {"effective_from": "2026-08-03", "forward_eps": 380, "trailing_eps": 321, "notes": "x"},
+                {
+                    "effective_from": date.isoformat(),
+                    "forward_eps": 350 + i,
+                    "trailing_eps": 220 + i,
+                }
+                for i, date in enumerate(weekly_dates)
             ]
         }
     )
@@ -118,11 +125,11 @@ def test_eps_history_block_present_when_provided(sample_state):
         if builder is build_report_prompt:
             kwargs["daily_state"] = sample_state
         body = builder(**kwargs).body
-        assert "EPS consensus history" in body
-        assert '"forward_eps": 354' in body
-        assert '"forward_eps": 380' in body
+        assert "Recent weekly EPS trend" in body
+        assert '"as_of_date": "2026-03-13"' in body
+        assert '"as_of_date": "2026-03-06"' not in body
         assert "resolved EPS block above is authoritative" in body
-        assert body.index("EPS inputs") < body.index("EPS consensus history")
+        assert body.index("EPS inputs") < body.index("Recent weekly EPS trend")
 
 
 def test_eps_history_block_absent_when_none(sample_state):
@@ -137,7 +144,7 @@ def test_eps_history_block_absent_when_none(sample_state):
         if builder is build_report_prompt:
             kwargs["daily_state"] = sample_state
         body = builder(**kwargs).body
-        assert "EPS consensus history" not in body
+        assert "Recent weekly EPS trend" not in body
 
 
 def test_report_prompt_lists_investor_sections(sample_state):

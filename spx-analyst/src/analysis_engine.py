@@ -249,6 +249,9 @@ def run_daily_analysis(
     }
     if memory_load is not None:
         run_log["memory_load"] = memory_load
+    eps_sync_log = _load_eps_sync_log(run_dir)
+    if eps_sync_log is not None:
+        run_log["eps_sync"] = eps_sync_log
     out = files.save_outputs(
         date=date,
         daily_state=daily_state,
@@ -340,6 +343,18 @@ def _pass2_audit_payload(
             for u in plan.unresolved_chart_refs
         ],
     }
+
+
+def _load_eps_sync_log(run_dir: Path) -> dict[str, object] | None:
+    path = run_dir / files.EPS_SOURCE_FILENAME
+    if not path.is_file():
+        return None
+    try:
+        payload = files.read_json(path)
+    except files.InputError as exc:
+        logger.warning("could not read EPS sync artifact %s: %s", path, exc)
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 def _placeholder_state(date: str, ctx: AnalysisContext) -> DailyState:

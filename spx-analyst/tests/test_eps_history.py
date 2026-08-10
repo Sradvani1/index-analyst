@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import datetime as dt
 
 import pytest
 from typer.testing import CliRunner
@@ -12,6 +13,7 @@ from src.eps_history import (
     load_eps_history,
     require_eps_for_run,
     resolve_eps_for_date,
+    select_completed_weekly_eps,
 )
 from src.files import InputError
 from src.schemas import EpsHistory
@@ -220,6 +222,53 @@ def test_load_eps_history_rejects_duplicate_dates(tmp_path):
 def test_eps_history_rejects_non_positive_values():
     with pytest.raises(ValueError):
         _history([{"effective_from": "2026-06-01", "forward_eps": 0, "trailing_eps": 220}])
+
+
+def test_select_completed_weekly_eps_uses_latest_trading_day_and_last_twelve():
+    entries = []
+    for i in range(13):
+        monday = dt.date(2026, 3, 2) + dt.timedelta(days=7 * i)
+        entries.extend(
+            [
+                {
+                    "effective_from": monday.isoformat(),
+                    "forward_eps": 350 + i,
+                    "trailing_eps": 220 + i,
+                },
+                {
+                    "effective_from": (monday + dt.timedelta(days=3)).isoformat(),
+                    "forward_eps": 351 + i,
+                    "trailing_eps": 221 + i,
+                },
+                {
+                    "effective_from": (monday + dt.timedelta(days=4)).isoformat(),
+                    "forward_eps": 352 + i,
+                    "trailing_eps": 222 + i,
+                },
+            ]
+        )
+
+    points = select_completed_weekly_eps(_history(entries), "2026-06-12")
+
+    assert len(points) == 12
+    assert points[0].effective_from == "2026-03-13"
+    assert points[-1].effective_from == "2026-05-29"
+    assert points[-1].forward_eps == 364
+
+
+def test_select_completed_weekly_eps_excludes_incomplete_week_and_weekends():
+    history = _history(
+        [
+            {"effective_from": "2026-06-05", "forward_eps": 380, "trailing_eps": 320},
+            {"effective_from": "2026-06-06", "forward_eps": 381, "trailing_eps": 321},
+            {"effective_from": "2026-06-08", "forward_eps": 382, "trailing_eps": 322},
+            {"effective_from": "2026-06-11", "forward_eps": 383, "trailing_eps": 323},
+        ]
+    )
+
+    points = select_completed_weekly_eps(history, "2026-06-11")
+
+    assert [point.effective_from for point in points] == ["2026-06-05"]
 
 
 def test_run_cli_fails_without_eps(tmp_path, monkeypatch):

@@ -62,7 +62,7 @@ def setup_run(
         for warning in resolution.warnings:
             typer.secho(warning, fg=typer.colors.YELLOW, err=True)
         typer.secho(
-            "Run is not ready — append EPS to data/master/eps_history.json before precompute/run.",
+            "Run is not ready — run sync-eps or provide a qualifying EPS history row before precompute/run.",
             fg=typer.colors.YELLOW,
         )
     else:
@@ -171,6 +171,45 @@ def show_eps(
         f"EPS for {date}: forward={resolution.forward_eps} trailing={resolution.trailing_eps} "
         f"(effective_from={resolution.effective_from})"
     )
+
+
+@app.command("sync-eps")
+def sync_eps(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+) -> None:
+    """Refresh the master EPS history from StreetStats once, without retrying."""
+    date = date or _today()
+    settings = get_settings()
+    from .eps_sync import sync_eps_for_date
+
+    try:
+        result = sync_eps_for_date(date, settings=settings)
+    except InputError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    if result.status == "updated":
+        typer.echo(
+            f"EPS history updated from StreetStats: source_as_of={result.source_as_of_date} "
+            f"forward={result.forward_eps} trailing={result.trailing_eps}"
+        )
+        return
+
+    if result.status == "fallback":
+        typer.secho(
+            "StreetStats unavailable; left EPS history unchanged and using the latest local row "
+            f"(effective_from={result.source_as_of_date}).",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
+        return
+
+    typer.secho(
+        f"StreetStats unavailable and no qualifying local EPS row exists: {result.error}",
+        fg=typer.colors.RED,
+        err=True,
+    )
+    raise typer.Exit(code=1)
 
 
 @app.command()

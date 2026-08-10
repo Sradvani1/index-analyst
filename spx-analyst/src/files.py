@@ -7,6 +7,8 @@ backend later.
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +20,7 @@ from .schemas import DailyManifest, DailyState
 MANIFEST_FILENAME = "manifest.json"
 ANALYSIS_CONTEXT_FILENAME = "analysis_context.json"
 CHARTS_DIRNAME = "charts"
+EPS_SOURCE_FILENAME = "eps_source.json"
 
 
 class InputError(Exception):
@@ -40,6 +43,30 @@ def write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = data.model_dump(mode="json") if isinstance(data, BaseModel) else data
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def write_json_atomic(path: Path, data: Any) -> None:
+    """Write JSON through a same-directory temporary file and atomic replace."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = (
+        data.model_dump(mode="json", exclude_none=True) if isinstance(data, BaseModel) else data
+    )
+    rendered = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+    fd, temporary_name = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+    )
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(rendered)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+    except BaseException:
+        temporary_path.unlink(missing_ok=True)
+        raise
 
 
 def read_text(path: Path) -> str:

@@ -14,7 +14,8 @@ a markdown report plus structured JSON state.
 - [PR-3: Memory rollup overhaul](docs/PR-3-memory-rollup-overhaul.md) — categorical posture snapshot, unconditional rolling rebuild, load observability
 - [PR-4: Pass 2 image optimization](docs/PR-4-pass2-image-optimization.md) — dynamic chart selection, Pass 2 downscaling, attached vs reference-only authority
 - [PR-4.1: Pass 2 stub-response fix](docs/PR-4.1-pass2-stub-response-fix.md) — `claude-opus-4-8` tools-free retry when Pass 2 returns a preamble stub
-- [PR-5: EPS master history](docs/PR-5-eps-master-history.md) — single `eps_history.json` source; no per-run EPS files
+- [PR-5: EPS master history](docs/PR-5-eps-master-history.md) — single `eps_history.json` source and date resolution
+- [PR-26: StreetStats EPS sync](docs/PR-26-streetstats-eps-sync.md) — daily full-history refresh and compact weekly prompt trend
 - [PR-6: Pass 1 schema discipline](docs/PR-6-pass1-schema-discipline.md) — signals contract prompt + tool schema descriptions, allowlisted drift coalescer, `pass1_schema_status` audit trail
 - [PR-7: Pass 2 investor report template](docs/PR-7-pass2-investor-report-template.md) — eight-section Pass 2 prose, Python assembly of nine visible parts, strict heading validation
 - [PR-8: Pass 1 repair hardening](docs/PR-8-pass1-repair-hardening.md) — structural coercion (`what_changed_today`), extended signals drift rules, repair SLO observability
@@ -34,17 +35,21 @@ a markdown report plus structured JSON state.
 
 ## How it works
 
-Each daily run has five stages:
+Each daily run has six stages:
 
-1. **Step 0 — Python precompute.** Fetches `^GSPC` (300d), `^VIX` (60d), and `^TNX`
+1. **EPS sync.** The automated daily runner makes one no-retry StreetStats request,
+   normalizes the complete growth-history response into `data/master/eps_history.json`,
+   and records the selected source row in `data/runs/<date>/eps_source.json`. If the
+   source is unavailable, the previous valid local history is preserved.
+2. **Step 0 — Python precompute.** Fetches `^GSPC` (300d), `^VIX` (60d), and `^TNX`
    (25 sessions) via yfinance, resolves `forward_eps` / `trailing_eps` from
    `data/master/eps_history.json`, and writes `analysis_context.json` (ERP, structure,
    Monte Carlo simulation, threshold evaluation). When price has fully retraced the
    active swing leg, a **Monte Carlo straddle guard** re-anchors the downside target
    to the nearest valid level strictly below spot so simulation targets always straddle
    close (see PR-1 doc).
-2. **Pass 1 — structured state.** The **full** chart pack (all manifest entries), resolved
-   EPS inputs, precomputed `analysis_context`, framework, and optional prior posture snapshot
+3. **Pass 1 — structured state.** The **full** chart pack (all manifest entries), resolved
+   EPS inputs, the last 12 completed weekly EPS points, precomputed `analysis_context`, framework, and optional prior posture snapshot
    are sent in one multimodal request at `SPX_IMAGE_MAX_DIMENSION` (default 1568). The model
    emits a `DailyState` JSON object via `emit_daily_state`, focusing on qualitative chart reads
    and `structural_bias`. The prompt and tool schema enforce a strict `signals` contract (no
@@ -57,13 +62,13 @@ Each daily run has five stages:
    decision-matrix rows are `(engine-filled)` placeholders; the engine overwrites them next.
    See [PR-6](docs/PR-6-pass1-schema-discipline.md) and
    [PR-8](docs/PR-8-pass1-repair-hardening.md).
-3. **Post-Pass-1 enforcement.** `state_enforcement.py` applies precomputed numerics
+4. **Post-Pass-1 enforcement.** `state_enforcement.py` applies precomputed numerics
    (`spx_close`, Monte Carlo block, seven owned matrix rows) before Pass 2 runs.
-4. **Pass 2 chart selection (PR-4).** `pass2_images.resolve_pass2_images()` runs on the
+5. **Pass 2 chart selection (PR-4).** `pass2_images.resolve_pass2_images()` runs on the
    post-enforcement state: protected conflict `chart_refs`, matrix-driven adds for
    non-neutral qualitative rows, then conservative redundancy pruning. See
    [PR-4](docs/PR-4-pass2-image-optimization.md).
-5. **Pass 2 — markdown report.** Only **attached** charts are encoded (default max edge
+6. **Pass 2 — markdown report.** Only **attached** charts are encoded (default max edge
    1092 when `SPX_PASS2_IMAGE_OPTIMIZATION=true`). The prompt lists reference-only charts
    by filename without sending their bytes. Pass 2 returns **eight investor-facing prose
    sections only** (no `#` preamble, no Decision Matrix). Python then assembles the
@@ -98,8 +103,10 @@ See [PR-4: Pass 2 image optimization](docs/PR-4-pass2-image-optimization.md) for
 selector rules, flag-off semantics, and `run_log` pass2 audit fields. Pass 2 stub handling:
 [PR-4.1](docs/PR-4.1-pass2-stub-response-fix.md). Live token A/B: [PR-4-live-ab-results.md](docs/PR-4-live-ab-results.md).
 
-See [PR-5: EPS master history](docs/PR-5-eps-master-history.md) for the append-only
-`eps_history.json` workflow, `show-eps`, resolution rules, and `run_log.eps_resolution`.
+See [PR-5: EPS master history](docs/PR-5-eps-master-history.md) and
+[PR-26: StreetStats EPS sync](docs/PR-26-streetstats-eps-sync.md) for the
+`eps_history.json` workflow, `sync-eps`, resolution rules, weekly trend selection,
+and `run_log.eps_resolution` / `run_log.eps_sync` provenance.
 
 See [PR-6: Pass 1 schema discipline](docs/PR-6-pass1-schema-discipline.md) for the
 `signals` contract, allowlisted coalescer rules, `run_log.pass1_schema_status`, and
@@ -141,18 +148,23 @@ Set these in `.env` (see `.env.example`):
 | `SPX_MAX_REPORT_CHARS` | `24000` | Report length validation limit |
 | `SPX_MAX_OUTPUT_TOKENS` | `8000` | Max tokens per Claude response |
 | `SPX_RECENT_STATE_COUNT` | `6` | Recent states loaded when memory is enabled |
-| `SPX_EPS_HISTORY_PATH` | `data/master/eps_history.json` | Append-only forward/trailing EPS history ([PR-5](docs/PR-5-eps-master-history.md)) |
+| `SPX_EPS_HISTORY_PATH` | `data/master/eps_history.json` | Full normalized forward/trailing EPS history ([PR-26](docs/PR-26-streetstats-eps-sync.md)) |
+| `SPX_STREETSTATS_BASE_URL` | `https://streetstats.finance` | StreetStats source host for the daily EPS sync |
+| `SPX_STREETSTATS_TIMEOUT_SECONDS` | `30` | Timeout for each StreetStats request; no retries |
 
 Path overrides (`SPX_FRAMEWORK_PATH`, `SPX_ROLE_PATH`, `SPX_DATA_DIR`, `SPX_EPS_HISTORY_PATH`,
 `SPX_MEMORY_DIR`, `SPX_OUTPUT_DIR`) default to the package layout below.
 
 EPS master history (`data/master/eps_history.json`):
 
-- Append-only list of `{ effective_from, forward_eps, trailing_eps }` rows
+- Normalized full history from StreetStats `growthHistory`
+- Each row is `{ effective_from, forward_eps, trailing_eps }`
 - Resolved by run date: latest row where `effective_from <= run_date`
-- Provenance recorded in `run_log.eps_resolution` on each completed run
+- The automated sync replaces the file only after a valid response; failed syncs leave it unchanged
+- Provenance is recorded in `run_log.eps_resolution` and `run_log.eps_sync`
 
-See [PR-5](docs/PR-5-eps-master-history.md) for operator workflow and failure policy.
+See [PR-5](docs/PR-5-eps-master-history.md) and
+[PR-26](docs/PR-26-streetstats-eps-sync.md) for operator workflow and failure policy.
 
 All qualitative indicators (VIX regime, Fear & Greed, breadth, etc.) come from
 charts in the two-pass LLM pipeline.
@@ -163,8 +175,8 @@ charts in the two-pass LLM pipeline.
 # Scaffold a run directory (placeholder manifest)
 python -m src.cli setup-run --date 2026-06-12
 
-# Append a row when consensus changes (never edit old rows)
-# effective_from = date the new values apply; runs on/after that date pick this row
+# Refresh the complete EPS history before a manual prepare/run
+python -m src.cli sync-eps --date 2026-06-12
 python -m src.cli show-eps --date 2026-06-10   # verify before run
 
 # Optional: preview Step 0 precompute when EPS resolves
@@ -235,7 +247,7 @@ data/runs/2026-06-12/
   market_history.json     # yfinance cache (optional after first fetch)
 
 data/master/
-  eps_history.json        # sole EPS source — append rows when consensus changes
+  eps_history.json        # sole EPS source — normalized full StreetStats EPS history
 ```
 
 `setup-run` creates a **placeholder** 1-chart manifest. For daily production runs,
@@ -388,10 +400,10 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs. Assistant: htt
 ```text
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime);
              chat-assistant-instructions.md (research assistant)
-docs/        PR-1 through PR-24 implementation records; docs/archive/ for retired specs
+docs/        PR implementation records; docs/archive/ for retired specs
 scripts/     operator utilities (e.g. setup_openai_resources.py)
 data/
-  master/    eps_history.json — sole EPS source (append-only)
+  master/    eps_history.json — sole normalized StreetStats EPS source
   runs/      dated input folders (charts + manifest + precompute cache)
 memory/      archived states/reports + rolling summary (rebuilt on every successful run);
              rag/ section index manifests; chat/ session index (gitignored)
@@ -413,7 +425,8 @@ Retired SCHK methodology files and the original Phase 1 spec live in
 | Memory rollup posture snapshot, categorical signals, rebuild decoupled from injection flag | PR-3 |
 | Pass 2 dynamic chart selection, downscaling, attached vs reference-only prompt authority | PR-4 |
 | Pass 2 stub-response retry for `claude-opus-4-8` | PR-4.1 |
-| EPS master history — single `eps_history.json`, `show-eps`, no per-run EPS files | PR-5 |
+| EPS master history — single `eps_history.json`, `show-eps`, date resolution | PR-5 |
+| Daily StreetStats EPS sync — full normalized history, source artifact, 12-week prompt trend | PR-26 |
 | Pass 1 schema discipline — signals contract, allowlisted coalescer, repair observability | PR-6 |
 | Pass 2 investor report template — eight prose sections, Python assembly, strict validation | PR-7 |
 | Pass 1 repair hardening — `what_changed_today` coercion, extended drift rules, repair SLO | PR-8 |
@@ -446,8 +459,9 @@ are **incompatible** with the daily framework engine. On upgrade:
 python -m src.cli rebuild-summary --days 6
 ```
 
-Ensure `data/master/eps_history.json` has an entry with `effective_from <=` each run
-date before running. See [PR-5](docs/PR-5-eps-master-history.md).
+The automated `scripts/daily-run.sh` refreshes EPS before `prepare`. For manual runs,
+use `python -m src.cli sync-eps --date YYYY-MM-DD` first. The resolver still requires
+at least one history row with `effective_from <=` the run date.
 
 ## Legacy Perplexity migration
 

@@ -53,6 +53,15 @@ class Settings(BaseSettings):
     treasury_ticker: str = Field(default="^TNX", alias="SPX_TREASURY_TICKER")
     spx_ticker: str = Field(default="^GSPC", alias="SPX_TICKER")
     vix_ticker: str = Field(default="^VIX", alias="SPX_VIX_TICKER")
+    streetstats_base_url: str = Field(
+        default="https://streetstats.finance",
+        alias="SPX_STREETSTATS_BASE_URL",
+    )
+    streetstats_timeout_seconds: float = Field(
+        default=30.0,
+        alias="SPX_STREETSTATS_TIMEOUT_SECONDS",
+        gt=0,
+    )
 
     # Paths (relative to package root unless absolute)
     framework_path_raw: str = Field(

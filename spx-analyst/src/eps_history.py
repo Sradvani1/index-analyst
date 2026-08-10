@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -43,6 +44,34 @@ def resolve_eps_for_date(run_date: str, history: EpsHistory) -> EpsHistoryEntry 
 
 def earliest_effective_from(history: EpsHistory) -> str:
     return min(e.effective_from for e in history.entries)
+
+
+def select_completed_weekly_eps(
+    history: EpsHistory,
+    run_date: str,
+    *,
+    limit: int = 12,
+) -> list[EpsHistoryEntry]:
+    """Select the latest available trading-day EPS row for each completed week."""
+    if limit <= 0:
+        return []
+    target = dt.date.fromisoformat(run_date)
+    by_week: dict[dt.date, EpsHistoryEntry] = {}
+
+    for entry in history.entries:
+        source_date = dt.date.fromisoformat(entry.effective_from)
+        if source_date.weekday() >= 5 or source_date > target:
+            continue
+        week_start = source_date - dt.timedelta(days=source_date.weekday())
+        week_end = week_start + dt.timedelta(days=4)
+        if week_end > target:
+            continue
+        previous = by_week.get(week_start)
+        if previous is None or entry.effective_from > previous.effective_from:
+            by_week[week_start] = entry
+
+    points = sorted(by_week.values(), key=lambda entry: entry.effective_from)
+    return points[-limit:]
 
 
 def get_eps_for_run(run_date: str, *, settings: Settings | None = None) -> EpsResolution:

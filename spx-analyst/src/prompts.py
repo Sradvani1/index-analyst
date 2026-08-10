@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from .eps_history import select_completed_weekly_eps
 from .schemas import AnalysisContext, ChartEntry, DailyManifest, DailyState, EpsHistory, ResolvedEps
 
 PRE_STEP = "Structural Regime Classification"
@@ -109,15 +110,19 @@ def _eps_block(eps: ResolvedEps) -> str:
     return "## EPS inputs (resolved from master history)\n```json\n" + json.dumps(payload, indent=2) + "\n```"
 
 
-def _eps_history_block(history: EpsHistory | None) -> str:
+def _eps_trend_block(history: EpsHistory | None, run_date: str) -> str:
     if history is None:
         return ""
     payload = [
-        {k: v for k, v in e.model_dump(mode="json").items() if v is not None}
-        for e in history.entries
+        {
+            "as_of_date": entry.effective_from,
+            "forward_eps": entry.forward_eps,
+            "trailing_eps": entry.trailing_eps,
+        }
+        for entry in select_completed_weekly_eps(history, run_date)
     ]
     return (
-        "## EPS consensus history (context only — the resolved EPS block above is "
+        "## Recent weekly EPS trend (context only — the resolved EPS block above is "
         "authoritative for this run)\n```json\n"
         + json.dumps(payload, indent=2)
         + "\n```"
@@ -294,7 +299,7 @@ def build_state_prompt(
     parts = [
         _analysis_context_block(analysis_context),
         _eps_block(resolved_eps),
-        _eps_history_block(eps_history),
+        _eps_trend_block(eps_history, manifest.date),
         _manifest_block(manifest),
     ]
     mem = _optional_memory_block(recent_summary)
@@ -372,7 +377,7 @@ def build_report_prompt(
     parts = [
         _analysis_context_block(analysis_context),
         _eps_block(resolved_eps),
-        _eps_history_block(eps_history),
+        _eps_trend_block(eps_history, manifest.date),
         chart_block,
         _investor_fact_snippets(analysis_context),
         f"## Validated daily state (immutable)\n```json\n{state_json}\n```",
