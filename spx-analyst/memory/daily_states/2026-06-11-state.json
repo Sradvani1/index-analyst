@@ -1,0 +1,166 @@
+{
+  "date": "2026-06-11",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7440.0,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "bullish_but_extended",
+  "trend_regime": "Extended above 50-day",
+  "valuation_bucket": "cautious",
+  "signals": {
+    "pct_vs_50dma": null,
+    "pct_vs_200dma": null,
+    "bollinger_position": null,
+    "rsi14": 64.0,
+    "mfi": null,
+    "vix_regime": null,
+    "fear_greed": 60,
+    "fear_greed_zone": "greed",
+    "put_call": null,
+    "high_yield_spread": null,
+    "intraday_close_position": "middle third",
+    "middle_band_regime": null
+  },
+  "what_changed_today": [
+    "Breadth improved"
+  ],
+  "narrative_summary": "Trend bullish but extended; hold and monitor.",
+  "open_questions": [
+    "Will VIX stay below 20?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "n/a",
+        "signal": "n/a"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "hold_and_monitor",
+        "signal": "hold_and_monitor"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 1,
+    "buy_signals_met": 0,
+    "overall": "mixed"
+  },
+  "confirming_evidence": [
+    "50-day SMA remains above 200-day SMA"
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "extension_vs_valuation",
+      "layers": [
+        "technicals",
+        "valuation"
+      ],
+      "bullish_read": "Price trend remains bullish with momentum intact",
+      "bearish_read": "Forward P/E in cautious bucket limits add aggression",
+      "framework_rule": "Forward PE calibration \u2014 cautious bucket",
+      "weight": "high",
+      "chart_refs": [
+        "01_chart.png"
+      ]
+    }
+  ],
+  "primary_tension": "Bullish trend extension versus cautious valuation bucket",
+  "monte_carlo": {
+    "effective_threshold": 65,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.58,
+    "prob_down_first_raw": 0.42,
+    "prob_up_first_adjusted": 0.53,
+    "prob_down_first_adjusted": 0.47,
+    "sigma": 0.18,
+    "mu": 0.07,
+    "upside_target": 7500.0,
+    "downside_target": 7200.0,
+    "rally_exhaustion_score": "Moderate",
+    "conditional_cascade": "If 7200 breaks, P(7100)=76%",
+    "median_days": "upside 25d / downside 18d",
+    "drift_path": "5d=7445; 10d=7450",
+    "cash_drag_prob": 0.35
+  }
+}

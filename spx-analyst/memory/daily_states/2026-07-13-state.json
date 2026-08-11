@@ -1,0 +1,207 @@
+{
+  "date": "2026-07-13",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7515.33984375,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Over the next 30-60 days the base case is a continued grind within the 6/09 low (7,238) to 6/15 swing high (7,578) range, with price pinned near the top of that band but repeatedly failing to convert the swing high into a durable breakout. A zero-cushion ERP, weak breadth, and a near-even Monte Carlo edge argue for range-bound chop with mean-reversion pressure elevated at resistance rather than a clean trend extension.",
+  "trend_regime": "Healthy bullish skeleton: 50-day (7,441) above rising 200-day (6,969), price +7.83% over the 200-day and above both the 20-day and 50-day; regime intact but maturing as price stalls just below the 6/15 swing high.",
+  "valuation_bucket": "Valuation ceiling: forward PE 20.09x (cautious/moderate zone), ERP 0.37% pinned in the 0.0-0.5% ceiling band — trim bias, no aggressive adds.",
+  "signals": {
+    "pct_vs_50dma": 1.01,
+    "pct_vs_200dma": 7.83,
+    "bollinger_position": "Mid-to-upper band; pulled back from the upper band tag toward the 20-day mid-band after stalling at resistance.",
+    "rsi14": 54.0,
+    "mfi": 40.0,
+    "vix_regime": "Standard operating regime: VIX 17.16, ticked up off the complacent floor but still below its 50-day MA (~17.4).",
+    "fear_greed": 44,
+    "fear_greed_zone": "Fear (near neutral)",
+    "put_call": 0.75,
+    "high_yield_spread": 1.3,
+    "intraday_close_position": "Middle-to-lower third of the daily range — neutral-to-weak close after an intraday fade.",
+    "middle_band_regime": "Price above the rising 20-day SMA; short-term structure intact but faded from the highs."
+  },
+  "what_changed_today": [
+    "PRICE PULLED BACK OFF THE SWING HIGH: close 7,515.34 (~-0.8% vs prior 7,575.39) slipped away from the 6/15 swing high (7,578) after tagging it, holding above the 23.6% fib (7,498) but failing to convert the resistance test into a breakout.",
+    "MONTE CARLO REVERTED TO NEAR-EVEN: adjusted prob_up_first fell to 53.6% (from 78% prior) with median days upside 4d vs downside 5d — the decisive up-skew has collapsed back toward a coin flip and again fails all regime thresholds (65/70/75).",
+    "VIX TICKED BACK UP TO 17.16 (from ~15.03): volatility rose off the complacent floor toward the middle of the standard operating regime, though still below its 50-day MA.",
+    "10-YEAR ROSE TO 4.609% (from ~4.55%): the higher discount rate pushed ERP down to just 0.37%, keeping the market pinned at the valuation ceiling; ERP re-entry floor eased to 7,320.",
+    "CREDIT SPREAD WIDENED BACK TO 1.30 from a brief tightening — junk spread sits right at its recent average, still refusing to confirm the price recovery."
+  ],
+  "narrative_summary": "SPX closed 7,515.34, pulling back ~0.8% after tagging the 6/15 swing high (7,578) — the tag-and-stall pattern at resistance persists rather than resolving into a breakout. The bull skeleton remains mechanically intact (50d > rising 200d, +7.83% over the 200-day, price above the 20/50-day), but the Monte Carlo edge has collapsed back to near-even (53.6% up-first, failing all thresholds), ERP is pinned at a zero-cushion 0.37% ceiling after the 10-year rose to 4.61%, and breadth (McClellan near its lows, net new highs weak) and credit still refuse to confirm the multi-week recovery. Trim bias into strength — not chasing the stall at resistance — remains the justified posture.",
+  "open_questions": [
+    "Can SPX clear and hold above the 7,577.92 swing high, or does the repeated tag-and-stall in this zone confirm distribution at resistance?",
+    "Will McClellan breadth (near its lows) and net new 52-week highs turn up to validate the price recovery, or does narrow leadership persist?",
+    "Does the 10-year yield keep grinding higher, further compressing an already zero-cushion ERP toward the valuation ceiling?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "70%"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1279",
+        "signal": "σ=0.1279"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0700",
+        "signal": "μ=0.0700"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50d (7,441) > rising 200d (6,969); price +7.83% over 200d, above 20/50-day",
+        "signal": "Bullish, maturing"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Middle-to-lower third of range after intraday fade",
+        "signal": "Neutral-to-weak"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "RSI ~54 neutral; MFI ~40 neutral-to-soft, trending down on 5d/1m",
+        "signal": "Neutral"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Price above rising 20-day SMA but faded from the highs",
+        "signal": "Intact / mildly positive"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Pulled back from upper-band tag toward mid-band",
+        "signal": "Extension easing / neutral"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.37% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk spread 1.30, widened back to its recent average",
+        "signal": "Not confirming / caution"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "McClellan ~948 near lows; net new 52-wk highs weak (1.95)",
+        "signal": "Narrow / deteriorating"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "VIX 17.16, standard operating regime, below 50-day MA",
+        "signal": "Neutral / benign"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "No drawdown thresholds breached; price near swing high, caution zone 7,351",
+        "signal": "Low near-term risk"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "54%",
+        "signal": "monitor below threshold"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "Intact trend vs stall at resistance, zero-cushion ERP, weak breadth/credit, near-even MC edge",
+        "signal": "Aligned trim"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Trim bias into strength at resistance; do not chase the stall. Patience on re-entry until breadth/credit confirm or a deeper Fib pullback offers confluence",
+        "signal": "Trim / hold"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 3,
+    "buy_signals_met": 1,
+    "overall": "aligned_trim"
+  },
+  "confirming_evidence": [
+    "Trend skeleton intact and bullish: 50-day (7,441) above rising 200-day (6,969), price +7.83% over the 200-day and above the 20-day SMA (chart 05, 06).",
+    "Price holding above the 23.6% fib (7,498) and well above the ERP re-entry floor (7,320) after tagging the swing high, keeping the shallow-pullback structure intact.",
+    "Rally Exhaustion Score is Low, so Monte Carlo probabilities are used at face value with no upside discount.",
+    "VIX at 17.16 sits in the standard operating regime and below its 50-day MA — no volatility stress accompanying the pullback.",
+    "Drift path remains positive (5d=7,525; 30d=7,571; 60d=7,627), consistent with a maturing but intact uptrend."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "breadth_credit_vs_price_trend",
+      "layers": [
+        "Technical Structure",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "Price is holding near the top of its range just below the swing high with the trend skeleton intact and VIX benign.",
+      "bearish_read": "McClellan Volume Summation Index sits near its lows (948) and net new 52-week highs are weak (1.95); junk credit spread widened back to 1.30 at its recent average — internals refuse to confirm the price recovery, signaling narrow leadership.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not yet broken down; price strength with weak breadth indicates narrow leadership.",
+      "weight": "high",
+      "chart_refs": [
+        "10_breadth_52wk_highs_lows.png",
+        "11_breadth_mcclellan.png",
+        "15_junk_bond_spread.png"
+      ]
+    },
+    {
+      "id": "valuation_ceiling_vs_bull_trend",
+      "layers": [
+        "Fundamental Valuation",
+        "Technical Structure"
+      ],
+      "bullish_read": "Price remains above rising trend averages with positive drift, supporting continued upside.",
+      "bearish_read": "ERP is only 0.37% (0.0-0.5% valuation ceiling) after the 10-year rose to 4.61%, and forward PE is 20.09x — thin valuation cushion argues trim bias, no aggressive adds.",
+      "framework_rule": "ERP of 0.0% to 0.5% is a valuation ceiling: trim bias, no aggressive adds.",
+      "weight": "high",
+      "chart_refs": [
+        "06_spx_1year.png"
+      ]
+    },
+    {
+      "id": "swing_high_stall_vs_uptrend",
+      "layers": [
+        "Technical Structure",
+        "Monte Carlo Probability Analysis"
+      ],
+      "bullish_read": "Price tagged the 6/15 swing high and remains above the 23.6% fib, holding the multi-week recovery.",
+      "bearish_read": "The tag-and-stall repeats without a breakout and the Monte Carlo edge collapsed from 78% to a near-even 53.6% up-first, failing all thresholds — resistance is capping the advance.",
+      "framework_rule": "Signals are only actionable when multiple independent indicators align; the adjusted probability must meet the regime threshold (70% for Late Bull) to be actionable.",
+      "weight": "medium",
+      "chart_refs": [
+        "03_spx_1month.png",
+        "05_spx_6month.png"
+      ]
+    }
+  ],
+  "primary_tension": "An intact, rising bull skeleton (50d > rising 200d, +7.83% over the 200-day, price above the 20/50-day, benign VIX) is colliding with late-cycle confirmation risk: a repeated tag-and-stall at the 6/15 swing high, a Monte Carlo edge that has collapsed back to near-even (53.6% up-first) and fails every regime threshold, a zero-cushion ERP (0.37%) pinned at the valuation ceiling after the 10-year rose to 4.61%, and breadth/credit that still refuse to confirm the recovery.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.5362,
+    "prob_down_first_raw": 0.4638,
+    "prob_up_first_adjusted": 0.5362,
+    "prob_down_first_adjusted": 0.4638,
+    "sigma": 0.127894,
+    "mu": 0.07,
+    "upside_target": 7577.919921875,
+    "downside_target": 7448.013249023437,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7448 breaks, P(7408)=90%; If 7578 breaks, P(7673)=85%",
+    "median_days": "upside 4d / downside 5d",
+    "drift_path": "5d=7524.56; 10d=7533.80; 20d=7552.30; 30d=7570.85; 60d=7626.78",
+    "cash_drag_prob": 0.2178
+  }
+}

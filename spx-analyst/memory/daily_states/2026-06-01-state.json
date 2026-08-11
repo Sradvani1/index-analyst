@@ -1,0 +1,233 @@
+{
+  "date": "2026-06-01",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7599.9599609375,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Over the next 30-60 days the base case is continued churn-to-melt-up toward the Wave 1 valuation ceiling near 7,695 (Monte Carlo upside target), with the rally visibly decelerating into all-time highs. Probabilistically the upside target is hit first ~63% of the time, but with ERP at zero, breadth divergent, and credit in extreme fear, the risk-reward favors trimming into strength rather than adding, with a 5-8% pullback toward the 38.2% fib / liquidation-nervous zone a live secondary scenario.",
+  "trend_regime": "50-day SMA above 200-day SMA and both rising; price +10.5% above 50dma and ~+11.2% above 200dma per analysis_context. Healthy bullish structure on the surface but extension is at cycle highs (elevated zone) — a maturing, extended bull trend.",
+  "valuation_bucket": "Forward PE 21.47x (cautious buying only at strong confluence, trim bias rising); ERP +0.18% sits in the 0.0-0.5% valuation-ceiling band — trim bias, no aggressive adds.",
+  "signals": {
+    "pct_vs_50dma": 10.5,
+    "pct_vs_200dma": 11.1675,
+    "bollinger_position": "Pulled back inside upper rail after 12 sessions walking the upper band",
+    "rsi14": 75.0,
+    "mfi": null,
+    "vix_regime": "Complacent regime (below 15-16)",
+    "fear_greed": 59,
+    "fear_greed_zone": "Greed",
+    "put_call": 0.6,
+    "high_yield_spread": 1.33,
+    "intraday_close_position": "Middle third (closed 7,600 well off intraday high 7,617)",
+    "middle_band_regime": "Well above 20-day SMA; no regime test"
+  },
+  "what_changed_today": [
+    "No prior sessions on record — this is the first logged run; baseline established at Late Bull / Topping.",
+    "Fifth consecutive ATH close but smallest gain of the streak (+0.26%), signaling rally deceleration.",
+    "Overall Fear & Greed fell for a 3rd consecutive session (61->60->59) on rising prices — textbook sentiment divergence.",
+    "McClellan breadth ticked up marginally (~1,000 -> ~1,020), first micro-improvement in 7+ sessions but still in fear.",
+    "VIX dropped to the lowest print of the rally (~15), marking peak complacency.",
+    "ERP near zero for a 7th consecutive session; junk bond demand in extreme fear for a 7th session."
+  ],
+  "narrative_summary": "SPX printed its fifth consecutive all-time-high close at 7,599.96 but the smallest gain of the streak (+0.26%) on a weak middle-third close, signaling a rally running out of buyers rather than building a base. Structure is Late Bull / Topping: trend is intact and Monte Carlo still favors the upside target first (~63%), but every confirming layer is at a cycle extreme — ERP at zero for seven sessions, junk-bond demand in extreme fear, breadth divergent, VIX at complacent lows, and put/call near cycle complacency. The strongest confirming signal is the still-bullish trend regime and melt-up probability edge; the biggest unresolved risk is the simultaneous credit-and-breadth divergence beneath new highs. Posture for next session is hold and monitor — trim into the 7,695 valuation ceiling, no new adds, and prepare staged re-entry at the 38.2% fib / liquidation zones on any pullback.",
+  "open_questions": [
+    "Does McClellan breadth cross ~1,100 mid-week to confirm participation, or roll back below 1,000 and intensify trap-door risk?",
+    "Will price reach the 7,695 upside / Wave 1 trim ceiling before momentum fully stalls?",
+    "Does junk-bond extreme fear resolve (spreads tighten) or escalate into a credit warning?",
+    "Does the gap-down-and-recover intraday pattern repeat, signaling persistent institutional distribution into highs?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "70%"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1007",
+        "signal": "σ=0.1007"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0450",
+        "signal": "μ=0.0450"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50d > 200d, both rising; price +10.5%/+11.2% above 50/200dma",
+        "signal": "bullish_but_extended"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Middle third; closed 7,600 well off intraday high 7,617",
+        "signal": "neutral_to_weak"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "RSI ~75 at close after wild intraday collapse to mid-40s; MFI back in overbought",
+        "signal": "trim_zone_caution"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Price well above 20-day SMA, no regime test",
+        "signal": "bullish"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Pulled back inside upper rail after 12 sessions walking the upper band",
+        "signal": "extended_trim_window"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.18% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk bond demand extreme fear, spread ~1.33% for 7th consecutive session",
+        "signal": "credit_warning"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "McClellan ~1,020 (fear), tiny uptick; stock price strength ~2% (fear) 7th session",
+        "signal": "divergent_narrow"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "~15-16, lowest of rally",
+        "signal": "complacent"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "No drawdown thresholds breached; caution zone ~7,292, nervous ~7,141",
+        "signal": "no_breach"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "63%",
+        "signal": "monitor below threshold"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "Mixed: trend + MC edge bullish, but ERP/credit/breadth/sentiment/VIX all at cycle extremes",
+        "signal": "aligned_trim"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Hold core, trim into 7,695 valuation ceiling, no new adds, prepare staged re-entry on pullback to 38.2% fib / liquidation zones",
+        "signal": "hold_trim_into_7695_no_adds"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 4,
+    "buy_signals_met": 1,
+    "overall": "aligned_trim"
+  },
+  "confirming_evidence": [
+    "Trend regime intact: 50d above 200d, both rising, price above both — no break of structure.",
+    "Monte Carlo favors upside target (7,695) first ~63% with low rally-exhaustion score.",
+    "Fifth consecutive ATH close confirms melt-up momentum has outperformed the topping thesis so far.",
+    "VIX at cycle lows and low realized vol (~10%) keep moving-average support relatively reliable.",
+    "McClellan breadth ticked up marginally (~1,000 -> ~1,020), a first micro-improvement."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "erp_vs_price",
+      "layers": [
+        "Fundamental Valuation",
+        "Technical Structure"
+      ],
+      "bullish_read": "Price at new ATHs with intact uptrend justifies holding equities.",
+      "bearish_read": "ERP at +0.18% (zero band) for a 7th session means equities offer essentially no premium over risk-free — a valuation ceiling demanding trim bias, not adds.",
+      "framework_rule": "ERP in 0.0-0.5% band = valuation ceiling, trim bias, no aggressive adds.",
+      "weight": "high",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    },
+    {
+      "id": "price_vs_breadth_credit",
+      "layers": [
+        "Technical Structure",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "New ATH closes suggest demand remains in control.",
+      "bearish_read": "Breadth (McClellan, stock price strength) and credit (junk extreme fear) both diverge from price for 7 sessions — narrow leadership beneath the index.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not broken down.",
+      "weight": "high",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    },
+    {
+      "id": "complacency_vs_sentiment_fade",
+      "layers": [
+        "Sentiment and Leverage",
+        "Technical Structure"
+      ],
+      "bullish_read": "VIX ~15 and put/call ~0.60 reflect calm, orderly conditions supporting the trend.",
+      "bearish_read": "Maximum complacency (VIX cycle low, put/call near cycle low) alongside F&G falling 3 straight sessions at new highs is a classic topping warning — falling sentiment near new highs.",
+      "framework_rule": "Falling sentiment during or near new highs is a topping warning; deep complacency in put/call is a trim warning.",
+      "weight": "high",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    },
+    {
+      "id": "mc_edge_vs_extension",
+      "layers": [
+        "Monte Carlo Probability Analysis",
+        "Structural Regime Classification"
+      ],
+      "bullish_read": "Monte Carlo upside-first probability ~63% favors the melt-up to 7,695.",
+      "bearish_read": "63% adjusted probability falls below the 70% Late Bull / Topping threshold, so the setup is not actionable as an add even though it favors holders.",
+      "framework_rule": "Never use Monte Carlo in isolation; if adjusted prob is below the regime threshold the setup is not actionable.",
+      "weight": "medium",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    },
+    {
+      "id": "deceleration_vs_ath",
+      "layers": [
+        "Technical Structure"
+      ],
+      "bullish_read": "Streak of new ATH closes signals durable upward momentum.",
+      "bearish_read": "Smallest gain of the streak (+0.26%), gap-down open, and weak middle-third close suggest the rally is running out of buyers.",
+      "framework_rule": "Report where the close occurred in the range; a weak close into resistance is distribution-style.",
+      "weight": "medium",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    }
+  ],
+  "primary_tension": "An intact, still-rising bull trend with a Monte Carlo upside edge is colliding with cycle-extreme exhaustion signals — ERP at zero, credit and breadth divergence beneath new highs, peak complacency, and a decelerating, distribution-style close — leaving the market in a hold-and-trim posture rather than an add posture.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.6334,
+    "prob_down_first_raw": 0.3666,
+    "prob_up_first_adjusted": 0.6334,
+    "prob_down_first_adjusted": 0.3666,
+    "sigma": 0.100683,
+    "mu": 0.045,
+    "upside_target": 7694.959460449219,
+    "downside_target": 7448.90252734375,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7449 breaks, P(7428)=93%; If 7695 breaks, P(7791)=79%",
+    "median_days": "upside 8d / downside 14d",
+    "drift_path": "5d=7605.98; 10d=7612.01; 20d=7624.08; 30d=7636.17; 60d=7672.56",
+    "cash_drag_prob": 0.4269
+  }
+}

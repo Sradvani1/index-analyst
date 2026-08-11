@@ -1,0 +1,226 @@
+{
+  "date": "2026-07-08",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7482.7099609375,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Price remains in an intact but mature bull trend, with rallies into the 7,498–7,578 resistance band more suitable for tactical trimming than fresh deployment. The preferred 30–60 day path is choppy consolidation or a renewed test of 7,448/7,408 before any higher-conviction re-entry, unless breadth and credit finally confirm the price recovery.",
+  "trend_regime": "Bullish but maturing: price remains above the 50-day and 200-day SMAs, with the 50-day above the 200-day, but upside progress is stalling below the June swing high while breadth and money-flow confirmation are soft.",
+  "valuation_bucket": "Valuation ceiling / thin cushion: forward PE near 20x and ERP around 0.43% leave reduced aggression and a trim-biased posture into strength.",
+  "signals": {
+    "pct_vs_50dma": 0.89,
+    "pct_vs_200dma": 7.5669,
+    "bollinger_position": "Inside the bands, near the middle/upper half; no fresh upper-band walk and no lower-band oversold signal.",
+    "rsi14": 53.0,
+    "mfi": 38.0,
+    "vix_regime": "Standard operating regime: VIX 16.90, below elevated-risk territory but not a capitulation/reversal signal.",
+    "fear_greed": 42,
+    "fear_greed_zone": "Fear, improving toward neutral",
+    "put_call": 0.73,
+    "high_yield_spread": 1.32,
+    "intraday_close_position": "Top third of range after a sharp intraday recovery from the morning low.",
+    "middle_band_regime": "Above/near the 20-day regime on the daily trend, but repeated failure near the 23.6% retracement keeps short-term structure capped."
+  },
+  "what_changed_today": [
+    "PRICE LOST THE BREAKOUT AGAIN: SPX closed at 7,482.71, slipping back below the 23.6% retracement at 7,497.66 after the prior session had already stalled just above it; the 6/15 swing high at 7,577.92 remains unconfirmed resistance.",
+    "MONTE CARLO FLIPPED BACK DOWN-FIRST: adjusted down-first probability rose to 60.89% versus 39.11% up-first, with the downside target at the 38.2% retracement expected faster than the upside retest; the edge still fails the Late Bull / Topping threshold.",
+    "VALUATION PRESSURE INCREASED: the 10-year yield rose to 4.569% and ERP sits at only 0.43%, keeping the market in a valuation-ceiling zone despite price remaining above the 50-day SMA.",
+    "BREADTH REMAINS A NON-CONFIRMATION: McClellan breadth is weak near 927 while net 52-week highs/lows are only modestly positive, so participation has not caught up with the index’s recovery.",
+    "VIX REMAINS BENIGN BUT NOT CAPITULATIVE: VIX at 16.90 is in the standard operating regime and below recent stress levels, which supports orderly trading but does not provide a high-quality re-entry washout signal."
+  ],
+  "narrative_summary": "The S&P 500 remains in a mechanically bullish but mature structure: price is above the 50-day and 200-day SMAs, yet it again failed to hold the shallow 23.6% retracement and remains below the June swing high. Valuation is restrictive, breadth is still weak, and credit is not providing clean confirmation, while Monte Carlo has shifted back to a down-first skew that fails the Late Bull / Topping action threshold. The tactical posture is therefore patience and trims into resistance, not chasing strength, with 7,448/7,408 the more relevant re-entry watch zone if confirmation improves.",
+  "open_questions": [
+    "Can SPX reclaim and hold 7,497.66, then clear the 7,577.92 swing high, or is the repeated failure below that zone confirming distribution?",
+    "Will McClellan breadth and new-high/new-low participation improve enough to validate price strength?",
+    "Does junk-spread behavior stabilize and tighten, or does the recent credit non-confirmation become a more serious warning?",
+    "Can ERP move sustainably above 0.5%, or will higher yields keep valuation as a ceiling on upside follow-through?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "70%"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1488",
+        "signal": "σ=0.1488"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0700",
+        "signal": "μ=0.0700"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "Price above 50-day and 200-day SMAs; 50-day remains above the 200-day, but price is capped below 7,498/7,578.",
+        "signal": "Bullish but maturing / monitor resistance"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Closed in the top third after recovering from a deep morning selloff.",
+        "signal": "Constructive intraday recovery, not enough alone for a buy signal"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "RSI broadly neutral; MFI weaker on longer views with short-term rebound only.",
+        "signal": "Mixed momentum; no high-conviction buy or trim oscillator signal"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Price remains above/near the 20-day regime but has not cleared the key resistance band.",
+        "signal": "Short-term structure intact but capped"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Inside the bands; neither an upper-band extension nor a lower-band oversold pierce.",
+        "signal": "Neutral / no standalone action"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.43% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk spread 1.32 with recent choppy/non-confirming behavior.",
+        "signal": "Credit non-confirmation / caution"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "McClellan breadth weak near 927; new highs/lows modestly positive but not broad.",
+        "signal": "Breadth divergence / participation risk"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "VIX 16.90, standard operating regime and below crisis levels.",
+        "signal": "Benign volatility, but no capitulation buy signal"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "No liquidation threshold breached; caution zone remains below at 7,350.58.",
+        "signal": "No forced-selling signal yet"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "39%",
+        "signal": "monitor below threshold"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "Trend support and benign VIX conflict with restrictive valuation, weak breadth, non-confirming credit, and down-first Monte Carlo.",
+        "signal": "Mixed-to-trim biased"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Hold core exposure, avoid chasing below 7,578, use strength into 7,498–7,578 for tactical trims, and wait for 7,448/7,408 plus confirmation for re-entry.",
+        "signal": "Patience / tactical trim bias"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 4,
+    "buy_signals_met": 0,
+    "overall": "aligned_trim"
+  },
+  "confirming_evidence": [
+    "Price remains above the 50-day SMA and materially above the rising 200-day SMA, preserving the primary bullish trend structure.",
+    "The 50-day SMA remains above the 200-day SMA, and the 125-day momentum chart still shows price well above the longer intermediate trend line.",
+    "VIX at 16.90 is in the standard operating regime rather than an elevated-risk or crisis regime.",
+    "Fear & Greed has recovered to 42, no longer showing the extreme fear readings seen during the late-June weakness.",
+    "The intraday chart showed a strong recovery from the morning selloff and closed in the top third of the session range."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "breadth_credit_vs_price_trend",
+      "layers": [
+        "Technical Structure",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "SPX remains above the 50-day and 200-day SMAs, and price has recovered sharply from the June pullback, so the primary trend has not broken.",
+      "bearish_read": "McClellan breadth remains weak near 927 and junk-spread behavior is not cleanly confirming the index recovery, creating a participation/credit divergence against price strength.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not yet broken down.",
+      "weight": "high",
+      "chart_refs": [
+        "09_fear_greed_momentum.png",
+        "10_breadth_52wk_highs_lows.png",
+        "11_breadth_mcclellan.png",
+        "15_junk_bond_spread.png"
+      ]
+    },
+    {
+      "id": "valuation_ceiling_vs_bull_trend",
+      "layers": [
+        "Fundamental Valuation",
+        "Technical Structure"
+      ],
+      "bullish_read": "The index is still in an uptrend above its major moving averages, and no major support threshold has been breached.",
+      "bearish_read": "ERP is only 0.43% with a roughly 20x forward PE and a 4.569% 10-year yield, leaving little valuation cushion for aggressive adds near resistance.",
+      "framework_rule": "ERP of 0.0% to 0.5% is a valuation ceiling: trim bias, no aggressive adds.",
+      "weight": "high",
+      "chart_refs": [
+        "06_spx_1year.png",
+        "09_fear_greed_momentum.png"
+      ]
+    },
+    {
+      "id": "momentum_recovery_vs_money_flow_fade",
+      "layers": [
+        "Technical Structure",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "RSI has stabilized in neutral territory across several timeframes, and the intraday chart recovered strongly into the close.",
+      "bearish_read": "MFI has weakened on the 6-month and 1-year views while price remains near the highs, suggesting waning money-flow confirmation and possible distribution beneath the surface.",
+      "framework_rule": "Bearish divergence occurs when price makes or tests higher highs while MFI or RSI makes lower highs; longer timeframe divergences carry more weight.",
+      "weight": "medium",
+      "chart_refs": [
+        "04_spx_3month.png",
+        "05_spx_6month.png",
+        "06_spx_1year.png"
+      ]
+    },
+    {
+      "id": "sentiment_recovery_vs_no_washout",
+      "layers": [
+        "Sentiment and Leverage",
+        "Technical Structure"
+      ],
+      "bullish_read": "Fear & Greed has improved to 42 and VIX remains contained, indicating the market is not in a stress regime.",
+      "bearish_read": "Because VIX did not spike into the 25–30+ zone and reverse, the setup lacks the capitulation signal that would strengthen a high-quality re-entry case.",
+      "framework_rule": "A VIX spike into the 25 to 30+ zone followed by reversal lower is a high-quality re-entry signal; corrections without that spike are orderly rather than capitulative.",
+      "weight": "medium",
+      "chart_refs": [
+        "08_fear_greed_index.png",
+        "13_vix_volatility.png"
+      ]
+    }
+  ],
+  "primary_tension": "The primary tension is an intact bullish price skeleton versus late-cycle confirmation risk: SPX is still above rising trend averages, but it has repeatedly failed below the June high and shallow 23.6% retracement while ERP is at a valuation ceiling, breadth is weak, credit is not confirming, and Monte Carlo has reverted to a down-first skew.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.3911,
+    "prob_down_first_raw": 0.6089,
+    "prob_up_first_adjusted": 0.3911,
+    "prob_down_first_adjusted": 0.6089,
+    "sigma": 0.148798,
+    "mu": 0.07,
+    "upside_target": 7577.919921875,
+    "downside_target": 7448.013249023437,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7448 breaks, P(7408)=93%; If 7578 breaks, P(7673)=87%",
+    "median_days": "upside 6d / downside 2d",
+    "drift_path": "5d=7491.46; 10d=7500.23; 20d=7517.79; 30d=7535.39; 60d=7588.44",
+    "cash_drag_prob": 0.1426
+  }
+}

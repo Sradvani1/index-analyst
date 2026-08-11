@@ -1,0 +1,240 @@
+{
+  "date": "2026-07-29",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7316.14990234375,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Over the next 30-60 days the base case is a corrective, range-lower phase within a still-intact long-term bull skeleton: the 6-session base above 7,421 has failed, price has broken decisively below the 20-day, 50-day and the entire 23.6-61.8% fib band, and Monte Carlo is 78% down-first with a 2-day median to the re-anchored liquidation-caution level (7,300.16). Expect a test of 7,300 and, if it breaks, a 57% conditional path toward the nervous zone (7,149.64) which sits just above the rising 200-day (7,015.5); a reclaim of the 50-day (7,468) with breadth confirmation would be required to negate this and re-open the 7,526 swing high.",
+  "trend_regime": "50-day (7,468.1) remains above a rising 200-day (7,015.5) — bullish long-term skeleton — but price closed 2.03% below the 50-day and only +4.29% above the 200-day, with the 50-day now flattening/rolling over and price under the 20-day for the session: bullish regime maturing into a confirmed short-term breakdown.",
+  "valuation_bucket": "Forward PE 19.3x (moderate buying at support band) but ERP 0.06% sits in the 0.0-0.5% valuation-ceiling band: trim bias, no aggressive adds. ERP-confirmed re-entry floor is 7,399.45, now above spot.",
+  "signals": {
+    "pct_vs_50dma": -2.03,
+    "pct_vs_200dma": 4.2854,
+    "bollinger_position": "Lower band pierce — close below the lower 20-day Bollinger Band after a multi-week range, oversold extension within a breakdown",
+    "rsi14": 38.0,
+    "mfi": 48.0,
+    "vix_regime": "Elevated risk: VIX 20.66, above the 20 threshold and clearly above its 50-day MA (~17.5); no 25-30+ capitulation spike yet, so moving-average support is less reliable but no washout has been registered",
+    "fear_greed": 32,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.84,
+    "high_yield_spread": 1.29,
+    "intraday_close_position": "Bottom third of the daily range — weak, distribution-style close",
+    "middle_band_regime": "Bearish — closed decisively below the 20-day SMA (~7,401) after reclaiming it the prior session; regime shift, not a normal dip"
+  },
+  "what_changed_today": [
+    "BASE BROKE DOWN HARD: close 7,316.15 (-1.52% vs prior 7,428.78) sliced through the six-session base, the 7/08 and 7/17 swing lows (7,421.26), the 20-day and the lower Bollinger Band, closing in the bottom third of the daily range and right on the re-anchored liquidation-caution level (7,300.16).",
+    "MONTE CARLO FLIPPED TO ITS MOST BEARISH SKEW OF THE ARC: adjusted prob_up_first collapsed to 21.92% (from 41.82% prior) with 78.08% down-first and median 2 days to 7,300 versus 19 days to 7,526 — a sixth straight session failing all regime thresholds (65/70/75).",
+    "VIX BROKE ABOVE 20 TO 20.66 (from 18.21), clearing its 50-day MA (~17.5) and exiting the standard operating band into the elevated-risk regime where moving-average support is less reliable — but still short of a 25-30 capitulation spike.",
+    "EXTENSION COMPRESSED TO +4.29% ABOVE THE 200-DAY (from +6.0%), moving into the normal-extension band and restoring full drift (mu 0.09) even as the short-term structure deteriorates.",
+    "VALUATION CUSHION VANISHED: ERP fell to 0.06% (from 0.50%) with the 10-year at 4.622%, leaving the 0.5% ERP re-entry floor (7,399.45) ~1.1% above spot."
+  ],
+  "narrative_summary": "The five-to-six session base above the 7/08-7/17 swing lows failed decisively today: SPX closed 7,316.15 (-1.52%), in the bottom third of its range, below the 20-day, 50-day, the entire 23.6-61.8% fib band and the lower Bollinger Band, landing exactly on the re-anchored liquidation-caution level of 7,300.16. Monte Carlo now reads 78.08% down-first with a 2-day median to 7,300 and a 57% conditional cascade to 7,149.64 if it gives way — the most bearish skew of this arc and a sixth straight session failing every regime threshold. VIX has broken above 20 into the elevated-risk regime without a capitulation spike, ERP has collapsed to 0.06% at the valuation ceiling with the re-entry floor (7,399.45) now above spot, and McClellan breadth (854) plus net new highs (1.53) continue to refuse confirmation. The long-term bull skeleton (50-day above a rising 200-day, extension compressed to +4.29%) is intact, but nothing in the confirmation stack supports deployment: defensive patience, no adds, and monitoring 7,300 as the pivot between an orderly retest and a cascade toward 7,150.",
+  "open_questions": [
+    "Does 7,300.16 hold as support on a retest, or does a clean break trigger the 57% conditional cascade toward the nervous zone (7,149.64)?",
+    "Can VIX push into the 25-30 capitulation zone and reverse to generate a high-quality re-entry signal, or does this decline keep grinding lower in an orderly, un-washed-out fashion?",
+    "Will the McClellan Volume Summation Index (854, at its cycle-low reference) and net new 52-week highs (1.53) form a bullish divergence against the new price lows, or confirm narrow topping leadership?",
+    "Does the ERP re-entry floor at 7,399.45 get reclaimed from below, or does bond yield (4.622%) keep the valuation ceiling pinned against equities?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "70%"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1048",
+        "signal": "σ=0.1048"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0900",
+        "signal": "μ=0.0900"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50-day 7,468.1 above rising 200-day 7,015.5, but price -2.03% below the 50-day and only +4.29% above the 200-day; 50-day flattening",
+        "signal": "Bullish skeleton, short-term breakdown — caution"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Bottom third of the daily range; slid from ~7,450 to ~7,318 into the close",
+        "signal": "Bearish — distribution-style close"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "Daily RSI-14 ~38 (approaching buy-watch), MFI ~48 and falling through 50; intraday RSI near 20",
+        "signal": "Bearish momentum, not yet buy zone"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Closed decisively below the 20-day (~7,401) after reclaiming it the prior session",
+        "signal": "Bearish — regime shift"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Lower band pierce on an expanding band width",
+        "signal": "Oversold within a breakdown — watch only"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.56% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk-vs-IG spread 1.29 versus ~1.286 one-year average; flat, no sustained widening",
+        "signal": "Neutral"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "McClellan Volume Summation 854 at cycle-low reference; net new 52-week highs 1.53 and falling",
+        "signal": "Bearish — narrow, deteriorating participation"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "20.66, above 20 and above its 50-day MA (~17.5); no 25-30 capitulation spike",
+        "signal": "Elevated risk — MA support less reliable"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "Price sits on the liquidation-caution level 7,300.16 (-3% from the 7/22 swing high 7,525.94); nervous zone 7,149.64, margin-call wave 6,773.35, cascade 6,397.05",
+        "signal": "Caution zone breached — first threshold active"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "22%",
+        "signal": "monitor below threshold"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "0 of 5 buy conditions and 4 of 5 defensive/trim conditions met; breadth, valuation ceiling, VIX>20, sub-20/50-day price and a 78% down-first Monte Carlo all align defensively against an intact long-term skeleton",
+        "signal": "Aligned defensive / trim bias"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Defensive patience: no new deployment. Hold existing core, complete trims into any bounce back toward the 20-day (~7,401) or the ERP floor (7,399.45). Treat 7,300.16 as the pivot — a clean break opens the nervous zone 7,149.64 with a 57% conditional cascade; require a VIX spike-and-reverse plus 3 of 4 re-entry checklist conditions (close above prior high, RSI turning up from depressed, breadth improving, VIX reversing) before any re-entry.",
+        "signal": "Defense / patience"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 4,
+    "buy_signals_met": 0,
+    "overall": "aligned_trim"
+  },
+  "confirming_evidence": [
+    "Long-term bull skeleton intact: 50-day (7,468.1) remains above a rising 200-day (7,015.5), and the 3-year chart shows an unbroken sequence of higher highs and higher lows with price still far above the 200-day (07_spx_3year.png).",
+    "Extension has compressed to +4.29% above the 200-day — normal-extension territory, which justifies full drift (mu 0.09) and removes the mean-reversion penalty that governed earlier sessions (05_spx_6month.png).",
+    "Rally Exhaustion Score is Low with realized 20-day vol at only 10.48%, so probabilities are used at face value rather than discounted — the decline is orderly, not a volatility-driven unwind.",
+    "Credit remains benign: junk-vs-IG spread at 1.29 sits essentially on its 1.286 one-year average with no sustained widening, so credit is not confirming a systemic risk event (15_junk_bond_spread.png).",
+    "Sentiment is already depressed rather than complacent: Fear & Greed at 32 in the fear zone and put/call at 0.84 near the top of its one-year range, indicating hedging demand rather than the deep complacency that precedes trim windows (08_fear_greed_index.png, 12_put_call_ratio.png).",
+    "Daily RSI-14 has fallen to roughly the high-30s and MFI to the mid-to-high-40s — approaching but not yet in the buy-watch band, leaving room for a washout that could set up a genuine re-entry (04_spx_3month.png, 05_spx_6month.png)."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "breadth_vs_bull_skeleton",
+      "layers": [
+        "Technical Structure",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "The 50-day remains above a rising 200-day and extension has compressed to a healthy +4.29%, so the multi-quarter uptrend structure is undamaged and the pullback is proportionate.",
+      "bearish_read": "McClellan Volume Summation has slid to 854, its cycle-low reference, and net new 52-week highs are just 1.53 and falling — participation has been contracting the entire time price was churning near highs, the classic narrow-leadership topping signature.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not yet broken down; falling breadth near highs is a topping warning.",
+      "weight": "high",
+      "chart_refs": [
+        "11_breadth_mcclellan.png",
+        "10_breadth_52wk_highs_lows.png",
+        "07_spx_3year.png"
+      ]
+    },
+    {
+      "id": "mc_downfirst_vs_bull_skeleton",
+      "layers": [
+        "Monte Carlo Probability Analysis",
+        "Technical Structure"
+      ],
+      "bullish_read": "Full drift (mu 0.09) applies at only +4.29% extension and the 60-day drift path projects 7,464.85 — back at the 50-day — implying time is on the bulls' side once the retest completes.",
+      "bearish_read": "Adjusted prob_up_first is only 21.92% versus 78.08% down-first with a 2-day median to 7,300.16 and 19 days to 7,525.94; the setup fails every regime threshold (65/70/75) for a sixth consecutive session.",
+      "framework_rule": "Never use the Monte Carlo output in isolation; if the adjusted probability does not meet the regime threshold, the setup is not actionable.",
+      "weight": "high",
+      "chart_refs": [
+        "05_spx_6month.png",
+        "04_spx_3month.png"
+      ]
+    },
+    {
+      "id": "valuation_ceiling_vs_fib_reentry",
+      "layers": [
+        "Fundamental Valuation",
+        "Fibonacci and Re-entry"
+      ],
+      "bullish_read": "Forward PE of 19.3x sits in the 18-20x band that normally supports moderate buying at support, and price is now below the entire fib ladder — nominally a deep-retracement zone.",
+      "bearish_read": "ERP is 0.06%, squarely in the 0.0-0.5% valuation-ceiling band (trim bias, no aggressive adds), and the 0.5% ERP re-entry floor of 7,399.45 is ~1.1% above spot — meaning price is below every fib level yet still not valuation-confirmed for deployment.",
+      "framework_rule": "ERP of 0.0% to 0.5% is a valuation ceiling: trim bias, no aggressive adds; the ERP-confirmed floor governs re-entry.",
+      "weight": "high",
+      "chart_refs": [
+        "06_spx_1year.png"
+      ]
+    },
+    {
+      "id": "vix_elevated_without_capitulation",
+      "layers": [
+        "Sentiment and Leverage",
+        "Technical Structure"
+      ],
+      "bullish_read": "Fear & Greed at 32 and put/call at 0.84 show fear and heavy hedging rather than complacency, historically a contrarian bottoming backdrop.",
+      "bearish_read": "VIX at 20.66 has cleared its 50-day MA into the elevated-risk regime — where moving-average support is explicitly less reliable — but there is no 25-30+ spike-and-reverse, so no capitulative washout has been registered and the decline can continue orderly and lower.",
+      "framework_rule": "When VIX is above 20, reduce confidence in moving-average support; a correction without a volatility spike is orderly rather than capitulative.",
+      "weight": "medium",
+      "chart_refs": [
+        "13_vix_volatility.png",
+        "08_fear_greed_index.png",
+        "12_put_call_ratio.png"
+      ]
+    },
+    {
+      "id": "intraday_weakness_vs_oversold_bands",
+      "layers": [
+        "Technical Structure"
+      ],
+      "bullish_read": "Price has pierced the lower Bollinger Band with intraday RSI dropping near 20 — a mechanically oversold condition that often precedes a bounce (01_spx_intraday.png).",
+      "bearish_read": "The close landed in the bottom third of the daily range with intraday price sliding from ~7,450 to ~7,318 into the bell and daily MFI turning down through the 50s — a distribution-style close confirming institutional selling pressure into the close, not stabilization.",
+      "framework_rule": "A close in the bottom third of the range is a weak/distribution-style close; MFI falling during a decline confirms institutional selling pressure.",
+      "weight": "medium",
+      "chart_refs": [
+        "01_spx_intraday.png",
+        "02_spx_5day.png",
+        "03_spx_1month.png"
+      ]
+    }
+  ],
+  "primary_tension": "A mechanically intact long-term bull skeleton (50-day above a rising 200-day, extension compressed to a benign +4.29%, Low exhaustion, full drift, neutral credit, depressed sentiment) is colliding with a decisive short-term breakdown and total confirmation failure: price sliced the six-session base, both July swing lows, the 20/50-day cluster and the lower Bollinger Band to close in the bottom third of its range right on the 7,300.16 liquidation-caution level; Monte Carlo is 78.08% down-first with a 2-day median to that level and a 57% cascade to 7,149.64; VIX has broken above 20 into the elevated-risk regime without a capitulation spike; ERP has collapsed to 0.06% at the valuation ceiling with the re-entry floor now above spot; and McClellan breadth sits at its cycle-low reference with net new highs at 1.53.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.2192,
+    "prob_down_first_raw": 0.7808,
+    "prob_up_first_adjusted": 0.2192,
+    "prob_down_first_adjusted": 0.7808,
+    "sigma": 0.10479,
+    "mu": 0.09,
+    "upside_target": 7525.93994140625,
+    "downside_target": 7300.1617431640625,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7300 breaks, P(7150)=57%; If 7526 breaks, P(7620)=79%",
+    "median_days": "upside 19d / downside 2d",
+    "drift_path": "5d=7328.43; 10d=7340.73; 20d=7365.39; 30d=7390.13; 60d=7464.85",
+    "cash_drag_prob": 0.1549
+  }
+}

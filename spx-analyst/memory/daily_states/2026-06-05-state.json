@@ -1,0 +1,223 @@
+{
+  "date": "2026-06-05",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7383.740234375,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "A confirmed three-session top (7,620 ATH on Jun 2 → relentless distribution into a -2.64% close at the low on Jun 5) has converted the topping regime into an active corrective phase. Over the next 30-60 days the base case is a controlled pullback toward the 38.2% Fib (~7,511) and the re-anchored liquidation/nervous zone (~7,240), with Monte Carlo now favoring downside-first. Trend mechanics (50d > 200d, price above both, +11.5% over 200d) remain intact, so this is a capital-preservation correction rather than a confirmed trend break — patience until a clean Fib re-entry or a reclaim above ~7,550 confirms structure.",
+  "trend_regime": "50-day SMA above 200-day SMA and rising; price still above both (+3.2% vs 50d, +7.7% vs 200d per context). Mechanically intact bull regime, but 50d premium has compressed rapidly and VIX at 21.5 makes MA support less reliable.",
+  "valuation_bucket": "Forward PE 20.86x (20-22x cautious zone, buy only at strong confluence); ERP 0.26% sits in the 0.0-0.5% valuation-ceiling band — trim bias, no aggressive adds.",
+  "signals": {
+    "pct_vs_50dma": 3.18,
+    "pct_vs_200dma": 7.662,
+    "bollinger_position": "Breaking below mid-band after extended advance — regime test",
+    "rsi14": 65.0,
+    "mfi": null,
+    "vix_regime": "Elevated (>20, MA support less reliable)",
+    "fear_greed": 42,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.6,
+    "high_yield_spread": 1.45,
+    "intraday_close_position": "Bottom third (closed near LOD ~7,369)",
+    "middle_band_regime": "Testing/below 20-day SMA after extended advance — short-term regime shift"
+  },
+  "what_changed_today": [
+    "Regime arc held at Late Bull / Topping for a 4th logged session, but the topping thesis transitioned from warning to active correction.",
+    "Largest single-day loss since the April tariff shock: -200.57 pts / -2.64%, relentless sell from open to a close near the low — textbook institutional distribution.",
+    "VIX spiked from ~15 to 21.5, crossing the framework's 20-threshold; MA support now explicitly less reliable and forced-selling risk elevated.",
+    "Fear & Greed collapsed 13 points in one session (55 -> 42), flipping from Greed to Fear — the fastest deterioration of the cycle; Safe Haven downgraded two tiers to Fear.",
+    "Monte Carlo bias inverted: prob-up-first now 44.9% vs 55.1% down-first, below all regime thresholds (65/70/75) — no longer actionable on the long side.",
+    "Active leg fully retraced prior downside target; engine re-anchored downside to 7,239.85 (nervous-zone liquidation) for straddle validity.",
+    "Caution zone (~7,392, -3% from ATH) breached on a closing basis for the first time."
+  ],
+  "narrative_summary": "The Late Bull / Topping regime has resolved into an active correction: SPX fell 2.64% in relentless open-to-close distribution, breaching the -3% caution zone, with Fear & Greed collapsing 13 points to Fear, VIX spiking to the 20+ risk threshold, and Monte Carlo inverting to favor downside-first (44.9% up vs 55.1% down) — below every regime action threshold. The trend mechanics remain intact (50d > 200d, price above both SMAs), so this is a capital-preservation event rather than a confirmed trend break, but valuation offers no cushion (ERP 0.26%, forward PE 20.9x). The dominant tension is an intact bull skeleton colliding with a confirmed distribution top, deteriorating sentiment/credit, and a negative quant edge. Posture is hold and monitor with defensive tripwires: no long-side action is justified, and patience for the 38.2% Fib (~7,511) or deeper re-entry zones is the default until confirmation.",
+  "open_questions": [
+    "Does the 23.6% Fib (~7,553) / caution zone failure extend cleanly to the 38.2% Fib (~7,511) and the re-anchored nervous zone (~7,240), or does support hold first?",
+    "Will junk-bond spreads (4th day at April-shock ~1.45%+) tighten or sustain widening, escalating the credit warning?",
+    "Does the put/call complacency (~0.60) finally break into hedging, which would be an early bottoming tell?",
+    "Does VIX peak and reverse from the 20-25 zone to produce a high-quality re-entry signal, or stay elevated?",
+    "Can bulls reclaim ~7,550 to invalidate the confirmed top, or is 7,620 now hard resistance?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "70%"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1349",
+        "signal": "σ=0.1349"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0700",
+        "signal": "μ=0.0700"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50d > 200d, price above both; 50d premium compressing fast",
+        "signal": "intact_but_maturing"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Bottom third, closed near LOD ~7,369 after open-to-close selloff",
+        "signal": "weak_distribution_close"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "RSI-14 ~65 breaking down; multi-month bearish RSI divergence triggered; MFI rolling over",
+        "signal": "bearish_momentum"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Closing below/testing 20-day after extended advance",
+        "signal": "short_term_regime_shift"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Rolled off upper band toward/below mid-band",
+        "signal": "regime_test"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.26% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk demand Extreme Fear; spread ~1.45% holding April-shock levels 4th day",
+        "signal": "credit_warning"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "McClellan ~-1,000 declining; Stock Price Strength Fear 10th session",
+        "signal": "narrow_deteriorating"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "21.5 — above 20 threshold, spiked +5pts",
+        "signal": "elevated_risk"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "Caution zone (~7,392) breached at close; nervous zone re-anchored to ~7,240",
+        "signal": "early_warning_active"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "45%",
+        "signal": "monitor below threshold"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "Confirmed distribution + sentiment/credit/breadth deterioration + negative quant edge vs intact trend skeleton",
+        "signal": "aligned_defensive"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Hold core, cancel upside limit, activate defensive tripwires; no long-side adds until ~7,511 re-entry zone or reclaim above ~7,550",
+        "signal": "hold_and_monitor_defensive_tripwires"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 4,
+    "buy_signals_met": 0,
+    "overall": "aligned_trim"
+  },
+  "confirming_evidence": [
+    "Largest single-day loss since April (-2.64%) with relentless open-to-close distribution and a close near the LOD — textbook institutional selling.",
+    "Three-session top confirmed: Jun 2 ATH -> Jun 3 distribution -> Jun 4 dead-cat -> Jun 5 breakdown acceleration.",
+    "Multi-month bearish RSI divergence on the 6-month chart has triggered; RSI broke below the 70 band and MFI rolled over.",
+    "Caution zone (~7,392, -3% from swing high) breached on a closing basis for the first time.",
+    "Monte Carlo inverted to down-first (44.9% up vs 55.1% down), below all regime thresholds — insufficient long-side edge.",
+    "Sentiment complex deteriorating broadly: F&G -13 to Fear, Safe Haven flipped to Fear, breadth in Fear, VIX above 20."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "trend_vs_distribution",
+      "layers": [
+        "Technical Structure",
+        "Technical Structure"
+      ],
+      "bullish_read": "50d > 200d and price still above both SMAs (+7.7% vs 200d) — the bull trend skeleton is mechanically intact, arguing this is a normal dip.",
+      "bearish_read": "Confirmed three-session distribution top, close at LOD, caution zone breached, bearish RSI divergence triggered, and VIX > 20 making MA support unreliable.",
+      "framework_rule": "A close below the 20-day SMA after an extended advance is a regime shift, not just a normal dip; when VIX > 20, reduce confidence in MA support.",
+      "weight": "high",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    },
+    {
+      "id": "complacency_vs_fear",
+      "layers": [
+        "Sentiment and Leverage",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "Put/call ~0.60 still complacent — no panic hedging, suggesting the move is not yet capitulative and could be shallow.",
+      "bearish_read": "F&G collapsed 13pts to Fear with Safe Haven flipping to Fear; complacent put/call into a falling tape means the correction likely deepens before a hedging-driven bottom.",
+      "framework_rule": "Falling sentiment during or near new highs is a topping warning; a rising put/call from complacent levels matters more than the absolute number.",
+      "weight": "high",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    },
+    {
+      "id": "erp_vs_price",
+      "layers": [
+        "Fundamental Valuation",
+        "Technical Structure"
+      ],
+      "bullish_read": "Selloff improved ERP modestly (toward ~0.26%) and forward PE eased to 20.9x as price fell.",
+      "bearish_read": "ERP still sits in the 0.0-0.5% valuation-ceiling band; the ERP-confirmed re-entry floor is ~7,029, far below current price — no valuation cushion to halt the decline.",
+      "framework_rule": "ERP 0.0-0.5% = valuation ceiling, trim bias, no aggressive adds; fundamental buyers do not step in until cushion rebuilds.",
+      "weight": "medium",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    },
+    {
+      "id": "credit_vs_intact_trend",
+      "layers": [
+        "Sentiment and Leverage",
+        "Technical Structure"
+      ],
+      "bullish_read": "Price remains above both rising SMAs despite the pullback.",
+      "bearish_read": "Junk demand at Extreme Fear, spread holding April-shock ~1.45% for a 4th day while breadth declines — credit and breadth both diverge from the still-elevated index.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not yet broken down.",
+      "weight": "high",
+      "chart_refs": [
+        "00_placeholder.png"
+      ]
+    }
+  ],
+  "primary_tension": "An intact bull-trend skeleton (50d > 200d, price above both SMAs) is colliding with a confirmed distribution top, a triggered multi-month bearish RSI divergence, sentiment/credit/breadth deterioration, VIX above the 20 risk threshold, and a Monte Carlo edge that has inverted to favor downside-first below every action threshold — defense and patience override the still-positive trend mechanics.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.4492,
+    "prob_down_first_raw": 0.5508,
+    "prob_up_first_adjusted": 0.4492,
+    "prob_down_first_adjusted": 0.5508,
+    "sigma": 0.134876,
+    "mu": 0.07,
+    "upside_target": 7620.89990234375,
+    "downside_target": 7239.854907226562,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7240 breaks, P(6859)=26%; If 7621 breaks, P(7716)=82%",
+    "median_days": "upside 17d / downside 10d",
+    "drift_path": "5d=7392.67; 10d=7401.61; 20d=7419.52; 30d=7437.47; 60d=7491.59",
+    "cash_drag_prob": 0.3479
+  }
+}

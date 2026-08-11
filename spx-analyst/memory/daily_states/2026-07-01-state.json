@@ -1,0 +1,206 @@
+{
+  "date": "2026-07-01",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7483.22998046875,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Over the next 30-60 days the base case is a choppy consolidation between the 61.8% fib / flattening 50-day support (~7,368-7,386) and the 6/15 swing high (7,578), with the burden of proof on the bulls: price has snapped back sharply but breadth (McClellan ~889, falling) and credit (junk spread 1.35%, elevated) still refuse to confirm, and ERP is pinned at the 0.5% valuation ceiling. A rejection at/near the swing high that fails to broaden participation is the modal outcome; a decisive break and hold above 7,578 (89% cascade to ~7,673) would be required to override the topping read.",
+  "trend_regime": "50-day (7,386) above 200-day (6,939) and both rising — mechanically bullish but the 50-day is flattening; price +1.31% over the 50-day and +7.85% over the 200-day.",
+  "valuation_bucket": "Valuation ceiling: forward PE 20.17x (cautious buying only at strong confluence), ERP 0.48% at the 0.0-0.5% ceiling band — trim bias, no aggressive adds.",
+  "signals": {
+    "pct_vs_50dma": 1.31,
+    "pct_vs_200dma": 7.85,
+    "bollinger_position": "Upper-middle of the daily bands after reclaim; not piercing the upper band — extended but not stretched.",
+    "rsi14": 58.0,
+    "mfi": 72.0,
+    "vix_regime": "Standard operating regime: VIX 16.59, below its 50-day MA (~17.7) and sub-20 — benign, no volatility confirmation of the sell-side risk.",
+    "fear_greed": 32,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.79,
+    "high_yield_spread": 1.35,
+    "intraday_close_position": "Bottom third — close 7,483 near the low of the 7,449-7,522 range, a weak/distribution-style finish.",
+    "middle_band_regime": "Price back above the 20-day SMA after the late-June breakdown — short-term structure improved."
+  },
+  "what_changed_today": [
+    "RALLY STALLED AT THE 23.6% FIB: close 7,483.23 (~-0.2% from prior 7,499) failed to hold the 23.6% fib (7,498) it tagged yesterday and closed back below it — the snap-back has run into resistance ~1.3% shy of the 6/15 swing high (7,578).",
+    "WEAK INTRADAY CLOSE: after trading as high as 7,522, price faded to close 7,483 in the bottom third of the daily range — a distribution-style finish that breaks the run of strong top-third closes during the bounce.",
+    "MONTE CARLO FLIPPED BACK DOWN-FIRST: prob_down_first re-widened to 59.6% (from 53.6%) and prob_up_first fell to 40.4% — the down-skew re-asserted after nearly balancing, still failing all regime thresholds (65/70/75).",
+    "ERP SLIPPED TO 0.48%: with forward PE 20.17x against a 10y of 4.475%, the cushion dipped back below the 0.5% ceiling; the 0.5% ERP re-entry floor (7,457) now sits just below spot — price hovers right at valuation-confirmed support.",
+    "BREADTH STILL DIVERGING: McClellan eased to ~889 (weak zone) and net new highs slid to 1.66% (Fear) — 14+ sessions of non-confirmation as price has recovered."
+  ],
+  "narrative_summary": "Structural bias holds at Late Bull / Topping: a mechanically intact skeleton (50d > 200d, +7.85% over the 200-day, benign sub-17 VIX) is colliding with a stalling rally. The 14-session snap-back tagged the 23.6% fib (7,498) but faded to a weak bottom-third close at 7,483, ~1.3% below the 6/15 swing high, while Monte Carlo flipped back to 59.6% down-first and fails every threshold. ERP sits at the 0.48% valuation ceiling with forward PE 20.2x, and breadth (McClellan ~889) plus credit (junk spread 1.35%) still refuse to confirm the recovery. Trim bias into strength/resistance — not chasing the rally toward the swing high — remains the only justified posture.",
+  "open_questions": [
+    "Can price reclaim and hold the 23.6% fib (7,498) and press the 6/15 swing high (7,578), or does today's rejection mark the next failure point as breadth/credit divergence has capped each prior bounce?",
+    "Will breadth (McClellan ~889) and credit (junk spread 1.35%) finally turn up to confirm the 14+ session price recovery, or does their persistent divergence signal narrow leadership into resistance?",
+    "Does the return to a bottom-third distribution close after a run of strong closes mark the start of a fresh downleg back toward the 50-day/61.8% fib support (7,368-7,386)?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "70%"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1776",
+        "signal": "σ=0.1776"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0700",
+        "signal": "μ=0.0700"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50d (7,386) > 200d (6,939), both rising; 50d flattening; price +1.31%/50d, +7.85%/200d",
+        "signal": "Bullish but maturing"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Bottom third of the 7,449-7,522 range; faded from 7,522 to close 7,483",
+        "signal": "Weak / distribution-style close"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "RSI-14 ~58 (neutral, rolling over); MFI ~72 (approaching trim zone)",
+        "signal": "Neutral RSI, cautionary MFI"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Price back above the 20-day SMA after late-June breakdown",
+        "signal": "Short-term structure improved"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Upper-middle of daily bands, not piercing upper band",
+        "signal": "Extended but not stretched"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.48% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk spread 1.35%, elevated and near recent highs; not tightening",
+        "signal": "Credit warning / non-confirming"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "McClellan ~889 (weak zone, falling); net new highs 1.66% (Fear)",
+        "signal": "Narrow / deteriorating"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "VIX 16.59, below 50-day MA (~17.7), sub-20",
+        "signal": "Benign; no vol confirmation of sell risk"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "Price ~1.3% below swing high; caution zone 7,350, no drawdown thresholds breached",
+        "signal": "Contained but elevated"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "40%",
+        "signal": "monitor below threshold"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "Intact skeleton vs stalled rally, weak close, down-first MC, ceiling ERP, non-confirming breadth/credit",
+        "signal": "Aligned trim"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Trim bias into strength/resistance; no re-entry as rally stalls at the 23.6% fib below the swing high",
+        "signal": "Defensive patience with trim bias"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 4,
+    "buy_signals_met": 1,
+    "overall": "aligned_trim"
+  },
+  "confirming_evidence": [
+    "Trend skeleton intact: 50-day (7,386) above 200-day (6,939) with both rising, price +7.85% over the 200-day — mechanically bullish structure.",
+    "Short-term structure repaired: price reclaimed and holds above the 20-day SMA after the late-June breakdown, and remains above the 50% and 38.2% fibs.",
+    "VIX benign at 16.59, below its 50-day MA and sub-20 — orderly rather than capitulative tape.",
+    "Rally Exhaustion Score Low with no exhaustion discount, so probabilities read at face value."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "breadth_credit_vs_rally",
+      "layers": [
+        "Sentiment and Leverage",
+        "Technical Structure"
+      ],
+      "bullish_read": "Price has recovered 14+ sessions and reclaimed key fibs, implying dip-buyers remain in control.",
+      "bearish_read": "McClellan ~889 (weak) and net new highs 1.66% (Fear) plus junk spread 1.35% (elevated) have refused to confirm the entire recovery — narrow leadership into resistance.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not broken down; price strength with weak breadth indicates narrow leadership.",
+      "weight": "high",
+      "chart_refs": [
+        "10_breadth_52wk_highs_lows.png",
+        "11_breadth_mcclellan.png",
+        "15_junk_bond_spread.png"
+      ]
+    },
+    {
+      "id": "erp_ceiling_vs_rally",
+      "layers": [
+        "Fundamental Valuation",
+        "Technical Structure"
+      ],
+      "bullish_read": "Trend is intact and price is holding above the 50-day and 20-day SMAs, arguing for continued upside.",
+      "bearish_read": "ERP 0.48% sits at the 0.0-0.5% valuation ceiling with forward PE 20.17x; the 0.5% ERP re-entry floor (7,457) is essentially at spot, leaving no cushion for aggressive adds.",
+      "framework_rule": "ERP 0.0-0.5% = valuation ceiling, trim bias, no aggressive adds.",
+      "weight": "high",
+      "chart_refs": [
+        "09_fear_greed_momentum.png"
+      ]
+    },
+    {
+      "id": "weak_close_vs_intact_skeleton",
+      "layers": [
+        "Technical Structure",
+        "Monte Carlo Probability Analysis"
+      ],
+      "bullish_read": "Intraday high of 7,522 cleared the 23.6% fib and pressed toward the swing high.",
+      "bearish_read": "Price faded to a bottom-third close (7,483) back below the 23.6% fib, and Monte Carlo flipped back to 59.6% down-first, failing every regime threshold.",
+      "framework_rule": "Report where the close occurred within the range; never use Monte Carlo in isolation; a bottom-third close is distribution-style.",
+      "weight": "medium",
+      "chart_refs": [
+        "01_spx_intraday.png",
+        "02_spx_5day.png"
+      ]
+    }
+  ],
+  "primary_tension": "A mechanically intact bull skeleton (50d > 200d, +7.85% over the 200-day, benign sub-17 VIX) is colliding with a stalling snap-back — a rejection at the 23.6% fib, a weak bottom-third distribution close ~1.3% below the swing high, a Monte Carlo edge that flipped back to 59.6% down-first and fails every threshold, an ERP pinned at the 0.48% valuation ceiling, and 14+ sessions of non-confirming breadth and wide credit — leaving trim bias into strength, not chasing the rally, as the justified posture.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.4042,
+    "prob_down_first_raw": 0.5958,
+    "prob_up_first_adjusted": 0.4042,
+    "prob_down_first_adjusted": 0.5958,
+    "sigma": 0.177631,
+    "mu": 0.07,
+    "upside_target": 7577.919921875,
+    "downside_target": 7448.013249023437,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7448 breaks, P(7408)=94%; If 7578 breaks, P(7673)=89%",
+    "median_days": "upside 5d / downside 2d",
+    "drift_path": "5d=7491.29; 10d=7499.35; 20d=7515.50; 30d=7531.69; 60d=7580.47",
+    "cash_drag_prob": 0.1298
+  }
+}

@@ -1,0 +1,213 @@
+{
+  "date": "2026-06-25",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7357.490234375,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Over the next 30-60 days the base case is choppy, downside-skewed consolidation. Price has fully retraced the active May-June leg and is sitting exactly on the flattening 50-day SMA and the 61.8% fib, with a zero-cushion ERP, Extreme Fear breadth and wide credit refusing to confirm, and a 79% down-first Monte Carlo edge. The intact bull skeleton (50d > 200d, +6.3% over the 200-day) keeps a full bear-market regime at bay, but the path of least resistance is a test of the 7,351 caution/liquidation zone and potentially the 7,199 nervous zone before any durable re-entry sets up.",
+  "trend_regime": "50-day (~7,357) above 200-day (~6,921) but flattening and now being tested by price — bullish skeleton maturing into caution; price +6.3% above 200-day, essentially flat on the 50-day.",
+  "valuation_bucket": "Forward PE ~19.9x (moderate buying band) but ERP pinned at ~0.06% — a valuation ceiling (trim bias, no aggressive adds).",
+  "signals": {
+    "pct_vs_50dma": 0.01,
+    "pct_vs_200dma": 6.31,
+    "bollinger_position": "Price riding the lower-to-middle band on daily/weekly views after full retrace of the active leg; not a clean lower-band pierce — orderly decline.",
+    "rsi14": 46.0,
+    "mfi": 38.0,
+    "vix_regime": "Standard operating regime: VIX ~18.9, in the 15-20 band, hovering near/just above its declining 50-day MA (~18) — benign, no forced-selling pressure.",
+    "fear_greed": 26,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.82,
+    "high_yield_spread": 1.37,
+    "intraday_close_position": "Bottom third — weak, distribution-style close.",
+    "middle_band_regime": "Testing the 20-day SMA / middle band from below after losing it on the downleg."
+  },
+  "what_changed_today": [
+    "DOWNSIDE TARGET TAGGED: close 7,357.49 fully retraced the active leg and breached the 50% fib (7,408), forcing the engine to re-anchor downside to the 7,350.58 caution/liquidation zone for straddle validity — price now sits essentially on the 61.8% fib (7,368) and the liquidation caution line.",
+    "50-DAY CUSHION GONE: price-to-50-day collapsed to ~0.01% (7,357 vs 7,357) — the flattening 50-day SMA is now THE line in the sand; a daily close below it opens the 77% conditional cascade toward 7,199.",
+    "SENTIMENT DETERIORATED: Fear & Greed slid to 26 (deeper Fear, near Extreme Fear) from prior Fear readings; safe-haven demand flipped to -3.11% (bonds outperforming, Extreme Fear) confirming a defensive rotation.",
+    "VALUATION CEILING HARDENED: ERP collapsed to ~0.06% (forward EY 5.03% vs 10Y 4.45%) — essentially no equity risk premium; the 0.5% ERP re-entry floor (7,473) sits well ABOVE spot, so price remains below valuation-confirmed support.",
+    "MONTE CARLO DOWN-FIRST EDGE WIDENED to 78.8% with median downside of just 1 day vs 12 days upside — fails the 70% Late-Bull actionability threshold for any long entry."
+  ],
+  "narrative_summary": "SPX closed 7,357.49 right on the flattening 50-day SMA and the 61.8% fib after fully retracing the May-June advance, with the engine re-anchoring downside to the 7,351 caution/liquidation zone. The mechanically intact bull skeleton (50d > 200d, +6.3% over the 200-day, benign VIX ~18.9) is colliding with a zero-cushion ERP (~0.06%), 9+ sessions of Extreme Fear breadth and wide credit, deteriorating sentiment (F&G 26), and a 78.8% down-first Monte Carlo edge. With no valuation cushion, no breadth/credit confirmation, and price sitting on its last mechanical support, defensive patience with a trim bias — not re-entry — remains the only justified posture.",
+  "open_questions": [
+    "Does the 7,351 caution/liquidation zone and the flattening 50-day SMA (~7,357) hold on a closing basis, or does a break trigger the 77% conditional cascade toward the 7,199 nervous zone?",
+    "Can breadth (McClellan ~877, Extreme Fear) and credit (junk spread 1.37%, widening) finally turn up to confirm any bounce, or does their persistent divergence presage further downside?",
+    "Does ERP recover above the 0.5% floor (requiring a move back toward 7,473) before any re-entry can be considered valuation-supported?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "70%"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1713",
+        "signal": "σ=0.1713"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0700",
+        "signal": "μ=0.0700"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50d (~7,357) > 200d (~6,921) but flattening; price +6.3% over 200d, flat on 50d",
+        "signal": "Bullish but maturing — caution"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Bottom third of daily range",
+        "signal": "Weak / distribution-style close"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "RSI ~46 (neutral, sloping down); MFI ~38 (sub-50, institutional selling)",
+        "signal": "Neutral-to-weak, no buy signal"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Price below the 20-day SMA, testing it from below after the downleg",
+        "signal": "Short-term structure broken — bearish"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Riding lower-to-middle band, orderly; no clean lower-band pierce",
+        "signal": "Extended-down but not capitulative"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.58% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk spread 1.37%, widening toward upper range (Extreme Fear)",
+        "signal": "Credit warning — diverges from any equity bounce"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "McClellan ~877 (Extreme Fear, falling); net new highs +1.44% and rolling over",
+        "signal": "Narrow/deteriorating — no confirmation"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "VIX ~18.9, in 15-20 band, near declining 50-day MA",
+        "signal": "Standard regime, benign — no capitulation spike"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "Price on the 7,351 caution/liquidation zone; nervous 7,199, margin-call 6,820 below",
+        "signal": "Caution zone active — first acceleration line"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "21%",
+        "signal": "monitor below threshold"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "Intact skeleton + benign VIX vs zero ERP cushion, weak breadth/credit, down-first MC, weak close",
+        "signal": "Aligned trim / defensive"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Defensive patience with trim bias; no re-entry until 7,351/50-day holds AND breadth/credit/ERP confirm",
+        "signal": "Hold defensively, do not add"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 4,
+    "buy_signals_met": 1,
+    "overall": "aligned_trim"
+  },
+  "confirming_evidence": [
+    "Price fully retraced the active May-June leg and closed on the 61.8% fib (7,368) and the 7,351 caution/liquidation zone — downside target tagged.",
+    "Price-to-50-day cushion collapsed to ~0.01%; the flattening 50-day is the last mechanical support, with price below the 20-day SMA.",
+    "ERP pinned at ~0.06% (forward EY 5.03% vs 10Y 4.45%) — a valuation ceiling; the 0.5% re-entry floor (7,473) sits well above spot.",
+    "Breadth in Extreme Fear (McClellan ~877, falling; net new highs +1.44% rolling over) and junk credit spread widening to 1.37% — neither confirms.",
+    "Monte Carlo 78.8% down-first edge with 1-day median to downside vs 12-day upside fails the 70% Late-Bull actionability threshold.",
+    "Sentiment deteriorating: Fear & Greed 26 (deep Fear) and safe-haven demand -3.11% (bonds outperforming, Extreme Fear) — defensive rotation.",
+    "Weak, bottom-third distribution-style close confirms sellers in control intraday."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "intact_skeleton_vs_retrace",
+      "layers": [
+        "Technical Structure",
+        "Monte Carlo Probability Analysis"
+      ],
+      "bullish_read": "50d still above 200d, price +6.3% over the 200-day, benign VIX ~18.9 with no capitulation washout, and Low Rally Exhaustion — the longer-term uptrend remains mechanically intact.",
+      "bearish_read": "The active leg is fully retraced onto the 61.8% fib and the flattening 50-day, price is below the 20-day SMA, and the Monte Carlo edge is 78.8% down-first — the short-term structure has broken and momentum favors a test of lower liquidation zones.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not yet broken down; never use Monte Carlo in isolation.",
+      "weight": "high",
+      "chart_refs": [
+        "03_spx_1month.png",
+        "05_spx_6month.png",
+        "07_spx_3year.png",
+        "13_vix_volatility.png"
+      ]
+    },
+    {
+      "id": "erp_ceiling_vs_forward_pe",
+      "layers": [
+        "Fundamental Valuation"
+      ],
+      "bullish_read": "Forward PE ~19.9x sits in the 18-20x moderate-buying-at-support band, which on its own would permit standard dip-buying.",
+      "bearish_read": "ERP collapsed to ~0.06% with the 0.5% re-entry floor (7,473) above spot — equities offer essentially no premium over the 4.45% 10Y, mandating a trim bias with no aggressive adds.",
+      "framework_rule": "ERP 0.0-0.5% = valuation ceiling, trim bias, no aggressive adds.",
+      "weight": "high",
+      "chart_refs": [
+        "09_fear_greed_momentum.png",
+        "14_safe_haven_demand.png",
+        "15_junk_bond_spread.png"
+      ]
+    },
+    {
+      "id": "breadth_credit_vs_benign_vix",
+      "layers": [
+        "Sentiment and Leverage",
+        "Technical Structure"
+      ],
+      "bullish_read": "VIX ~18.9 in the standard band with no spike, and an orderly (non-capitulative) decline suggests no forced-selling panic.",
+      "bearish_read": "McClellan in Extreme Fear (~877, falling), net new highs rolling toward zero, and junk spreads widening to 1.37% show internals and credit deteriorating well ahead of any price stabilization — narrow, low-quality tape.",
+      "framework_rule": "Headline/price strength with weak breadth indicates narrow leadership; widening spreads are a credit warning.",
+      "weight": "medium",
+      "chart_refs": [
+        "10_breadth_52wk_highs_lows.png",
+        "11_breadth_mcclellan.png",
+        "12_put_call_ratio.png",
+        "13_vix_volatility.png"
+      ]
+    }
+  ],
+  "primary_tension": "A mechanically intact bull skeleton (50d > 200d, +6.3% over the 200-day, benign VIX) is colliding with a fully-retraced active leg sitting on the 61.8% fib and the flattening 50-day, a zero-cushion ERP (~0.06%) with valuation support above spot, 9+ sessions of Extreme Fear breadth and widening credit, deteriorating sentiment, and a 78.8% down-first Monte Carlo edge — leaving defensive patience with a trim bias, not re-entry, as the only justified posture.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.2117,
+    "prob_down_first_raw": 0.7883,
+    "prob_up_first_adjusted": 0.2117,
+    "prob_down_first_adjusted": 0.7883,
+    "sigma": 0.171271,
+    "mu": 0.07,
+    "upside_target": 7577.919921875,
+    "downside_target": 7350.58232421875,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7351 breaks, P(7199)=77%; If 7578 breaks, P(7673)=87%",
+    "median_days": "upside 12d / downside 1d",
+    "drift_path": "5d=7365.57; 10d=7373.66; 20d=7389.87; 30d=7406.12; 60d=7455.06",
+    "cash_drag_prob": 0.0966
+  }
+}

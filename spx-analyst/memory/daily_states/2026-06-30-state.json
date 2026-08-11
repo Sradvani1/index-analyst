@@ -1,0 +1,207 @@
+{
+  "date": "2026-06-30",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7499.35986328125,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Over the next 30-60 days the base case is a range-bound-to-choppy consolidation beneath the 6/15 swing high (7,578), with price hovering near the 23.6% fib / valuation-ceiling zone (~7,498-7,544). The mechanical skeleton (50d > 200d, +8.2% over the 200-day) remains intact, but a zero-cushion ERP, Extreme Fear breadth, and wide credit cap upside. Absent breadth/credit confirmation, rallies into the swing-high band are trim opportunities, not chase points.",
+  "trend_regime": "Healthy bullish SMA structure on the surface — 50-day (7,379) above 200-day (6,934) and both rising, price +8.2% over the 200-day and +1.6% over the 50-day — but the 50-day has been flattening through June and the advance is running into repeated rejection at the 7,578 swing-high band.",
+  "valuation_bucket": "Restrictive — forward PE 20.2x (cautious/trim-leaning band), trailing PE 24.8x, ERP just 0.53% pinned at the 0.0-0.5% valuation-ceiling boundary.",
+  "signals": {
+    "pct_vs_50dma": 1.63,
+    "pct_vs_200dma": 8.15,
+    "bollinger_position": "Upper-band region — price has pushed back toward the upper Bollinger Band on the recent snap-back, riding above the middle band.",
+    "rsi14": 58.0,
+    "mfi": 85.0,
+    "vix_regime": "Standard operating regime — VIX 16.45, below the 20 threshold and below its 50-day MA (17.79) which is rolling over; benign, no forced-selling pressure.",
+    "fear_greed": 31,
+    "fear_greed_zone": "Fear",
+    "put_call": 0.82,
+    "high_yield_spread": 1.35,
+    "intraday_close_position": "Top third — intraday chart shows a firm, upward-drifting session closing near the highs of the day.",
+    "middle_band_regime": "Reclaimed and holding above the 20-day / middle band after the late-June breakdown."
+  },
+  "what_changed_today": [
+    "CONTINUATION OF SNAP-BACK: close 7,499.36 (~+0.8% from prior ~7,440) extended the recovery, reclaiming the 38.2% fib (7,448), the 50% fib, and now tagging the 23.6% fib (7,498) — price is back within ~1% of the 6/15 swing high (7,578).",
+    "MONTE CARLO NEARLY BALANCED: prob_down_first eased to 53.6% (from 65.9% prior) and prob_up_first rose to 46.4% — the down-skew has compressed dramatically, though it still fails all regime thresholds (65/70/75).",
+    "ERP EDGED UP TO 0.53%: with forward PE 20.2x against a 10y of 4.42%, the cushion nudged just above the 0.5% ceiling; the 0.5% ERP re-entry floor (7,544) now sits just above spot — price is right at the valuation-confirmed support line.",
+    "MFI SURGED INTO OVERBOUGHT: short-timeframe Money Flow Index has driven into the ~85 overbought zone on the bounce, while RSI-14 recovered to the high-50s — a momentum thrust but an MFI trim-zone reading.",
+    "BREADTH STILL WEAK BUT LESS EXTREME: McClellan ~899 (still weak/Fear), net new 52-wk highs 1.39% (Fear), safe-haven demand -2.08% and junk spread 1.35% — the 13+ session divergence persists but breadth is no longer at fresh lows."
+  ],
+  "narrative_summary": "A persistent mechanical snap-back has now carried SPX to 7,499, reclaiming the 38.2% and 50% fibs and tagging the 23.6% fib within ~1% of the 6/15 swing high, on a strong top-third close with a benign sub-17 VIX. Yet the rally runs straight into a zero-cushion ERP (0.53%) pinned at the valuation ceiling, an MFI already in the overbought trim zone, and 13+ sessions of Extreme Fear breadth and wide credit that still refuse to confirm the move. The Monte Carlo edge has nearly balanced (53.6% down-first) but fails every regime threshold. In a Late Bull / Topping regime this is a rally into resistance to be trimmed, not chased.",
+  "open_questions": [
+    "Can price clear and hold above the 23.6% fib (7,498) and press the 6/15 swing high (7,578), or does the 89% conditional cascade above 7,578 mark this as the next rejection point?",
+    "Will breadth (McClellan ~899) and credit (junk spread 1.35%) finally turn up to confirm the 13+ session price recovery, or does their divergence cap this rally as it has each prior bounce?",
+    "With ERP back at exactly the 0.5% ceiling and MFI in the overbought zone, does valuation/momentum exhaustion force another retrace toward the 38.2%/50% fib band?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "70%"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1777",
+        "signal": "σ=0.1777"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0700",
+        "signal": "μ=0.0700"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50d 7,379 > 200d 6,934, both rising; price +8.2% over 200d, +1.6% over 50d; 50d flattening",
+        "signal": "Bullish but maturing"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Top third of range — firm upward-drifting close near session highs",
+        "signal": "Strong close"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "RSI-14 ~58 (neutral); MFI ~85 (overbought trim zone)",
+        "signal": "Mixed — momentum firm but MFI in trim territory"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Reclaimed and holding above the 20-day / middle band after the late-June breakdown",
+        "signal": "Short-term structure improved / bullish"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Pushing back toward the upper band, riding above the middle band",
+        "signal": "Extension / possible trim window"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.53% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk vs IG spread 1.35%, elevated and choppy near recent highs; Extreme Fear",
+        "signal": "Credit diverges from equity strength — caution"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "McClellan ~899 (weak); net new 52-wk highs 1.39% (Fear); 13+ sessions non-confirming",
+        "signal": "Narrow / deteriorating — divergence"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "VIX 16.45, below 20 and below rolling-over 50-day MA (17.79)",
+        "signal": "Benign / standard regime"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "Price ~1% below swing high; no drawdown thresholds breached; caution zone not active",
+        "signal": "Low forced-selling risk currently"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "46%",
+        "signal": "monitor below threshold"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "Strong mechanical bounce and benign VIX vs zero-cushion ERP, overbought MFI, non-confirming breadth/credit, sub-threshold MC",
+        "signal": "Aligned trim into strength"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Trim bias into the rally as it tags the 23.6% fib / valuation ceiling; do not chase toward the swing high; patience on re-entry until breadth and credit confirm",
+        "signal": "Trim bias / defensive patience"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 3,
+    "buy_signals_met": 1,
+    "overall": "aligned_trim"
+  },
+  "confirming_evidence": [
+    "Mechanical bull skeleton intact: 50-day (7,379) above 200-day (6,934), both rising, price +8.2% over the 200-day and +1.6% over the 50-day (charts 06, 07).",
+    "Snap-back reclaimed the 38.2% and 50% fibs and now tags the 23.6% fib (7,498), a strong top-third intraday close back above the 20-day / middle band (charts 01, 02, 03).",
+    "VIX benign at 16.45, below 20 and below its rolling-over 50-day MA (17.79) — no volatility stress or forced-selling pressure (chart 13).",
+    "Monte Carlo down-skew compressed sharply to 53.6% down-first (from ~66% prior), nearly balanced, with Rally Exhaustion Score Low."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "breadth_credit_vs_rally",
+      "layers": [
+        "Sentiment and Leverage",
+        "Technical Structure"
+      ],
+      "bullish_read": "Price has reclaimed the mid-fib band and is pressing toward the swing high on a strong close.",
+      "bearish_read": "McClellan (~899) and net new 52-wk highs (1.39%) remain weak/Fear, junk spread wide at 1.35%, safe-haven demand -2.08% — a 13+ session divergence signaling narrow leadership that has capped every prior bounce.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not broken down; headline/price strength with weak breadth indicates narrow leadership.",
+      "weight": "high",
+      "chart_refs": [
+        "10_breadth_52wk_highs_lows.png",
+        "11_breadth_mcclellan.png",
+        "14_safe_haven_demand.png",
+        "15_junk_bond_spread.png"
+      ]
+    },
+    {
+      "id": "erp_ceiling_vs_rally",
+      "layers": [
+        "Fundamental Valuation",
+        "Technical Structure"
+      ],
+      "bullish_read": "Snap-back momentum and reclaimed fibs argue the recovery can extend to the swing high.",
+      "bearish_read": "ERP is pinned at just 0.53% (0.0-0.5% valuation-ceiling boundary), forward PE 20.2x, and the 0.5% ERP re-entry floor (7,544) sits just above spot — valuation offers essentially no cushion to chase.",
+      "framework_rule": "ERP 0.0-0.5% = valuation ceiling, trim bias, no aggressive adds.",
+      "weight": "high",
+      "chart_refs": [
+        "09_fear_greed_momentum.png"
+      ]
+    },
+    {
+      "id": "mfi_overbought_vs_momentum",
+      "layers": [
+        "Technical Structure",
+        "Monte Carlo Probability Analysis"
+      ],
+      "bullish_read": "Rising RSI and surging money flow confirm the bounce has real buying behind it.",
+      "bearish_read": "Short-timeframe MFI has driven into the ~85 overbought trim zone as price tags resistance, and the Monte Carlo edge (46.4% up-first) fails every regime threshold — momentum exhaustion risk into the 23.6% fib.",
+      "framework_rule": "MFI above 80 = trim zone; never use Monte Carlo in isolation; if adjusted prob fails the threshold, the setup is not actionable.",
+      "weight": "medium",
+      "chart_refs": [
+        "02_spx_5day.png",
+        "03_spx_1month.png"
+      ]
+    }
+  ],
+  "primary_tension": "A persistent mechanical snap-back — reclaimed 38.2%/50% fibs, a tag of the 23.6% fib within ~1% of the 6/15 swing high, a strong top-third close, and a benign sub-17 VIX — is colliding with a zero-cushion ERP (0.53%) pinned at the valuation ceiling, an MFI already in the overbought trim zone, 13+ sessions of Extreme Fear breadth and wide credit that still refuse to confirm, and a Monte Carlo edge that fails every regime threshold — leaving trim bias into strength, not chasing the rally into resistance, as the justified posture.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.4637,
+    "prob_down_first_raw": 0.5363,
+    "prob_up_first_adjusted": 0.4637,
+    "prob_down_first_adjusted": 0.5363,
+    "sigma": 0.177713,
+    "mu": 0.07,
+    "upside_target": 7577.919921875,
+    "downside_target": 7448.013249023437,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7448 breaks, P(7408)=94%; If 7578 breaks, P(7673)=89%",
+    "median_days": "upside 4d / downside 3d",
+    "drift_path": "5d=7507.43; 10d=7515.51; 20d=7531.69; 30d=7547.91; 60d=7596.78",
+    "cash_drag_prob": 0.1487
+  }
+}
