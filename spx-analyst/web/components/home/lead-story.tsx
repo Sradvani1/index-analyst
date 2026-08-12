@@ -14,7 +14,12 @@ export function LeadStory({ run }: LeadStoryProps) {
 
   return (
     <section className="rounded-[14px] border border-border-soft bg-surface-0 p-6 shadow-editorial-1 sm:p-8">
-      <p className="text-xs font-medium uppercase tracking-wide text-ink-500">Latest analysis</p>
+      <div className="flex items-center gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-500">Latest analysis</p>
+        <span className="rounded-full bg-market-green/10 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-market-green">
+          Latest
+        </span>
+      </div>
       <h1 className="mt-2 font-display text-3xl font-semibold leading-tight text-ink-900 sm:text-4xl">
         {formatDateLong(run.date)}
       </h1>

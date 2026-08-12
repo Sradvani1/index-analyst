@@ -15,6 +15,11 @@ function buildComponents(variant: "article" | "compact"): Components {
       : "mb-4 text-[19px] leading-[1.72] text-ink-900 last:mb-0";
 
   return {
+    h1: ({ children }) => (
+      <h1 className="mb-6 scroll-mt-24 font-display text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
+        {children}
+      </h1>
+    ),
     p: ({ children }) => <p className={bodyClass}>{children}</p>,
     li: ({ children }) => (
       <li
@@ -37,7 +42,27 @@ function buildComponents(variant: "article" | "compact"): Components {
         {children}
       </h3>
     ),
+    h4: ({ children }) => (
+      <h4 className="mb-2 mt-6 scroll-mt-24 text-base font-semibold text-ink-900">{children}</h4>
+    ),
+    h2: ({ children, node }) => {
+      const text = node?.children
+        .map((child) => (child.type === "text" ? child.value ?? "" : ""))
+        .join("")
+        .trim() ?? "";
+      const id = text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      return (
+        <h2 id={id} className="mb-4 scroll-mt-24 font-display text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl">
+          {children}
+        </h2>
+      );
+    },
     strong: ({ children }) => <strong className="font-semibold text-ink-900">{children}</strong>,
+    ul: ({ children }) => <ul className="mb-4 list-disc space-y-2 pl-6">{children}</ul>,
+    ol: ({ children }) => <ol className="mb-4 list-decimal space-y-2 pl-6">{children}</ol>,
     table: ({ children }) => (
       <div className="my-4 overflow-x-auto rounded-lg border border-border-soft">
         <table className="w-full border-collapse text-sm text-ink-900">{children}</table>

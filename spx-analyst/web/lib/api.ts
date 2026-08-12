@@ -2,6 +2,7 @@ import { cache } from "react";
 
 import {
   ApiError,
+  FrameworkResponse,
   HealthResponse,
   RunDetail,
   RunSummary,
@@ -42,4 +43,8 @@ export const listRuns = cache(async (): Promise<RunSummary[]> => {
 
 export async function getRun(date: string): Promise<RunDetail> {
   return fetchJson<RunDetail>(`/api/runs/${date}`);
+}
+
+export async function getFramework(): Promise<FrameworkResponse> {
+  return fetchJson<FrameworkResponse>("/api/framework");
 }

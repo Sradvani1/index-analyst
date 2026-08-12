@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { MetadataChipFromText } from "@/components/archive/metadata-chip";
 import { formatClose, formatDateLong } from "@/lib/format";
+import { toneFor } from "@/lib/report";
 import type { RunSummary } from "@/lib/types";
 
 interface RecentStreamProps {
@@ -31,9 +32,15 @@ export function RecentStream({ runs }: RecentStreamProps) {
                 {run.structural_bias && (
                   <MetadataChipFromText text={run.structural_bias} />
                 )}
-                <span className="text-lg font-semibold tabular-nums text-ink-900">
-                  {formatClose(run.spx_close)}
-                </span>
+                <div className="flex items-center gap-3">
+                  <MetadataChipFromText
+                    text={run.recommended_action.replaceAll("_", " ")}
+                    tone={toneFor(run.recommended_action)}
+                  />
+                  <span className="text-lg font-semibold tabular-nums text-ink-900">
+                    {formatClose(run.spx_close)}
+                  </span>
+                </div>
               </div>
             </Link>
           </li>

@@ -8,8 +8,8 @@ interface ArchiveGridProps {
 export function ArchiveGrid({ runs }: ArchiveGridProps) {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-      {runs.map((run) => (
-        <ArchiveCard key={run.date} run={run} />
+      {runs.map((run, index) => (
+        <ArchiveCard key={run.date} run={run} latest={index === 0} />
       ))}
     </div>
   );

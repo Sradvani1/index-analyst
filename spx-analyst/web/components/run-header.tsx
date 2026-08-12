@@ -52,6 +52,17 @@ export function RunHeader({ state, reportMarkdown }: RunHeaderProps) {
         )}
         <MetadataChipFromText text={humanizeAction(action)} tone={toneFor(action)} />
       </div>
+
+      <div className="grid gap-3 rounded-[14px] border border-border-soft bg-surface-1 p-4 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] sm:p-5">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-500">Today&apos;s posture</p>
+          <p className="mt-1 text-base font-semibold text-ink-900">{humanizeAction(action)}</p>
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-500">Primary tension</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-700">{state.primary_tension}</p>
+        </div>
+      </div>
     </header>
   );
 }

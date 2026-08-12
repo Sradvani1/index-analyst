@@ -35,6 +35,13 @@ class RunDetail(BaseModel):
     daily_state: DailyState
 
 
+class FrameworkResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    framework_markdown: str
+    role_block_markdown: str
+
+
 class ChatSessionResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

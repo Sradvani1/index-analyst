@@ -7,9 +7,10 @@ import type { RunSummary } from "@/lib/types";
 
 interface ArchiveCardProps {
   run: RunSummary;
+  latest?: boolean;
 }
 
-export function ArchiveCard({ run }: ArchiveCardProps) {
+export function ArchiveCard({ run, latest = false }: ArchiveCardProps) {
   const action = humanizeAction(run.recommended_action);
 
   return (
@@ -19,9 +20,16 @@ export function ArchiveCard({ run }: ArchiveCardProps) {
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-            {formatDateLong(run.date)}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
+              {formatDateLong(run.date)}
+            </p>
+            {latest && (
+              <span className="rounded-full bg-market-green/10 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-market-green">
+                Latest
+              </span>
+            )}
+          </div>
           <p className="mt-1 font-display text-lg font-semibold text-ink-900">{run.date}</p>
         </div>
         <p className="text-right text-2xl font-bold tabular-nums text-ink-900">
@@ -29,11 +37,14 @@ export function ArchiveCard({ run }: ArchiveCardProps) {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {run.structural_bias && (
           <MetadataChipFromText text={run.structural_bias} />
         )}
         <MetadataChipFromText text={action} tone={toneFor(run.recommended_action)} />
+        <span className="ml-auto text-xs font-medium text-market-green transition-colors group-hover:text-market-green-hover">
+          Read report →
+        </span>
       </div>
 
       <p className="line-clamp-3 text-sm leading-relaxed text-ink-500">{runCardSummary(run)}</p>

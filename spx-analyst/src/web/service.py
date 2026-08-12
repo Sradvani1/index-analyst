@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from ..config import Settings, get_settings
 from ..files import InputError, read_json, read_text
 from ..schemas import DailyState
-from .models import RunDetail, RunSummary
+from .models import FrameworkResponse, RunDetail, RunSummary
 from .report_parse import extract_posture_lead
 
 logger = logging.getLogger(__name__)
@@ -111,4 +111,13 @@ def get_run(date: str, settings: Settings | None = None) -> RunDetail:
         date=date,
         report_markdown=report_markdown,
         daily_state=daily_state,
+    )
+
+
+def get_framework(settings: Settings | None = None) -> FrameworkResponse:
+    """Load the two public methodology documents from their canonical paths."""
+    settings = settings or get_settings()
+    return FrameworkResponse(
+        framework_markdown=read_text(settings.framework_path),
+        role_block_markdown=read_text(settings.role_path),
     )

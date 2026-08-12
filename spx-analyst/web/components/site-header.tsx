@@ -30,7 +30,7 @@ const NAV_LINKS = [
       latestDate ? `/runs/${latestDate}` : "/archive",
   },
   { href: "/archive", label: "Archive", match: (path: string) => path === "/archive" },
-  { href: "/about", label: "About", match: (path: string) => path === "/about" },
+  { href: "/framework", label: "Framework", match: (path: string) => path === "/framework" },
 ] as const;
 
 export function SiteHeader({ runs, backendError }: SiteHeaderProps) {

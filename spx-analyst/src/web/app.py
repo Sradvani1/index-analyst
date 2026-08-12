@@ -6,9 +6,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..config import get_settings
+from ..files import InputError
 from .chat_api import router as chat_router
-from .models import HealthResponse, RunDetail, RunSummary
-from .service import RunNotFoundError, get_run, list_runs
+from .models import FrameworkResponse, HealthResponse, RunDetail, RunSummary
+from .service import RunNotFoundError, get_framework, get_run, list_runs
 
 app = FastAPI(title="SPX Analyst Viewer", version="0.1.0")
 
@@ -35,6 +36,14 @@ def health() -> HealthResponse:
 @app.get("/api/runs", response_model=list[RunSummary])
 def api_list_runs() -> list[RunSummary]:
     return list_runs()
+
+
+@app.get("/api/framework", response_model=FrameworkResponse)
+def api_framework() -> FrameworkResponse:
+    try:
+        return get_framework()
+    except (InputError, OSError, UnicodeError) as exc:
+        raise HTTPException(status_code=503, detail="framework documents unavailable") from exc
 
 
 @app.get("/api/runs/{date}", response_model=RunDetail)

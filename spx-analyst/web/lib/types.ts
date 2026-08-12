@@ -118,6 +118,11 @@ export interface RunDetail {
   daily_state: DailyState;
 }
 
+export interface FrameworkResponse {
+  framework_markdown: string;
+  role_block_markdown: string;
+}
+
 export interface HealthResponse {
   status: string;
 }

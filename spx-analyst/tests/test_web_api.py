@@ -29,6 +29,41 @@ def test_health() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_framework_returns_configured_documents(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    response = TestClient(app).get("/api/framework")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "framework_markdown": "# SPX Daily Analysis Framework\n",
+        "role_block_markdown": "# SPX Claude Role Block\n",
+    }
+
+
+def test_framework_returns_503_when_documents_are_missing(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    settings.framework_path.unlink()
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    response = TestClient(app).get("/api/framework")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "framework documents unavailable"}
+
+
+def test_framework_returns_503_when_role_block_is_missing(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    settings.role_path.unlink()
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    response = TestClient(app).get("/api/framework")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "framework documents unavailable"}
+
+
 def test_list_runs_empty(tmp_path, monkeypatch) -> None:
     settings = make_settings(tmp_path)
     monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
