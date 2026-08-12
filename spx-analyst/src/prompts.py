@@ -295,6 +295,7 @@ def build_state_prompt(
     analysis_context: AnalysisContext,
     recent_summary: str | None = None,
     eps_history: EpsHistory | None = None,
+    structural_bias_arc: str | None = None,
 ) -> PromptBundle:
     parts = [
         _analysis_context_block(analysis_context),
@@ -305,6 +306,8 @@ def build_state_prompt(
     mem = _optional_memory_block(recent_summary)
     if mem:
         parts.insert(0, mem)
+    if structural_bias_arc:
+        parts.append(structural_bias_arc)
 
     owned_rows = ", ".join(PRECOMPUTE_OWNED_MATRIX_ROWS)
     parts.append(
@@ -358,6 +361,7 @@ def build_report_prompt(
     pass2_reference_only: list[ChartEntry] | None = None,
     pass2_optimization_enabled: bool = True,
     eps_history: EpsHistory | None = None,
+    structural_bias_arc: str | None = None,
 ) -> PromptBundle:
     state_json = json.dumps(daily_state.model_dump(mode="json"), indent=2)
     section_list = "\n".join(f"{i + 1}. `## {title}`" for i, title in enumerate(PASS2_PROSE_SECTIONS))
@@ -386,6 +390,8 @@ def build_report_prompt(
     mem = _optional_memory_block(recent_summary)
     if mem:
         parts.insert(0, mem)
+    if structural_bias_arc:
+        parts.append(structural_bias_arc)
 
     pass2_task_extra = ""
     if pass2_optimization_enabled and pass2_attached is not None:

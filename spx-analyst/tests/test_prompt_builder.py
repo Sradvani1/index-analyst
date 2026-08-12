@@ -38,6 +38,7 @@ def test_state_prompt_contains_blocks(sample_state):
         resolved_eps=_context(),
         analysis_context=ac,
         recent_summary="prior summary",
+        structural_bias_arc="## Structural Bias Arc\n\n| table |",
     )
     assert bundle.framework == "FRAMEWORK_TEXT"
     assert "never force" in bundle.system_role.lower() or "hold and monitor" in bundle.system_role.lower()
@@ -47,6 +48,7 @@ def test_state_prompt_contains_blocks(sample_state):
     assert "structural_bias" in bundle.body
     assert "prior summary" in bundle.body
     assert "Prior posture snapshot" in bundle.body
+    assert "## Structural Bias Arc" in bundle.body
     assert "Optional prior-run narrative context" not in bundle.body
     assert "7450.25" in bundle.body
     assert "signals_*` contract" in bundle.body
@@ -95,6 +97,22 @@ def test_memory_block_absent_when_none(sample_state):
         bundle = builder(**kwargs)
         assert "Prior posture snapshot" not in bundle.body
         assert "Optional prior-run narrative context" not in bundle.body
+
+
+def test_structural_bias_arc_is_injected_into_both_prompts(sample_state):
+    arc = "## Structural Bias Arc\n\n| 2026-06-10 | Late Bull / Topping | 2 sessions |"
+    for builder in (build_state_prompt, build_report_prompt):
+        kwargs = {
+            "system_role": load_system_role("R"),
+            "framework": "FW",
+            "manifest": _manifest(),
+            "resolved_eps": _context(),
+            "analysis_context": sample_analysis_context(),
+            "structural_bias_arc": arc,
+        }
+        if builder is build_report_prompt:
+            kwargs["daily_state"] = sample_state
+        assert arc in builder(**kwargs).body
 
 
 def test_eps_history_block_present_when_provided(sample_state):

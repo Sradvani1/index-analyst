@@ -128,6 +128,22 @@ pip install -e ".[dev]"   # optional: editable install + pytest
 cp .env.example .env      # then fill in API keys
 ```
 
+## Publication Viewer
+
+The Next.js publication viewer and read-only FastAPI API are deployed to Vercel.
+The daily analysis engine remains local and is the source of new public reports.
+After a successful local run, publish only the canonical archive artifacts:
+
+```bash
+git add memory/daily_states memory/daily_reports
+git commit -m "Publish SPX report YYYY-MM-DD"
+git push
+```
+
+Charts are not deployed in this workflow. The research Assistant remains local-only
+at `http://localhost:3000/assistant`; Vercel must set `SPX_CHAT_ENABLED=false`.
+Run the local viewer with FastAPI on port 8000 and Next.js on port 3000.
+
 ## Configuration
 
 Set these in `.env` (see `.env.example`):
@@ -137,6 +153,7 @@ Set these in `.env` (see `.env.example`):
 | `ANTHROPIC_API_KEY` | — | Required for live runs |
 | `OPENAI_API_KEY` | — | Required for post-run RAG indexing and chat assistant (Phase 2+) |
 | `OPENAI_VECTOR_STORE_ID` | — | Vector store for report section retrieval (chat `file_search` + indexing) |
+| `SPX_CHAT_ENABLED` | `true` | Enable the local research assistant; set `false` for Vercel |
 | `OPENAI_CHAT_MODEL` | `gpt-5` | Responses API model for chat; create vector store via [operator guide](docs/research-assistant-operator-guide.md) |
 | `SPX_MODEL` | `claude-opus-5` | Claude model for both passes |
 | `SPX_LLM_PROVIDER` | `anthropic` | LLM provider for both passes; `openai` opts into `OpenAIPipelineClient` (PR-21/PR-22) |

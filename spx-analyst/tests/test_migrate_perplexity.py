@@ -174,6 +174,28 @@ def test_migrate_session_applies_precompute(mock_precompute, mock_rebuild, tmp_p
     assert saved.framework_version == FRAMEWORK_VERSION
 
 
+def test_migrate_session_preserves_existing_canonical_state(tmp_path: Path):
+    from src.files import scaffold_run_dir
+    from src.migrate_perplexity import MigrationError, PerplexitySession, migrate_session
+
+    settings = make_settings(tmp_path)
+    write_eps_history(tmp_path)
+    date = "2026-06-01"
+    scaffold_run_dir(settings.runs_dir / date, date)
+    settings.daily_states_dir.mkdir(parents=True, exist_ok=True)
+    (settings.daily_states_dir / f"{date}-state.json").write_text("{}", encoding="utf-8")
+    session = PerplexitySession(
+        date=date,
+        spx_close=7599.96,
+        raw_markdown=JUNE_10_SNIPPET,
+        clean_markdown="Perplexity narrative",
+        title_line="# title",
+    )
+
+    with pytest.raises(MigrationError, match="canonical state already exists"):
+        migrate_session(session, settings=settings, client=MagicMock())
+
+
 def test_migrated_state_produces_categorical_rollup(tmp_path: Path):
     from tests.conftest import write_state
 

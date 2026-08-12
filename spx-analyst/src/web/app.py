@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from ..config import get_settings
 from .chat_api import router as chat_router
 from .models import HealthResponse, RunDetail, RunSummary
 from .service import RunNotFoundError, get_run, list_runs
@@ -22,7 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat_router)
+if get_settings().chat_enabled:
+    app.include_router(chat_router)
 
 
 @app.get("/api/health", response_model=HealthResponse)

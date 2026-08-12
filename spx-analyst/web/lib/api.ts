@@ -8,10 +8,15 @@ import {
 } from "@/lib/types";
 
 function apiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
+  if (typeof window !== "undefined") {
+    return "";
   }
-  return "";
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
 }
 
 async function fetchJson<T>(path: string): Promise<T> {

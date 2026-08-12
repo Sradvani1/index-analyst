@@ -17,6 +17,11 @@ def _write_report(settings: Settings, date: str, body: str = "# Report\n\nBody."
     path.write_text(body, encoding="utf-8")
 
 
+def test_chat_enabled_setting_defaults_on_and_accepts_deployment_alias() -> None:
+    assert Settings().chat_enabled is True
+    assert Settings(SPX_CHAT_ENABLED=False).chat_enabled is False
+
+
 def test_health() -> None:
     client = TestClient(app)
     response = client.get("/api/health")

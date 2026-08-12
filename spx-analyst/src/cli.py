@@ -11,7 +11,7 @@ import typer
 
 from .config import get_settings
 from .files import InputError, read_json, read_text
-from .memory import rebuild_rolling_summary
+from .memory import rebuild_rolling_summary, rebuild_structural_bias_history
 from .schemas import ValidationReport
 from .validation import parse_daily_state, validate_report
 
@@ -331,6 +331,11 @@ def migrate_perplexity(
     from_date: str = typer.Option(None, "--from", help="Start date YYYY-MM-DD (inclusive)."),
     to_date: str = typer.Option(None, "--to", help="End date YYYY-MM-DD (inclusive)."),
     force_fetch: bool = typer.Option(False, help="Force fresh yfinance fetch for precompute."),
+    overwrite_existing: bool = typer.Option(
+        False,
+        "--overwrite-existing",
+        help="Replace existing canonical memory states intentionally.",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Backfill memory from Perplexity markdown (text-only; no chart packs required)."""
@@ -347,6 +352,7 @@ def migrate_perplexity(
             from_date=from_date,
             to_date=to_date,
             force_fetch=force_fetch,
+            overwrite_existing=overwrite_existing,
         )
     except MigrationError as exc:
         typer.secho(f"Migration failed: {exc}", fg=typer.colors.RED, err=True)
@@ -375,6 +381,17 @@ def rebuild_summary(
     summary, path = rebuild_rolling_summary(days=days)
     typer.secho(f"Wrote rolling summary to {path}", fg=typer.colors.GREEN)
     typer.echo(summary)
+
+
+@app.command("rebuild-bias-history")
+def rebuild_bias_history(
+    date: str = typer.Option(..., help="As-of trade date YYYY-MM-DD."),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+) -> None:
+    """Regenerate the structural-bias arc projection from canonical states."""
+    _setup_logging(verbose)
+    _, path = rebuild_structural_bias_history(as_of_date=date)
+    typer.secho(f"Wrote structural-bias history to {path}", fg=typer.colors.GREEN)
 
 
 @app.command("index-rag")

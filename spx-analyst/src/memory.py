@@ -8,15 +8,24 @@ from __future__ import annotations
 
 import json
 import re
+import datetime as dt
 from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from .config import Settings, get_settings
-from .files import InputError, read_json
+from .files import InputError, read_json, write_json_atomic
 from .formatting import format_event_headline
-from .schemas import ArcBrief, ArcBriefCaps, ArcBriefSessionSnapshot, DailyState, Divergence, SignalSet
+from .schemas import (
+    ArcBrief,
+    ArcBriefCaps,
+    ArcBriefSessionSnapshot,
+    DailyState,
+    Divergence,
+    SignalSet,
+    StructuralBias,
+)
 
 _WEIGHT_ORDER = {"high": 0, "medium": 1, "low": 2}
 
@@ -27,6 +36,22 @@ class MemoryLoadStats:
     loaded: int
     skipped_invalid: int
     skipped_before_date: int
+
+
+@dataclass(frozen=True)
+class StructuralBiasArc:
+    classified_on: str
+    structural_bias: StructuralBias
+    duration_sessions: int
+    ended_on: str | None
+
+
+def one_year_before(date: str) -> str:
+    target = dt.date.fromisoformat(date)
+    try:
+        return target.replace(year=target.year - 1).isoformat()
+    except ValueError:
+        return target.replace(year=target.year - 1, day=28).isoformat()
 
 
 def _state_date(path: Path) -> str:
@@ -85,6 +110,102 @@ def load_recent_states(
         limit, before_date=before_date, settings=settings
     )
     return states
+
+
+def load_all_states(
+    *, before_date: str | None = None, settings: Settings | None = None
+) -> list[DailyState]:
+    """Load every valid canonical state, newest first."""
+    settings = settings or get_settings()
+    states_dir = settings.daily_states_dir
+    if not states_dir.is_dir():
+        return []
+    states: list[DailyState] = []
+    for path in sorted(states_dir.glob("*-state.json"), key=_state_date, reverse=True):
+        date = _state_date(path)
+        if before_date is not None and date >= before_date:
+            continue
+        try:
+            states.append(DailyState.model_validate(read_json(path)))
+        except (ValidationError, ValueError, InputError):
+            continue
+    return states
+
+
+def build_structural_bias_arcs(
+    states: list[DailyState], *, display_from: str | None = None
+) -> list[StructuralBiasArc]:
+    """Collapse chronological daily classifications into uninterrupted arcs."""
+    if not states:
+        return []
+    chronological = sorted(
+        {state.date: state for state in states}.values(), key=lambda s: s.date
+    )
+    groups: list[list[DailyState]] = []
+    for state in chronological:
+        if not groups or state.structural_bias != groups[-1][-1].structural_bias:
+            groups.append([state])
+        else:
+            groups[-1].append(state)
+
+    arcs: list[StructuralBiasArc] = []
+    for index, group in enumerate(groups):
+        ended_on = group[-1].date if index + 1 < len(groups) else None
+        if display_from is not None and ended_on is not None and ended_on < display_from:
+            continue
+        arcs.append(
+            StructuralBiasArc(
+                classified_on=group[0].date,
+                structural_bias=group[0].structural_bias,
+                duration_sessions=len(group),
+                ended_on=ended_on,
+            )
+        )
+    return arcs
+
+
+def structural_bias_arc_prompt(arcs: list[StructuralBiasArc]) -> str:
+    """Render the compact structural-bias history supplied to the LLM."""
+    if not arcs:
+        return ""
+    lines = [
+        "## Structural Bias Arc",
+        "",
+        "| Classified on | Structural bias | Duration |",
+        "|---|---|---:|",
+    ]
+    for arc in reversed(arcs):
+        unit = "session" if arc.duration_sessions == 1 else "sessions"
+        duration = f"{arc.duration_sessions} {unit}"
+        if arc.ended_on is None:
+            duration += ", ongoing"
+        lines.append(f"| {arc.classified_on} | {arc.structural_bias} | {duration} |")
+    return "\n".join(lines)
+
+
+def rebuild_structural_bias_history(
+    *, as_of_date: str, settings: Settings | None = None
+) -> tuple[list[StructuralBiasArc], Path]:
+    """Rebuild and persist the trailing 12-month structural-bias projection."""
+    settings = settings or get_settings()
+    display_from = one_year_before(as_of_date)
+    states = load_all_states(before_date=as_of_date, settings=settings)
+    arcs = build_structural_bias_arcs(states, display_from=display_from)
+    payload = {
+        "as_of_date": as_of_date,
+        "window_start": display_from,
+        "arcs": [
+            {
+                "classified_on": arc.classified_on,
+                "structural_bias": arc.structural_bias,
+                "duration_sessions": arc.duration_sessions,
+                "ended_on": arc.ended_on,
+            }
+            for arc in arcs
+        ],
+    }
+    write_json_atomic(settings.structural_bias_history_path, payload)
+    return arcs, settings.structural_bias_history_path
 
 
 def _truncate(text: str, max_len: int) -> str:
@@ -282,7 +403,7 @@ def _action_for_state(s: DailyState) -> str:
 def _format_day(s: DailyState) -> str:
     lines = [
         f"### {s.date}",
-        f"{s.structural_bias} | {s.signal_alignment.overall} | action: {_action_for_state(s)}",
+        f"{s.signal_alignment.overall} | action: {_action_for_state(s)}",
         _signal_labels(s),
     ]
     if s.what_changed_today:
@@ -459,11 +580,7 @@ def build_recent_summary(states: list[DailyState]) -> str:
         return "No prior sessions on record."
 
     blocks = [_format_day(s) for s in reversed(states)]
-    footer = [
-        "---",
-        _regime_arc(states),
-        _build_unresolved_watchlist(states),
-    ]
+    footer = ["---", _build_unresolved_watchlist(states)]
     return "\n\n".join(blocks + footer)
 
 

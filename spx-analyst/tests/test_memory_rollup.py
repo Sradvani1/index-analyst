@@ -9,6 +9,7 @@ from src.memory import (
     _bucket_fear_greed,
     _bucket_vix,
     _build_unresolved_watchlist,
+    build_structural_bias_arcs,
     _format_day,
     _normalize_action,
     _regime_arc,
@@ -17,6 +18,7 @@ from src.memory import (
     load_recent_states,
     load_recent_states_with_stats,
     rebuild_rolling_summary,
+    structural_bias_arc_prompt,
 )
 from src.schemas import DailyState, SignalSet
 
@@ -82,7 +84,8 @@ def test_build_recent_summary_empty():
 def test_format_day_structure(sample_state):
     block = _format_day(sample_state)
     assert block.startswith("### 2026-06-11")
-    assert "Mid Bull | mixed | action:" in block
+    assert "mixed | action:" in block
+    assert "Mid Bull" not in block
     assert block.startswith("###")
     assert "signals:" in block
     assert "changed:" in block
@@ -308,6 +311,30 @@ def test_six_day_rollup_under_typical_ceiling():
     assert len(summary) <= 10_000
 
 
+def test_structural_bias_arcs_collapse_and_preserve_dates():
+    states = [
+        _state(date="2025-07-08", structural_bias="Mid Bull"),
+        _state(date="2025-07-09", structural_bias="Mid Bull"),
+        _state(date="2025-08-12", structural_bias="Mid Bull"),
+        _state(date="2026-06-10", structural_bias="Late Bull / Topping"),
+        _state(date="2026-06-11", structural_bias="Late Bull / Topping"),
+    ]
+    arcs = build_structural_bias_arcs(states, display_from="2025-08-11")
+    assert [(a.classified_on, a.structural_bias, a.duration_sessions) for a in arcs] == [
+        ("2025-07-08", "Mid Bull", 3),
+        ("2026-06-10", "Late Bull / Topping", 2),
+    ]
+    assert arcs[-1].ended_on is None
+
+
+def test_structural_bias_arc_prompt_is_compact():
+    states = [_state(date="2026-06-10", structural_bias="Late Bull / Topping")]
+    prompt = structural_bias_arc_prompt(build_structural_bias_arcs(states))
+    assert "## Structural Bias Arc" in prompt
+    assert "| 2026-06-10 | Late Bull / Topping | 1 session, ongoing |" in prompt
+    assert "continuity" not in prompt.lower()
+
+
 def test_six_day_rollup_under_stress_ceiling():
     states = []
     for i, date in enumerate(["2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10"]):
@@ -331,3 +358,22 @@ def test_rebuild_rolling_summary_writes_files(settings):
     assert "signals:" in summary
     assert "Primary tension:" not in summary
     assert (settings.rolling_dir / "recent_memory.json").exists()
+
+
+def test_rebuild_structural_bias_history_writes_projection(settings):
+    from src.memory import rebuild_structural_bias_history
+
+    write_state(settings, "2026-06-11")
+    arcs, path = rebuild_structural_bias_history(as_of_date="2026-06-12", settings=settings)
+    assert path == settings.structural_bias_history_path
+    assert path.exists()
+    assert len(arcs) == 1
+
+
+def test_rebuild_structural_bias_history_excludes_future_states(settings):
+    from src.memory import rebuild_structural_bias_history
+
+    write_state(settings, "2026-06-11")
+    write_state(settings, "2026-06-13", structural_bias="Bear Market")
+    arcs, _ = rebuild_structural_bias_history(as_of_date="2026-06-12", settings=settings)
+    assert [(arc.structural_bias, arc.duration_sessions) for arc in arcs] == [("Mid Bull", 1)]

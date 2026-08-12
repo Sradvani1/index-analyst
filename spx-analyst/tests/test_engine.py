@@ -288,12 +288,15 @@ def test_memory_block_absent_when_include_memory_false(mock_precompute, tmp_path
     run_dir = build_run_dir(tmp_path, date=date, n=1)
     mock_precompute.return_value = sample_analysis_context(date)
     settings.include_memory = False
+    write_state(settings, "2026-06-11")
     state = dict(SAMPLE_STATE)
     state["date"] = date
     client = FakeClient(state)
     run_daily_analysis(date, str(run_dir), settings=settings, client=client)
     assert "Prior posture snapshot" not in client.state_bodies[0]
     assert "Prior posture snapshot" not in client.report_bodies[0]
+    assert "## Structural Bias Arc" in client.state_bodies[0]
+    assert "## Structural Bias Arc" in client.report_bodies[0]
 
 
 @patch("src.analysis_engine.run_precompute")

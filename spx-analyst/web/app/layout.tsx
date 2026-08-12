@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   description: "Daily SPX tactical analysis — editorial archive and reports",
 };
 
+export const dynamic = "force-dynamic";
+
 const getShellRuns = cache(async () => {
   try {
     const runs = await listRuns();

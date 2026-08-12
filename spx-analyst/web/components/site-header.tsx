@@ -30,11 +30,6 @@ const NAV_LINKS = [
       latestDate ? `/runs/${latestDate}` : "/archive",
   },
   { href: "/archive", label: "Archive", match: (path: string) => path === "/archive" },
-  {
-    href: "/assistant",
-    label: "Assistant",
-    match: (path: string) => path.startsWith("/assistant"),
-  },
   { href: "/about", label: "About", match: (path: string) => path === "/about" },
 ] as const;
 

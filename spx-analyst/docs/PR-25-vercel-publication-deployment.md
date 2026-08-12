@@ -1,9 +1,21 @@
 # PR-25: Vercel Publication Deployment
 
-**Status:** Planned
+**Status:** Implemented and deployed
 **Scope:** Deploy the Next.js publication viewer and its FastAPI read API to Vercel. Keep the daily analysis engine and research assistant local-only.
 **Builds on:** PR-17 publication viewer, PR-24 daily engine fixes.
 **Primary deployment model:** One Vercel project using Vercel Services.
+
+**Implementation record (2026-08-10):**
+
+- Vercel project: `sameer-advanis-projects/spx-analyst`
+- Production: https://spx-analyst.vercel.app
+- Verified preview: https://spx-analyst-bc817bwnh-sameer-advanis-projects.vercel.app
+- Both frontend and backend Services reached `Ready`.
+- Backend bundle: 122.14 MB; frontend bundle: 825.26 KB.
+- `SPX_CHAT_ENABLED=false` is configured for Production and Preview.
+- Vercel SSO Deployment Protection is disabled so server-side same-origin API fetches can reach the public backend service.
+- Local verification passed: `pytest` (437 tests), `npm run lint`, and `npm run build`.
+- Production verification passed for the homepage, health API, known report, disabled Assistant page, and disabled chat API.
 
 ---
 

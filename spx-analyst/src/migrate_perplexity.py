@@ -32,6 +32,7 @@ from .memory import (
     build_recent_summary,
     load_recent_states_with_stats,
     rebuild_rolling_summary,
+    rebuild_structural_bias_history,
 )
 from .precompute import run_precompute
 from .prompts import (
@@ -391,8 +392,15 @@ def migrate_session(
     settings: Settings | None = None,
     client: AnthropicClient | None = None,
     force_fetch: bool = False,
+    overwrite_existing: bool = False,
 ) -> MigrationResult:
     settings = settings or get_settings()
+    existing_state = settings.daily_states_dir / f"{session.date}-state.json"
+    if existing_state.is_file() and not overwrite_existing:
+        raise MigrationError(
+            f"{session.date}: canonical state already exists at {existing_state}; "
+            "use overwrite_existing=True only for an intentional replacement"
+        )
     client = client or AnthropicClient(settings)
     framework = files.load_framework(settings)
     system_role = load_system_role(files.load_role(settings))
@@ -537,6 +545,7 @@ def migrate_session(
     files.write_json(settings.runs_dir / session.date / ANALYSIS_CONTEXT_FILENAME, analysis_context)
 
     rebuild_rolling_summary(settings=settings)
+    rebuild_structural_bias_history(as_of_date=session.date, settings=settings)
 
     from .prompts import INVESTOR_REPORT_SECTIONS
     from .rag_index import RagIndexError, index_rag_or_fail, split_report_sections
@@ -575,6 +584,7 @@ def migrate_history(
     settings: Settings | None = None,
     client: AnthropicClient | None = None,
     force_fetch: bool = False,
+    overwrite_existing: bool = False,
 ) -> list[MigrationResult]:
     sessions = filter_sessions(parse_history(history_path), from_date=from_date, to_date=to_date)
     if not sessions:
@@ -589,6 +599,7 @@ def migrate_history(
                 settings=settings,
                 client=client,
                 force_fetch=force_fetch,
+                overwrite_existing=overwrite_existing,
             )
         )
     return results

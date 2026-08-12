@@ -14,8 +14,13 @@ from .pipeline_client import PipelineLLMClient
 from .eps_history import eps_resolution_log, load_eps_history, require_eps_for_run
 from .memory import (
     build_recent_summary,
+    build_structural_bias_arcs,
+    load_all_states,
     load_recent_states_with_stats,
     rebuild_rolling_summary,
+    rebuild_structural_bias_history,
+    structural_bias_arc_prompt,
+    one_year_before,
 )
 from .pass2_images import Pass2ImagePlan, resolve_pass2_images
 from .precompute import run_precompute
@@ -98,6 +103,13 @@ def run_daily_analysis(
     warnings.extend(analysis_context.market_data.precompute_warnings)
 
     recent_summary: str | None = None
+    prior_bias_states = load_all_states(before_date=date, settings=settings)
+    prior_bias_arc = structural_bias_arc_prompt(
+        build_structural_bias_arcs(
+            prior_bias_states,
+            display_from=one_year_before(date),
+        )
+    )
     memory_load: dict[str, int] | None = None
     if settings.include_memory:
         recent_states, mem_stats = load_recent_states_with_stats(
@@ -132,6 +144,7 @@ def run_daily_analysis(
         analysis_context=analysis_context,
         recent_summary=recent_summary,
         eps_history=eps_history,
+        structural_bias_arc=prior_bias_arc,
     )
     state_call = client.run_structured_state(state_bundle, image_paths)
     nested_tool_input = flat_to_nested(state_call.tool_input or {})
@@ -175,6 +188,14 @@ def run_daily_analysis(
     warnings.extend(enforce_warnings)
     state_validation = _merge_enforcement_audit(state_validation, enforce_warnings)
 
+    current_bias_states = prior_bias_states + [daily_state]
+    current_bias_arc = structural_bias_arc_prompt(
+        build_structural_bias_arcs(
+            current_bias_states,
+            display_from=one_year_before(date),
+        )
+    )
+
     pass2_plan = resolve_pass2_images(run_dir, manifest, daily_state, settings)
     attached_names = {p.name for p in pass2_plan.attached}
     pass2_attached_entries = [c for c in manifest.ordered_charts() if c.file in attached_names]
@@ -195,6 +216,7 @@ def run_daily_analysis(
         pass2_reference_only=pass2_plan.reference_only,
         pass2_optimization_enabled=settings.pass2_image_optimization_enabled,
         eps_history=eps_history,
+        structural_bias_arc=current_bias_arc,
     )
     report_call = client.run_markdown_report(
         report_bundle, pass2_plan.attached, pass2_audit=pass2_audit
@@ -275,6 +297,7 @@ def run_daily_analysis(
     files.write_json(out / "analysis_context.json", analysis_context)
 
     rebuild_rolling_summary(settings=settings)
+    rebuild_structural_bias_history(as_of_date=date, settings=settings)
 
     from .rag_index import RagIndexError, index_rag_or_fail
 

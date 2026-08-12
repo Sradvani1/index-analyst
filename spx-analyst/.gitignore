@@ -13,9 +13,9 @@ docs/archive/
 output/*/
 data/runs/*/
 data/master/anchor_state.json
-memory/daily_states/*.json
-memory/daily_reports/*.md
 memory/rolling/*
 memory/chat/
 memory/rag/
 daily_pdfs/*.pdf
+.vercel
+.env.local

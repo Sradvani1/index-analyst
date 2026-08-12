@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 import { AssistantWorkspace } from "@/components/chat/assistant-workspace";
 
 interface AssistantSessionPageProps {
@@ -5,6 +7,10 @@ interface AssistantSessionPageProps {
 }
 
 export default async function AssistantSessionPage({ params }: AssistantSessionPageProps) {
+  if (process.env.SPX_CHAT_ENABLED === "false") {
+    notFound();
+  }
+
   const { sessionId } = await params;
   return <AssistantWorkspace sessionId={sessionId} />;
 }

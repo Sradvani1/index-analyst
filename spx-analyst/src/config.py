@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     openai_vector_store_id: str = Field(default="", alias="OPENAI_VECTOR_STORE_ID")
     model: str = Field(default="claude-opus-5", alias="SPX_MODEL")
     prompt_cache_enabled: bool = Field(default=True, alias="SPX_PROMPT_CACHE_ENABLED")
+    chat_enabled: bool = Field(default=True, alias="SPX_CHAT_ENABLED")
 
     # Run tuning
     recent_state_count: int = Field(default=6, alias="SPX_RECENT_STATE_COUNT")
@@ -132,6 +133,10 @@ class Settings(BaseSettings):
     @property
     def rolling_dir(self) -> Path:
         return self.memory_dir / "rolling"
+
+    @property
+    def structural_bias_history_path(self) -> Path:
+        return self.rolling_dir / "structural_bias_history.json"
 
     @property
     def rag_dir(self) -> Path:
