@@ -24,7 +24,7 @@ from tests.sample_analysis_context import sample_analysis_context
 def test_render_header_snapshot_includes_close_line(sample_state):
     ctx = sample_analysis_context(sample_state.date)
     header = render_header_snapshot(date=sample_state.date, daily_state=sample_state, analysis_context=ctx)
-    assert header.startswith(f"# SPX Daily Analysis — {sample_state.date}")
+    assert header.startswith(f"# SPX Daily Analysis - {sample_state.date}")
     assert "Close:" in header
     assert sample_state.structural_bias in header
     assert "Framework version:" in header
@@ -72,7 +72,7 @@ def test_extract_prose_sections_strips_preamble_and_matrix():
 
 def test_assemble_investor_report_nine_visible_parts(sample_state):
     report = assembled_report_for_state(sample_state, date="2026-06-12")
-    assert report.startswith("# SPX Daily Analysis — 2026-06-12")
+    assert report.startswith("# SPX Daily Analysis - 2026-06-12")
     headings = re.findall(r"^##\s+(.+?)\s*$", report, re.MULTILINE)
     assert headings == INVESTOR_REPORT_SECTIONS
     assert "Key valuation levels" in report
@@ -93,3 +93,4 @@ def test_assemble_investor_report_golden_snapshot(sample_state):
     assert "**Extension vs valuation**" in report
     assert "**extension_vs_valuation**" not in report
     assert "Recommended Action" in report
+    assert "—" not in report

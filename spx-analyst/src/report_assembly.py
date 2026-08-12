@@ -14,6 +14,11 @@ _H1_RE = re.compile(r"^#\s+.+$", re.MULTILINE)
 _MATRIX_HEADING = INVESTOR_REPORT_SECTIONS[-1]
 
 
+def _remove_em_dashes(text: str) -> str:
+    """Keep the published report within the prose style contract."""
+    return text.replace("—", "-")
+
+
 def _format_close(value: float) -> str:
     return format_price(value)
 
@@ -37,7 +42,7 @@ def render_header_snapshot(
 ) -> str:
     close = analysis_context.market_data.spx_close
     lines = [
-        f"# SPX Daily Analysis — {date}",
+        f"# SPX Daily Analysis - {date}",
         "",
         f"**Framework version:** {daily_state.framework_version}",
         (
@@ -240,4 +245,4 @@ def assemble_investor_report(
             parts.append(render_tactical_levels_block(analysis_context=analysis_context))
 
     parts.append(render_decision_matrix_table(daily_state=daily_state))
-    return "\n".join(parts).rstrip() + "\n"
+    return _remove_em_dashes("\n".join(parts).rstrip() + "\n")
