@@ -185,6 +185,7 @@ def test_report_prompt_lists_investor_sections(sample_state):
     assert "Evidence Reconciliation" not in bundle.body
     assert sample_state.primary_tension in bundle.body
     assert "Read-only fact snippets" in bundle.body
+    assert "Do not use em dashes" in bundle.body
     assert len(PASS2_PROSE_SECTIONS) == 8
     assert len(INVESTOR_REPORT_SECTIONS) == 9
 

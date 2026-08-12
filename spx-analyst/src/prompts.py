@@ -425,6 +425,8 @@ def build_report_prompt(
         "- `## Updated Decision Matrix` (Python renders the matrix from validated state)\n\n"
         "Audience: an experienced investor reading a daily market report. "
         "Lead each section with the takeaway in the first sentence; support with evidence after.\n\n"
+        "Do not use em dashes (—) anywhere in the report. Use commas, periods, "
+        "semicolons, colons, or parentheses instead.\n\n"
         "Do not write in prose: chart filenames (e.g. *.png), workflow labels (\"Step N\", "
         "\"Pre-Step\"), attributing conclusions to \"the framework\", or snake_case divergence ids as "
         "headings — use plain English headings and state conclusions directly. You may use framework_rule and chart_refs from the "
