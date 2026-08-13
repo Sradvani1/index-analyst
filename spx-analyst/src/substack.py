@@ -9,22 +9,40 @@ from typing import Any
 
 from .schemas import DailyState, SubstackArticle, SUBSTACK_SECTIONS
 
+_INTERNAL_ANALYSIS_RE = re.compile(
+    r"monte\s+carlo|probabilit(?:y|ies)|up-first|down-first|drift\s+path|"
+    r"cash-drag|rally exhaustion|conditional cascade|\bσ\b|\bμ\b",
+    re.IGNORECASE,
+)
+
+
+def sanitize_substack_sources(daily_state: DailyState, report_markdown: str) -> tuple[str, str]:
+    """Remove internal Monte Carlo material before editorial generation."""
+    state = daily_state.model_dump(mode="json", exclude={"monte_carlo"})
+    sections = re.split(r"(?=^##\s+)", report_markdown, flags=re.MULTILINE)
+    visible_sections: list[str] = []
+    for section in sections:
+        heading = re.match(r"^##\s+(.+?)\s*$", section, re.MULTILINE)
+        if heading and "monte carlo" in heading.group(1).lower():
+            continue
+        blocks = re.split(r"\n\s*\n", section)
+        visible_sections.append(
+            "\n\n".join(block for block in blocks if not _INTERNAL_ANALYSIS_RE.search(block))
+        )
+    return json.dumps(state, indent=2), "\n\n".join(visible_sections).strip()
+
 
 def build_substack_prompt(daily_state: DailyState, report_markdown: str) -> str:
-    state = json.dumps(daily_state.model_dump(mode="json"), indent=2)
-    headings = ", ".join(SUBSTACK_SECTIONS)
+    state, report = sanitize_substack_sources(daily_state, report_markdown)
     return (
-        "Create a concise daily market article from the supplied technical report.\n\n"
-        "Audience: sophisticated retail investors and fund managers who want a clear "
-        "three-to-five-minute read. Use calm, analytical, plain English. Explain useful "
-        "technical terms briefly, keep paragraphs short, and do not give personalized advice.\n\n"
-        "The validated daily state is authoritative. Rewrite and explain it, but do not "
-        "change its posture, recommendation, or conclusions. Use only facts from the supplied "
-        "state and report. Do not mention internal passes, prompts, filenames, or the framework.\n\n"
-        f"Return JSON with exactly these section keys, in this order: {headings}. Also return "
-        "title and subtitle. Target 600-900 words. Return no Markdown fences or extra text.\n\n"
-        f"Validated daily state:\n```json\n{state}\n```\n\n"
-        f"Technical report:\n```markdown\n{report_markdown}\n```"
+        "SOURCE CONTEXT: VALIDATED DAILY STATE\n"
+        "```json\n"
+        f"{state}\n"
+        "```\n\n"
+        "SOURCE CONTEXT: TECHNICAL REPORT\n"
+        "```markdown\n"
+        f"{report}\n"
+        "```"
     )
 
 
