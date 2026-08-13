@@ -335,10 +335,8 @@ def _multi_panel() -> tuple[plt.Figure, plt.Axes, plt.Axes, plt.Axes]:
 
 
 def _format_date(d: date) -> str:
-    today = date.today()
-    if d.year == today.year:
-        return d.strftime("%b %d")
-    return d.strftime("%b %d %Y")
+    """Format chart ticks compactly; chronology provides year context."""
+    return d.strftime("%b %d")
 
 
 def _daily_tick_labels(dates: list[date], n_ticks: int = 8) -> tuple[list[int], list[str]]:
