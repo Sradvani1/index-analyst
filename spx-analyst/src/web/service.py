@@ -107,10 +107,14 @@ def get_run(date: str, settings: Settings | None = None) -> RunDetail:
 
     daily_state = _load_state(state_path)
     report_markdown = read_text(report_path)
+    substack_path = settings.daily_reports_dir / f"{date}-substack.md"
+    html_path = settings.daily_reports_dir / f"{date}-substack.html"
     return RunDetail(
         date=date,
         report_markdown=report_markdown,
         daily_state=daily_state,
+        substack_markdown=read_text(substack_path) if substack_path.is_file() else None,
+        substack_html=read_text(html_path) if html_path.is_file() else None,
     )
 
 

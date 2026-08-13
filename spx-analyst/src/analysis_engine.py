@@ -30,6 +30,7 @@ from .schemas import AnalysisContext, DailyState, ValidationIssue, ValidationRep
 from .state_enforcement import apply_precomputed_fields, audit_enforcement_issues
 from .state_normalize import resolve_pass1_daily_state
 from .validation import validate_report, validation_errors_text
+from .substack import render_substack_html, render_substack_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,7 @@ def run_daily_analysis(
     settings = settings or get_settings()
     started = dt.datetime.now(dt.timezone.utc).isoformat()
     warnings: list[str] = []
+    client_injected = client is not None
 
     framework = files.load_framework(settings)
     role_text = files.load_role(settings)
@@ -235,6 +237,20 @@ def run_daily_analysis(
     )
     warnings.extend(i.message for i in report_validation.warnings)
 
+    substack_article = None
+    substack_audit: dict[str, object] | None = None
+    if settings.openai_api_key and not client_injected:
+        from .openai_pipeline_client import OpenAIPipelineClient
+
+        editorial_client = OpenAIPipelineClient(settings)
+        substack_article, substack_audit = editorial_client.run_substack_article(
+            daily_state, report_md
+        )
+        substack_md = render_substack_markdown(substack_article)
+    else:
+        warnings.append("Substack article skipped: OPENAI_API_KEY is not set")
+        substack_md = None
+
     run_log: dict[str, object] = {
         "started": started,
         "finished": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -269,6 +285,14 @@ def run_daily_analysis(
             "assembled_chars": len(report_md),
         },
     }
+    if substack_article is not None and substack_audit is not None:
+        assert substack_md is not None
+        run_log["substack"] = {
+            "status": "ok",
+            "title": substack_article.title,
+            "word_count": len(substack_md.split()),
+            "model": substack_audit["model"],
+        }
     if memory_load is not None:
         run_log["memory_load"] = memory_load
     eps_sync_log = _load_eps_sync_log(run_dir)
@@ -293,6 +317,22 @@ def run_daily_analysis(
         ],
         settings=settings,
     )
+    if substack_md is not None:
+        assert substack_article is not None
+        files.write_text(out / f"{date}-substack.md", substack_md)
+        files.write_text(settings.daily_reports_dir / f"{date}-substack.md", substack_md)
+        files.write_text(
+            out / f"{date}-substack.html",
+            render_substack_html(substack_article),
+        )
+        files.write_text(
+            settings.daily_reports_dir / f"{date}-substack.html",
+            render_substack_html(substack_article),
+        )
+    else:
+        for directory in (out, settings.daily_reports_dir):
+            (directory / f"{date}-substack.md").unlink(missing_ok=True)
+            (directory / f"{date}-substack.html").unlink(missing_ok=True)
     files.write_json(run_dir / files.ANALYSIS_CONTEXT_FILENAME, analysis_context)
     files.write_json(out / "analysis_context.json", analysis_context)
 

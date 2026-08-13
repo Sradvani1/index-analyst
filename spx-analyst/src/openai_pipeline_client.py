@@ -25,7 +25,8 @@ from .config import Settings, get_settings
 from .pipeline_client import CallResult, PassTelemetry
 from .pipeline_utils import encode_image
 from .prompts import PromptBundle
-from .schemas import DailyState, EmitDailyStateInput
+from .schemas import DailyState, EmitDailyStateInput, SubstackArticle
+from .substack import build_substack_prompt, parse_substack_response
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,18 @@ def _repair_response_text() -> dict[str, Any]:
             "type": "json_schema",
             "name": "emit_daily_state",
             "schema": _make_strict_schema(DailyState),
+            "strict": True,
+        }
+    }
+
+
+def _substack_response_text() -> dict[str, Any]:
+    schema = _make_strict_schema(SubstackArticle)
+    return {
+        "format": {
+            "type": "json_schema",
+            "name": "emit_substack_article",
+            "schema": schema,
             "strict": True,
         }
     }
@@ -352,3 +365,42 @@ class OpenAIPipelineClient:
             raw_response=response.model_dump(mode="json"),
             request_snapshot=snapshot,
         )
+
+    def run_substack_article(
+        self, daily_state: DailyState, report_markdown: str
+    ) -> tuple[SubstackArticle, dict[str, Any]]:
+        """Generate the short editorial article from validated analysis."""
+        instructions = (
+            "You are the daily editor for a serious market publication. Return only valid JSON. "
+            "The supplied validated state is authoritative. Simplify the report without changing "
+            "its posture, recommendation, or conclusions."
+        )
+        body = build_substack_prompt(daily_state, report_markdown)
+        t0 = time.monotonic()
+        response = self._create(
+            model=self.settings.openai_substack_model,
+            instructions=instructions,
+            input=[{"role": "user", "content": body}],
+            text=_substack_response_text(),
+            max_output_tokens=3000,
+            store=False,
+        )
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        raw_text = _extract_output_text(response)
+        telemetry = _build_telemetry(
+            provider="openai",
+            model=self.settings.openai_substack_model,
+            pass_name="substack",
+            response=response,
+            elapsed_ms=elapsed_ms,
+            image_count=0,
+        )
+        article = parse_substack_response(raw_text)
+        logger.info("generated Substack article for %s", daily_state.date)
+        return article, {
+            "model": self.settings.openai_substack_model,
+            "mode": "substack",
+            "telemetry": dataclasses.asdict(telemetry),
+            "body_chars": len(body),
+            "response_raw": response.model_dump(mode="json"),
+        }

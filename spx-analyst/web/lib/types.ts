@@ -116,6 +116,8 @@ export interface RunDetail {
   date: string;
   report_markdown: string;
   daily_state: DailyState;
+  substack_markdown?: string | null;
+  substack_html?: string | null;
 }
 
 export interface FrameworkResponse {

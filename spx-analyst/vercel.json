@@ -12,7 +12,7 @@
       "installCommand": "pip install -r requirements-deploy.txt",
       "functions": {
         "src/web/app.py": {
-          "includeFiles": "{memory/**,framework/**}",
+          "includeFiles": "{memory/daily_reports/**,memory/daily_states/**,framework/**}",
           "excludeFiles": "{data/**,tests/**,docs/**,scripts/**,daily_pdfs/**,output/**,web/**,.venv/**}"
         }
       }

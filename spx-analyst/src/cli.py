@@ -325,6 +325,47 @@ def export_report(
             subprocess.run(["start", "", str(dest)], shell=True, check=False)
 
 
+@app.command("generate-substack")
+def generate_substack(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+) -> None:
+    """Generate or retry the short Substack article from an existing report."""
+    date = date or _today()
+    try:
+        date = dt.date.fromisoformat(date).isoformat()
+    except ValueError:
+        typer.secho("Date must be YYYY-MM-DD", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+    settings = get_settings()
+    report_path = settings.daily_reports_dir / f"{date}-analysis.md"
+    state_path = settings.daily_states_dir / f"{date}-state.json"
+    if not report_path.is_file() or not state_path.is_file():
+        typer.secho(f"No completed analysis found for {date}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+    if not settings.openai_api_key:
+        typer.secho("OPENAI_API_KEY is not set", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    from .files import write_text
+    from .openai_pipeline_client import OpenAIPipelineClient
+    from .schemas import DailyState
+    from .substack import render_substack_html, render_substack_markdown
+
+    state = DailyState.model_validate(read_json(state_path))
+    article, _audit = OpenAIPipelineClient(settings).run_substack_article(
+        state, read_text(report_path)
+    )
+    substack_md = render_substack_markdown(article)
+    html = render_substack_html(article)
+    out = settings.output_dir / date
+    out.mkdir(parents=True, exist_ok=True)
+    write_text(settings.daily_reports_dir / f"{date}-substack.md", substack_md)
+    write_text(settings.daily_reports_dir / f"{date}-substack.html", html)
+    write_text(out / f"{date}-substack.md", substack_md)
+    write_text(out / f"{date}-substack.html", html)
+    typer.secho("Substack article generated", fg=typer.colors.GREEN)
+
+
 @app.command("migrate-perplexity")
 def migrate_perplexity(
     history: Path = typer.Option(..., "--history", help="Path to perplexity_analysis_history.md."),

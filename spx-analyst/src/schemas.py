@@ -51,6 +51,50 @@ class DailyManifest(BaseModel):
         return sorted(self.charts, key=lambda c: c.order)
 
 
+SUBSTACK_SECTIONS = [
+    "The Takeaway",
+    "What Happened Today",
+    "Why It Matters",
+    "Levels and Signals to Watch",
+    "The Bull Case",
+    "The Risk Case",
+    "Bottom Line",
+]
+
+
+class SubstackArticle(BaseModel):
+    """Structured editorial rewrite for the short daily publication."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(..., min_length=1)
+    subtitle: str = Field(..., min_length=1)
+    sections: "SubstackSections"
+
+    @model_validator(mode="after")
+    def _check_sections(self) -> "SubstackArticle":
+        if any(not text.strip() for text in self.sections.model_dump().values()):
+            raise ValueError("substack sections must not be empty")
+        return self
+
+
+class SubstackSections(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    the_takeaway: str = Field(..., min_length=1, alias="The Takeaway")
+    what_happened_today: str = Field(..., min_length=1, alias="What Happened Today")
+    why_it_matters: str = Field(..., min_length=1, alias="Why It Matters")
+    levels_and_signals_to_watch: str = Field(
+        ..., min_length=1, alias="Levels and Signals to Watch"
+    )
+    the_bull_case: str = Field(..., min_length=1, alias="The Bull Case")
+    the_risk_case: str = Field(..., min_length=1, alias="The Risk Case")
+    bottom_line: str = Field(..., min_length=1, alias="Bottom Line")
+
+    def ordered_values(self) -> dict[str, str]:
+        return self.model_dump(by_alias=True)
+
+
 class EpsHistoryEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { BackendUnavailable } from "@/components/backend-unavailable";
 import { ReportView } from "@/components/report-view";
+import { PublishView } from "@/components/publish-view";
 import { getRun } from "@/lib/api";
 import { ApiError } from "@/lib/types";
 
@@ -23,7 +24,12 @@ export default async function RunPage({ params }: RunPageProps) {
   }
 
   return (
-    <ReportView markdown={run.report_markdown} dailyState={run.daily_state} />
+    <>
+      <ReportView markdown={run.report_markdown} dailyState={run.daily_state} />
+      {run.substack_markdown ? (
+        <PublishView markdown={run.substack_markdown} html={run.substack_html ?? undefined} />
+      ) : null}
+    </>
   );
 }
 

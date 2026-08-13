@@ -140,6 +140,28 @@ def test_get_run_success(tmp_path, monkeypatch) -> None:
     assert data["daily_state"]["spx_close"] == SAMPLE_STATE["spx_close"]
 
 
+def test_get_run_includes_substack_artifacts(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    date = "2026-06-12"
+    write_state(settings, date)
+    _write_report(settings, date)
+    settings.daily_reports_dir.mkdir(parents=True, exist_ok=True)
+    (settings.daily_reports_dir / f"{date}-substack.md").write_text(
+        "# Daily Take\n\n## The Takeaway\n\nA concise read.\n", encoding="utf-8"
+    )
+    (settings.daily_reports_dir / f"{date}-substack.html").write_text(
+        "<h1>Daily Take</h1>", encoding="utf-8"
+    )
+
+    response = TestClient(app).get(f"/api/runs/{date}")
+
+    assert response.status_code == 200
+    assert response.json()["substack_markdown"].startswith("# Daily Take")
+    assert response.json()["substack_html"] == "<h1>Daily Take</h1>"
+
+
 def test_list_runs_includes_posture_lead_from_report(tmp_path, monkeypatch) -> None:
     settings = make_settings(tmp_path)
     monkeypatch.setattr("src.web.service.get_settings", lambda: settings)

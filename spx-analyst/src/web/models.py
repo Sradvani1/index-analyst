@@ -33,6 +33,8 @@ class RunDetail(BaseModel):
     date: str
     report_markdown: str
     daily_state: DailyState
+    substack_markdown: str | None = None
+    substack_html: str | None = None
 
 
 class FrameworkResponse(BaseModel):
