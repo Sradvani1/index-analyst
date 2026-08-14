@@ -1,5 +1,7 @@
 # PR-21: Provider Abstraction Layer
 
+> Historical record. References to the retired vector-store index are preserved only for change history.
+
 **Status:** Complete  
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-20: Prepare-run workflow](PR-20-prepare-run-workflow.md)

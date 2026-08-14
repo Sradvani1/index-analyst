@@ -2,7 +2,7 @@
 
 A headless, file-driven analysis engine for the S&P 500 daily tactical framework.
 It ingests a daily chart pack, precomputes numeric context (yfinance + master EPS history),
-runs a two-pass Claude pipeline with deterministic post-Pass-1 enforcement, and emits
+runs a two-pass Google Gemini pipeline by default with deterministic post-Pass-1 enforcement, and emits
 a markdown report plus structured JSON state.
 
 **Framework version:** `daily-2026-06`
@@ -29,8 +29,9 @@ a markdown report plus structured JSON state.
 - [PR-18: Pass 2 Task voice](docs/PR-18-pass2-task-voice.md) — investor daily report audience, prose bans, posture-based Evidence resolution in Pass 2 Task
 - [PR-19: Chart generation engine](docs/PR-19-chart-generation-engine.md) — automated SPX price charts + CNN Fear & Greed charts
 - [PR-20: Prepare-run workflow](docs/PR-20-prepare-run-workflow.md) — two-step `prepare` → `run` eliminates separate generation + import steps
-- [PR-21: Provider abstraction layer](docs/PR-21-provider-abstraction-layer.md) — `PipelineLLMClient` Protocol; Anthropic default, OpenAI opt-in via `SPX_LLM_PROVIDER`
-- [PR-22: OpenAI pipeline client](docs/PR-22-openai-pipeline-client.md) — `OpenAIPipelineClient` on Responses API; Anthropic remains default until OpenAI shadow-run validation
+- [PR-21: Provider abstraction layer](docs/PR-21-provider-abstraction-layer.md) — `PipelineLLMClient` Protocol; all analytical providers remain selectable via `SPX_LLM_PROVIDER`
+- [PR-22: OpenAI pipeline client](docs/PR-22-openai-pipeline-client.md) — `OpenAIPipelineClient` on Responses API; OpenAI remains available as an override
+- [PR-27: Google Gemini pipeline client](docs/PR-27-google-gemini-provider.md) — Google AI Studio Gemini as a third selectable analytical provider
 - [PR-24: Daily surgical fixes](docs/PR-24-daily-reanchor-probability-regime.md) — swing-high re-anchoring (anchor-authority state machine) + Monte Carlo probability-regime label
 
 ## How it works
@@ -89,10 +90,6 @@ full resolution, legacy manifest prompt block).
 On every **successful** run, canonical state and report files are mirrored into
 `memory/daily_states/` and `memory/daily_reports/` (used by the web viewer).
 `rebuild_rolling_summary` refreshes `memory/rolling/` after every successful run.
-Report sections are then uploaded to the OpenAI vector store for the research
-assistant (requires `OPENAI_API_KEY` and `OPENAI_VECTOR_STORE_ID` in `.env`).
-If indexing fails, the run exits with an error after memory is saved — retry with
-`python -m src.cli index-rag --date YYYY-MM-DD`.
 `SPX_INCLUDE_MEMORY=true` gates **prompt injection** of the posture snapshot into
 Pass 1/Pass 2 only — archival and rolling rebuild always run on success.
 
@@ -150,13 +147,20 @@ Set these in `.env` (see `.env.example`):
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `ANTHROPIC_API_KEY` | — | Required for live runs |
-| `OPENAI_API_KEY` | — | Required for post-run RAG indexing and chat assistant (Phase 2+) |
-| `OPENAI_VECTOR_STORE_ID` | — | Vector store for report section retrieval (chat `file_search` + indexing) |
+| `ANTHROPIC_API_KEY` | — | Required when Anthropic is the selected pipeline provider |
+| `GOOGLE_API_KEY` | — | Required when Google is the selected pipeline provider |
+| `OPENAI_API_KEY` | — | Required only when using the optional OpenAI pipeline or chat assistant |
 | `SPX_CHAT_ENABLED` | `true` | Enable the local research assistant; set `false` for Vercel |
-| `OPENAI_CHAT_MODEL` | `gpt-5` | Responses API model for chat; create vector store via [operator guide](docs/research-assistant-operator-guide.md) |
-| `SPX_MODEL` | `claude-opus-5` | Claude model for both passes |
-| `SPX_LLM_PROVIDER` | `anthropic` | LLM provider for both passes; `openai` opts into `OpenAIPipelineClient` (PR-21/PR-22) |
+| `OPENAI_CHAT_MODEL` | `gpt-5` | Responses API model for the optional local chat assistant |
+| `SPX_MODEL` | `claude-opus-5` | Anthropic model for both passes |
+| `SPX_OPENAI_PIPELINE_MODEL` | `gpt-5.6-sol` | OpenAI Responses pipeline model |
+| `SPX_GOOGLE_PIPELINE_MODEL` | `gemini-3.7-flash` | Google AI Studio Gemini pipeline model |
+| `SPX_GOOGLE_THINKING_LEVEL` | unset | Optional Gemini thinking level: `MINIMAL`, `LOW`, `MEDIUM`, or `HIGH`; unset uses Gemini default thinking |
+| `SPX_GOOGLE_STATE_THINKING_LEVEL` | `HIGH` | Pass 1 thinking level; takes precedence over the shared thinking level |
+| `SPX_GOOGLE_REPORT_THINKING_LEVEL` | unset | Optional Pass 2 override; takes precedence over the shared thinking level |
+| `SPX_GOOGLE_MAX_OUTPUT_TOKENS` | `16000` | Gemini output budget, including thinking tokens when enabled |
+| `SPX_GOOGLE_SUBSTACK_MAX_OUTPUT_TOKENS` | `8000` | Gemini Substack output budget, including default thinking tokens |
+| `SPX_LLM_PROVIDER` | `google` | Pipeline and Substack provider: `google`, `anthropic`, or `openai` |
 | `SPX_PROMPT_CACHE_ENABLED` | `true` | Reuse framework + tool schema across passes |
 | `SPX_INCLUDE_MEMORY` | `false` | Inject prior posture snapshot into Pass 1/Pass 2 (rebuild always runs on success; rollup is categorical-only — no historical numerics) |
 | `SPX_IMAGE_MAX_DIMENSION` | `1568` | Long-edge resize for Pass 1 chart images (and Pass 2 when optimization off) |
@@ -201,7 +205,7 @@ python -m src.cli setup-run --date 2026-06-12 --precompute
 
 # Primary two-step workflow: prepare → run (auto-generates all 15 charts)
 python -m src.cli prepare --date 2026-07-08          # generates charts + precompute
-python -m src.cli run --date 2026-07-08               # two-pass Claude analysis
+python -m src.cli run --date 2026-07-08               # two-pass Google Gemini analysis
 
 # Force regenerate an already-prepared date
 python -m src.cli prepare --date 2026-07-08 --force
@@ -227,10 +231,6 @@ python -m src.cli validate --date 2026-06-12
 
 # Rebuild memory/rolling/recent_summary.md from archived states (also runs automatically after every successful run)
 python -m src.cli rebuild-summary --days 6
-
-# Upload report sections to OpenAI vector store (also runs automatically after every successful run)
-python -m src.cli index-rag --date 2026-06-12
-python -m src.cli index-rag --backfill
 
 # Research assistant REPL (OpenAI Responses + three-layer preload)
 python -m src.cli chat
@@ -294,7 +294,6 @@ memory/daily_states/2026-06-12-state.json      # mirrored on successful run
 memory/daily_reports/2026-06-12-analysis.md    # mirrored on successful run
 memory/rolling/recent_summary.md               # posture snapshot rollup (rebuilt every successful run)
 memory/rolling/recent_memory.json              # JSON mirror of states used in rollup
-memory/rag/2026-06-12.json                     # OpenAI file IDs per indexed section (after index-rag)
 ```
 
 After a successful `run`, `analysis_context.json` exists in **both** the run
@@ -313,17 +312,11 @@ fixed fixtures; live yfinance is not required for CI.
 
 ## Research assistant
 
-Personal localhost chat over published runs — three-layer compact preload ([PR-15](docs/PR-15-compact-chat-preload.md): analyst charter + current house view + recent arc) plus section-vector RAG ([PR-10](docs/PR-10-research-assistant-phase1.md)–[PR-16](docs/PR-16-analyst-charter-preload-voice.md)).
+Personal localhost chat over published runs using a three-layer compact preload ([PR-15](docs/PR-15-compact-chat-preload.md): analyst charter + current house view + recent arc).
 
 **Operator walkthrough:** [docs/research-assistant-operator-guide.md](docs/research-assistant-operator-guide.md)
 
 ```bash
-# One-time OpenAI setup (prints vector store id for .env)
-python scripts/setup_openai_resources.py
-
-# Backfill report sections into vector store
-python -m src.cli index-rag --backfill
-
 # CLI chat (no UI)
 python -m src.cli chat
 ```
@@ -418,7 +411,7 @@ Open http://localhost:3000. API docs: http://127.0.0.1:8000/docs. Assistant: htt
 framework/   SPX-Daily-Analysis-Framework.md + SPX-Claude-Role-Block.md (runtime);
              chat-assistant-instructions.md (research assistant)
 docs/        PR implementation records; docs/archive/ for retired specs
-scripts/     operator utilities (e.g. setup_openai_resources.py)
+scripts/     operator utilities
 data/
   master/    eps_history.json — sole normalized StreetStats EPS source
   runs/      dated input folders (charts + manifest + precompute cache)

@@ -22,58 +22,13 @@ from tenacity import (
 )
 
 from .config import Settings, get_settings
-from .pipeline_client import CallResult, PassTelemetry
+from .pipeline_client import CallResult, PassTelemetry, PipelineClientError
 from .pipeline_utils import encode_image
 from .prompts import PromptBundle
 from .schemas import DailyState, EmitDailyStateInput, SubstackArticle
-from .substack import build_substack_prompt, parse_substack_response
+from .substack import SUBSTACK_INSTRUCTIONS, build_substack_prompt, parse_substack_response
 
 logger = logging.getLogger(__name__)
-
-_SUBSTACK_INSTRUCTIONS = """You are the writer for a daily stock market publication.
-
-Task:
-Rewrite the supplied technical SPX market report into a concise daily article for retail investors who want a clear three-to-five-minute read.
-
-Source authority:
-- The validated daily state is authoritative.
-- Explain the supplied analysis. Do not independently reanalyze the market.
-- Preserve the meaning of the supplied structural bias, market conclusion, and posture.
-- Preserve key levels, confirmation conditions, and invalidation conditions.
-- Translate internal labels and classifications into plain, reader-facing language.
-- Use only facts from the supplied daily state and technical report.
-
-Audience and style:
-- Use calm, analytical, plain English.
-- Preserve useful technical detail. Briefly explain specialized terms when helpful.
-- Do not mention Monte Carlo or its outputs.
-- Keep paragraphs short and prioritize what changed, why it matters, confirmation conditions,
-  invalidation conditions, and the bottom line.
-- Do not repeat a level, posture, or conclusion unless the later reference adds a
-  materially different implication.
-- Avoid unexplained jargon and oversimplification.
-- Avoid stock phrases and repetitive transitions.
-- Do not use em dashes, colons, or semicolons anywhere in the article. Use periods or commas instead.
-- Do not use sensational, promotional, or alarmist language.
-- Do not make guarantees, provide personalized investment advice, or recommend position
-  sizes or allocations.
-
-Required output:
-- Return only the JSON object defined by the response schema.
-- Return a useful title and subtitle, followed by exactly these sections in this order:
-  The Takeaway
-  What Happened Today
-  Why It Matters
-  Levels and Signals to Watch
-  The Bull Case
-  The Risk Case
-  Bottom Line
-- Every section must contain substantive prose. Target 600-900 words overall.
-- Do not return Markdown fences, commentary, or any extra fields.
-
-State conclusions directly for the reader. Do not mention internal framework terminology,
-source documents, model mechanics, or the generation process.
-"""
 
 _RESPONSE_TRANSIENT_ERRORS = (
     openai.APIConnectionError,
@@ -81,7 +36,7 @@ _RESPONSE_TRANSIENT_ERRORS = (
 )
 
 
-class OpenAIPipelineError(Exception):
+class OpenAIPipelineError(PipelineClientError):
     """Raised when the provider response is missing or unusable."""
 
 
@@ -417,14 +372,17 @@ class OpenAIPipelineClient:
         """Generate the short editorial article from validated analysis."""
         body = build_substack_prompt(daily_state, report_markdown)
         t0 = time.monotonic()
-        response = self._create(
-            model=self.settings.openai_substack_model,
-            instructions=_SUBSTACK_INSTRUCTIONS,
-            input=[{"role": "user", "content": body}],
-            text=_substack_response_text(),
-            max_output_tokens=3000,
-            store=False,
-        )
+        try:
+            response = self._create(
+                model=self.settings.openai_substack_model,
+                instructions=SUBSTACK_INSTRUCTIONS,
+                input=[{"role": "user", "content": body}],
+                text=_substack_response_text(),
+                max_output_tokens=3000,
+                store=False,
+            )
+        except Exception as exc:
+            raise OpenAIPipelineError("OpenAI Substack request failed") from exc
         elapsed_ms = int((time.monotonic() - t0) * 1000)
         raw_text = _extract_output_text(response)
         telemetry = _build_telemetry(
@@ -435,7 +393,10 @@ class OpenAIPipelineClient:
             elapsed_ms=elapsed_ms,
             image_count=0,
         )
-        article = parse_substack_response(raw_text)
+        try:
+            article = parse_substack_response(raw_text)
+        except ValueError as exc:
+            raise OpenAIPipelineError("OpenAI Substack response was invalid") from exc
         logger.info("generated Substack article for %s", daily_state.date)
         return article, {
             "model": self.settings.openai_substack_model,

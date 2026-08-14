@@ -7,7 +7,12 @@ from unittest.mock import patch
 
 import pytest
 
-from src.analysis_engine import RunError, _resolve_pipeline_client, run_daily_analysis
+from src.analysis_engine import (
+    RunError,
+    _pipeline_model,
+    _resolve_pipeline_client,
+    run_daily_analysis,
+)
 from src.anthropic_client import AnthropicClient
 from src.pipeline_client import CallResult, PassTelemetry, PipelineLLMClient
 
@@ -15,10 +20,13 @@ from tests.conftest import SAMPLE_STATE, build_run_dir, make_settings
 from tests.fixtures.investor_report import PASS2_PROSE
 
 
-def test_default_resolves_anthropic(tmp_path):
+def test_default_resolves_google(tmp_path):
+    from src.google_pipeline_client import GooglePipelineClient
+
     settings = make_settings(tmp_path)
-    client = _resolve_pipeline_client(settings)
-    assert isinstance(client, AnthropicClient)
+    with patch.object(GooglePipelineClient, "_build_client", return_value=object()):
+        client = _resolve_pipeline_client(settings)
+    assert isinstance(client, GooglePipelineClient)
 
 
 @pytest.mark.parametrize("value", ["anthropic", "ANTHROPIC", "Anthropic"])
@@ -37,6 +45,51 @@ def test_resolves_openai(tmp_path):
     settings.llm_provider = "openai"
     client = _resolve_pipeline_client(settings)
     assert isinstance(client, OpenAIPipelineClient)
+
+
+def test_resolves_google(tmp_path):
+    from src.google_pipeline_client import GooglePipelineClient
+
+    settings = make_settings(tmp_path)
+    settings.google_api_key = "test"
+    settings.llm_provider = "google"
+    with patch.object(GooglePipelineClient, "_build_client", return_value=object()):
+        client = _resolve_pipeline_client(settings)
+    assert isinstance(client, GooglePipelineClient)
+
+
+@pytest.mark.parametrize("value", ["google", "GOOGLE", "Google"])
+def test_case_insensitive_google_resolution(tmp_path, value):
+    from src.google_pipeline_client import GooglePipelineClient
+
+    settings = make_settings(tmp_path)
+    settings.google_api_key = "test"
+    settings.llm_provider = value
+    with patch.object(GooglePipelineClient, "_build_client", return_value=object()):
+        client = _resolve_pipeline_client(settings)
+    assert isinstance(client, GooglePipelineClient)
+
+
+@pytest.mark.parametrize(
+    ("provider", "configured", "expected"),
+    [
+        ("anthropic", "claude-test", "claude-test"),
+        ("openai", "gpt-test", "gpt-test"),
+        ("openai", "", "gpt-5.6-sol"),
+        ("google", "gemini-test", "gemini-test"),
+        ("google", "", "gemini-3.7-flash"),
+    ],
+)
+def test_pipeline_model_matches_selected_provider(tmp_path, provider, configured, expected):
+    settings = make_settings(tmp_path)
+    settings.llm_provider = provider
+    if provider == "anthropic":
+        settings.model = configured
+    elif provider == "openai":
+        settings.openai_pipeline_model = configured
+    else:
+        settings.google_pipeline_model = configured
+    assert _pipeline_model(settings) == expected
 
 
 @pytest.mark.parametrize("value", ["openai", "OPENAI", "OpenAI"])
@@ -68,6 +121,9 @@ class _FakePipelineClient:
 
     def run_markdown_report(self, bundle, image_paths, *, pass2_audit=None) -> CallResult:
         return CallResult(text="prose", tool_input=None, raw_response={}, request_snapshot={})
+
+    def run_substack_article(self, daily_state, report_markdown):
+        raise AssertionError("injected test client should not generate Substack")
 
 
 def test_fake_client_conforms_to_protocol():
@@ -106,5 +162,5 @@ def test_run_log_records_providers(mock_precompute, tmp_path, settings):
 
     result = run_daily_analysis(date, str(run_dir), settings=settings, client=_StateFake())
     run_log = json.loads((result.output_dir / "run_log.json").read_text(encoding="utf-8"))
-    assert run_log["configured_provider"] == "anthropic"
+    assert run_log["configured_provider"] == "google"
     assert run_log["resolved_provider"] == "injected"

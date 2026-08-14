@@ -1,4 +1,4 @@
-"""Orchestrates a full daily run: ingest -> precompute -> two-pass Claude -> persist."""
+"""Orchestrates a full daily run: ingest -> precompute -> two-pass LLM -> persist."""
 
 from __future__ import annotations
 
@@ -39,6 +39,16 @@ class RunError(Exception):
     """Hard failure that aborts the run."""
 
 
+def _pipeline_model(settings: Settings) -> str:
+    """Return the effective model name used by the selected pipeline provider."""
+    provider = settings.llm_provider.strip().lower()
+    if provider == "openai":
+        return settings.openai_pipeline_model.strip() or "gpt-5.6-sol"
+    if provider == "google":
+        return settings.google_pipeline_model.strip() or "gemini-3.7-flash"
+    return settings.model
+
+
 @dataclass
 class RunResult:
     date: str
@@ -61,10 +71,17 @@ def _resolve_pipeline_client(settings: Settings) -> PipelineLLMClient:
             return OpenAIPipelineClient(settings)
         except OpenAIPipelineError as exc:
             raise RunError(str(exc)) from exc
+    if provider == "google":
+        from .google_pipeline_client import GooglePipelineClient, GooglePipelineError
+
+        try:
+            return GooglePipelineClient(settings)
+        except GooglePipelineError as exc:
+            raise RunError(str(exc)) from exc
     if provider != "anthropic":
         raise RunError(
             f"Unknown LLM provider: {settings.llm_provider!r}. "
-            "Expected 'anthropic' or 'openai'."
+            "Expected 'anthropic', 'openai', or 'google'."
         )
     return AnthropicClient(settings)
 
@@ -136,7 +153,11 @@ def run_daily_analysis(
     else:
         client = _resolve_pipeline_client(settings)
         provider_name = settings.llm_provider.strip().lower()
-        resolved_provider = provider_name if provider_name in ("anthropic", "openai") else "unknown"
+        resolved_provider = (
+            provider_name
+            if provider_name in ("anthropic", "openai", "google")
+            else "unknown"
+        )
 
     state_bundle = build_state_prompt(
         system_role=system_role,
@@ -236,19 +257,21 @@ def run_daily_analysis(
         report_md, date, settings.max_report_chars, daily_state=daily_state
     )
     warnings.extend(i.message for i in report_validation.warnings)
+    if not report_validation.passed:
+        warnings.extend(
+            f"report validation [{issue.code}]: {issue.message}"
+            for issue in report_validation.errors
+        )
 
     substack_article = None
     substack_audit: dict[str, object] | None = None
-    if settings.openai_api_key and not client_injected:
-        from .openai_pipeline_client import OpenAIPipelineClient
-
-        editorial_client = OpenAIPipelineClient(settings)
-        substack_article, substack_audit = editorial_client.run_substack_article(
+    if not client_injected and hasattr(client, "run_substack_article"):
+        substack_article, substack_audit = client.run_substack_article(
             daily_state, report_md
         )
         substack_md = render_substack_markdown(substack_article)
     else:
-        warnings.append("Substack article skipped: OPENAI_API_KEY is not set")
+        warnings.append("Substack article skipped: selected pipeline has no editorial client")
         substack_md = None
 
     run_log: dict[str, object] = {
@@ -270,7 +293,7 @@ def run_daily_analysis(
             for u in pass2_plan.unresolved_chart_refs
         ],
         "memory_included": settings.include_memory,
-        "model": settings.model,
+        "model": _pipeline_model(settings),
         "warnings": warnings,
         "precompute_enforcement": {
             "applied": True,
@@ -284,6 +307,7 @@ def run_daily_analysis(
             "prose_chars": len(report_prose),
             "assembled_chars": len(report_md),
         },
+        "report_validation": report_validation.model_dump(mode="json"),
     }
     if substack_article is not None and substack_audit is not None:
         assert substack_md is not None
@@ -338,13 +362,6 @@ def run_daily_analysis(
 
     rebuild_rolling_summary(settings=settings)
     rebuild_structural_bias_history(as_of_date=date, settings=settings)
-
-    from .rag_index import RagIndexError, index_rag_or_fail
-
-    try:
-        index_rag_or_fail(date, settings=settings)
-    except RagIndexError as exc:
-        raise RunError(f"RAG indexing failed for {date}: {exc}") from exc
 
     return RunResult(
         date=date,

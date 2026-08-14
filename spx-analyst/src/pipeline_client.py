@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from .prompts import PromptBundle
+from .schemas import DailyState, SubstackArticle
+
+
+class PipelineClientError(Exception):
+    """Provider-neutral failure from an analytical or editorial client."""
 
 
 @dataclass
@@ -69,3 +74,7 @@ class PipelineLLMClient(Protocol):
         *,
         pass2_audit: dict[str, Any] | None = None,
     ) -> CallResult: ...
+
+    def run_substack_article(
+        self, daily_state: DailyState, report_markdown: str
+    ) -> tuple[SubstackArticle, dict[str, Any]]: ...

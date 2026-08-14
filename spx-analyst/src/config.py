@@ -25,19 +25,35 @@ class Settings(BaseSettings):
     )
 
     # Provider selection
-    llm_provider: str = Field(default="anthropic", alias="SPX_LLM_PROVIDER")
+    llm_provider: str = Field(default="google", alias="SPX_LLM_PROVIDER")
 
     # Anthropic
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
 
-    # OpenAI (chat assistant + RAG indexing)
+    # OpenAI (optional pipeline and chat assistant)
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     openai_chat_model: str = Field(default="gpt-5", alias="OPENAI_CHAT_MODEL")
     openai_pipeline_model: str = Field(default="", alias="SPX_OPENAI_PIPELINE_MODEL")
+    google_api_key: str = Field(default="", alias="GOOGLE_API_KEY")
+    google_pipeline_model: str = Field(
+        default="gemini-3.7-flash", alias="SPX_GOOGLE_PIPELINE_MODEL"
+    )
+    google_thinking_level: str = Field(default="", alias="SPX_GOOGLE_THINKING_LEVEL")
+    google_state_thinking_level: str = Field(
+        default="HIGH", alias="SPX_GOOGLE_STATE_THINKING_LEVEL"
+    )
+    google_report_thinking_level: str = Field(
+        default="", alias="SPX_GOOGLE_REPORT_THINKING_LEVEL"
+    )
+    google_max_output_tokens: int = Field(
+        default=16000, alias="SPX_GOOGLE_MAX_OUTPUT_TOKENS"
+    )
+    google_substack_max_output_tokens: int = Field(
+        default=8000, alias="SPX_GOOGLE_SUBSTACK_MAX_OUTPUT_TOKENS"
+    )
     openai_substack_model: str = Field(
         default="gpt-5.6-luna", alias="SPX_OPENAI_SUBSTACK_MODEL"
     )
-    openai_vector_store_id: str = Field(default="", alias="OPENAI_VECTOR_STORE_ID")
     model: str = Field(default="claude-opus-5", alias="SPX_MODEL")
     prompt_cache_enabled: bool = Field(default=True, alias="SPX_PROMPT_CACHE_ENABLED")
     chat_enabled: bool = Field(default=True, alias="SPX_CHAT_ENABLED")
@@ -140,10 +156,6 @@ class Settings(BaseSettings):
     @property
     def structural_bias_history_path(self) -> Path:
         return self.rolling_dir / "structural_bias_history.json"
-
-    @property
-    def rag_dir(self) -> Path:
-        return self.memory_dir / "rag"
 
     @property
     def chat_dir(self) -> Path:

@@ -1,5 +1,7 @@
 # PR-12: Research assistant Phase 3 (local UI)
 
+> Historical record. Vector-store retrieval described below has been retired.
+
 **Status:** Complete — **Phase 3 accepted** (review sign-off + targeted fixes)  
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-11: Research assistant Phase 2](PR-11-research-assistant-phase2.md)  

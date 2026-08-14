@@ -1,5 +1,7 @@
 # PR-15: Deterministic compact chat preload
 
+> Historical record. The prior `file_search` integration described below has been retired.
+
 **Status:** Complete  
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-10](PR-10-research-assistant-phase1.md) · [PR-3](PR-3-memory-rollup-overhaul.md) · [PR-14](PR-14-responses-api-chat.md) · [PR-16](PR-16-analyst-charter-preload-voice.md) (voice)  

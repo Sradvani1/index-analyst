@@ -22,14 +22,16 @@ from tenacity import (
 )
 
 from .config import Settings, get_settings
-from .pipeline_client import CallResult, PassTelemetry
+from .pipeline_client import CallResult, PassTelemetry, PipelineClientError
 from .pipeline_utils import encode_image
 from .prompts import EVIDENCE_AND_TENSIONS_HEADING, PASS2_PROSE_SECTIONS, PromptBundle
-from .schemas import DailyState, EmitDailyStateInput
+from .schemas import DailyState, EmitDailyStateInput, SubstackArticle
+from .substack import SUBSTACK_INSTRUCTIONS, build_substack_prompt, parse_substack_response
 
 logger = logging.getLogger(__name__)
 
 STATE_TOOL_NAME = "emit_daily_state"
+SUBSTACK_TOOL_NAME = "emit_substack_article"
 
 # Pass 2 stub preambles observed on claude-opus-4-8 when tools are present with
 # tool_choice=none — model announces emit_daily_state instead of writing markdown.
@@ -62,7 +64,7 @@ _TRANSIENT_ERRORS = (
 )
 
 
-class AnthropicError(Exception):
+class AnthropicError(PipelineClientError):
     """Raised when the provider response is missing or unusable."""
 
 
@@ -436,6 +438,59 @@ class AnthropicClient:
                 telemetry=telemetry,
             ),
         )
+
+    def run_substack_article(
+        self, daily_state: DailyState, report_markdown: str
+    ) -> tuple[SubstackArticle, dict[str, Any]]:
+        """Generate the editorial article with the selected Anthropic model."""
+        import json
+
+        body = build_substack_prompt(daily_state, report_markdown)
+        tool = {
+            "name": SUBSTACK_TOOL_NAME,
+            "description": "Emit the validated Substack article.",
+            "input_schema": SubstackArticle.model_json_schema(),
+        }
+        t0 = time.monotonic()
+        try:
+            response = self._create(
+                model=self.settings.model,
+                max_tokens=3000,
+                system=SUBSTACK_INSTRUCTIONS,
+                tools=[tool],
+                tool_choice={"type": "tool", "name": SUBSTACK_TOOL_NAME},
+                messages=[{"role": "user", "content": body}],
+            )
+        except AnthropicError:
+            raise
+        except Exception as exc:
+            raise AnthropicError("Anthropic Substack request failed") from exc
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        payload = _extract_tool_input(response, SUBSTACK_TOOL_NAME)
+        try:
+            article = parse_substack_response(json.dumps(payload))
+        except ValueError as exc:
+            raise AnthropicError("Anthropic Substack response was invalid") from exc
+        usage = response.usage
+        telemetry = PassTelemetry(
+            provider="anthropic",
+            model=self.settings.model,
+            pass_name="substack",
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", None),
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", None),
+            latency_ms=elapsed_ms,
+            image_count=0,
+            request_shape_version="1.0",
+        )
+        return article, {
+            "model": self.settings.model,
+            "mode": "substack",
+            "telemetry": dataclasses.asdict(telemetry),
+            "body_chars": len(body),
+            "response_raw": response.model_dump(mode="json"),
+        }
 
 
 def _extract_tool_input(response: Any, tool_name: str) -> dict[str, Any]:

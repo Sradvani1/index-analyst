@@ -240,7 +240,10 @@ def _parse_matrix_table(report_md: str) -> list[tuple[str, str, str]] | None:
             if rows:
                 break
             continue
-        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        cells = [
+            c.replace(r"\|", "|").strip()
+            for c in re.split(r"(?<!\\)\|", stripped.strip("|"))
+        ]
         if len(cells) < 3:
             continue
         if all(re.match(r"^:?-{2,}:?$", c.replace(" ", "")) for c in cells):
@@ -257,11 +260,16 @@ def _validate_matrix_state_echo(report_md: str, state: DailyState) -> list[Valid
     if parsed is None:
         return issues
 
+    def normalize(value: str) -> str:
+        return value.replace("—", "-").strip()
     expected = {
-        (r.signal_layer.strip(), r.current_reading.strip(), r.signal.strip())
+        (normalize(r.signal_layer), normalize(r.current_reading), normalize(r.signal))
         for r in state.decision_matrix.rows
     }
-    rendered = {(layer.strip(), reading.strip(), signal.strip()) for layer, reading, signal in parsed}
+    rendered = {
+        (normalize(layer), normalize(reading), normalize(signal))
+        for layer, reading, signal in parsed
+    }
     if rendered != expected:
         issues.append(
             ValidationIssue(
@@ -384,7 +392,8 @@ def validate_report(
         issues.extend(_validate_state_consistency(report_md, daily_state))
         issues.extend(_validate_matrix_state_echo(report_md, daily_state))
 
-        if not _evidence_and_tensions_section(report_md):
+        evidence_section = _evidence_and_tensions_section(report_md)
+        if not evidence_section:
             issues.append(
                 ValidationIssue(
                     severity="error",
@@ -392,6 +401,24 @@ def validate_report(
                     message=f"report requires '## {EVIDENCE_AND_TENSIONS_HEADING}' on every run",
                 )
             )
+        elif daily_state.conflicting_evidence:
+            for div in daily_state.conflicting_evidence:
+                if not _conflict_addressed(
+                    evidence_section, div.id, div.bullish_read, div.bearish_read
+                ):
+                    code = (
+                        "missing_high_weight_conflict"
+                        if div.weight == "high"
+                        else "missing_conflict"
+                    )
+                    weight_label = f"{div.weight}-weight " if div.weight else ""
+                    issues.append(
+                        ValidationIssue(
+                            severity="error",
+                            code=code,
+                            message=f"{weight_label}conflict not addressed: {div.id}",
+                        )
+                    )
         elif not _mentions_tension(report_md, daily_state.primary_tension):
             issues.append(
                 ValidationIssue(
@@ -400,20 +427,6 @@ def validate_report(
                     message="report does not address primary_tension from validated state",
                 )
             )
-
-        for div in daily_state.conflicting_evidence:
-            if div.weight != "high":
-                continue
-            if not _conflict_addressed(
-                report_md, div.id, div.bullish_read, div.bearish_read
-            ):
-                issues.append(
-                    ValidationIssue(
-                        severity="error",
-                        code="missing_high_weight_conflict",
-                        message=f"high-weight conflict not addressed: {div.id}",
-                    )
-                )
 
         mixed_day = (
             daily_state.signal_alignment.overall == "mixed"

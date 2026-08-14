@@ -1,5 +1,7 @@
 # PR-14: Responses API chat migration
 
+> Historical record. Vector-store and `file_search` functionality described below has been retired.
+
 **Status:** Complete  
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-13: Research assistant Phase 4](PR-13-research-assistant-phase4.md)  

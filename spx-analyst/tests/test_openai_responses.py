@@ -36,8 +36,8 @@ ASSISTANT_MESSAGE_ITEM = {
     "created_at": 1741900002,
 }
 
-FILE_SEARCH_CALL_ITEM = {
-    "type": "file_search_call",
+NON_MESSAGE_ITEM = {
+    "type": "tool_call",
     "id": "fs_1",
     "status": "completed",
 }
@@ -92,7 +92,7 @@ def test_parse_assistant_message_item():
 
 
 def test_parse_non_message_item_returns_none():
-    assert parse_message_item(FILE_SEARCH_CALL_ITEM) is None
+    assert parse_message_item(NON_MESSAGE_ITEM) is None
 
 
 def test_parse_empty_message_returns_none():
@@ -140,7 +140,7 @@ def test_iter_stream_text_deltas_raises_on_failed_event():
 def test_parse_conversation_items_filters_and_preserves_order():
     items = [
         USER_MESSAGE_ITEM,
-        FILE_SEARCH_CALL_ITEM,
+        NON_MESSAGE_ITEM,
         ASSISTANT_MESSAGE_ITEM,
         EMPTY_MESSAGE_ITEM,
     ]

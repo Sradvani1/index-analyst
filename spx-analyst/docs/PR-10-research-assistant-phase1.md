@@ -1,5 +1,7 @@
 # PR-10: Research assistant Phase 1 (RAG + preload)
 
+> Historical record. Vector-store indexing described below has been retired.
+
 **Status:** Complete — **Phase 1 accepted** (review sign-off)  
 **Superseded (preload only):** [PR-15: Deterministic compact chat preload](PR-15-compact-chat-preload.md) replaced the monolithic preload (`LatestRunState` block + full `recent_summary.md`) with constitution + current brief + arc brief. RAG indexing, authority rules, and matrix-from-`DailyState` semantics are unchanged.
 

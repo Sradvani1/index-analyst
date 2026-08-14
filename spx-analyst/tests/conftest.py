@@ -89,6 +89,7 @@ def make_settings(tmp_path: Path) -> Settings:
     role.write_text("# SPX Claude Role Block\n", encoding="utf-8")
     return Settings(
         anthropic_api_key="test",
+        google_api_key="test",
         framework_path_raw=str(framework),
         role_path_raw=str(role),
         data_dir_raw=str(tmp_path / "data"),

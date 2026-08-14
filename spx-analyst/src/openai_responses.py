@@ -103,7 +103,6 @@ def _require_chat_settings(settings: Settings) -> None:
         for name, value in (
             ("OPENAI_API_KEY", settings.openai_api_key),
             ("OPENAI_CHAT_MODEL", settings.openai_chat_model),
-            ("OPENAI_VECTOR_STORE_ID", settings.openai_vector_store_id),
         )
         if not value.strip()
     ]
@@ -177,12 +176,6 @@ class LiveResponsesClient:
                 input=[{"role": "user", "content": user_message}],
                 instructions=instructions,
                 store=True,
-                tools=[
-                    {
-                        "type": "file_search",
-                        "vector_store_ids": [self._settings.openai_vector_store_id],
-                    }
-                ],
             ) as stream:
                 yield from iter_stream_text_deltas(stream)
         except ResponsesError:

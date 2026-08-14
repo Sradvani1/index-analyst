@@ -1,5 +1,7 @@
 # PR-13: Research assistant Phase 4 (operator docs)
 
+> Historical record. Vector-store setup described below has been retired.
+
 **Status:** Complete — **Phase 4 accepted**  
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-12: Research assistant Phase 3](PR-12-research-assistant-phase3.md)  

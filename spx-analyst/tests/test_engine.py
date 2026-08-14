@@ -9,29 +9,11 @@ import pytest
 
 from src.analysis_engine import run_daily_analysis
 from src.pipeline_client import CallResult
+from src.schemas import SUBSTACK_SECTIONS, SubstackArticle
 
 from tests.conftest import SAMPLE_STATE, build_run_dir, write_state
 from tests.fixtures.investor_report import PASS2_PROSE
 from tests.sample_analysis_context import sample_analysis_context
-
-
-@pytest.fixture(autouse=True)
-def _mock_rag_index(monkeypatch, request):
-    """Engine tests must not call live OpenAI for post-run RAG indexing."""
-    if request.node.name == "test_rag_index_failure_emits_retry_hint":
-        return
-
-    from src.rag_index import RagIndexManifest
-
-    def fake_index_rag_or_fail(date, *, settings=None, client=None):
-        return RagIndexManifest(
-            date=date,
-            vector_store_id="vs_test",
-            sections=[],
-            indexed_at="2026-01-01T00:00:00+00:00",
-        )
-
-    monkeypatch.setattr("src.rag_index.index_rag_or_fail", fake_index_rag_or_fail)
 
 
 class FakeClient:
@@ -41,6 +23,7 @@ class FakeClient:
         self.report_bodies: list[str] = []
         self.state_image_paths: list[list] = []
         self.report_image_paths: list[list] = []
+        self.report_text = PASS2_PROSE
 
     def run_structured_state(self, bundle, image_paths) -> CallResult:
         self.state_bodies.append(bundle.body)
@@ -63,7 +46,7 @@ class FakeClient:
         self.report_bodies.append(bundle.body)
         self.report_image_paths.append(list(image_paths))
         return CallResult(
-            text=PASS2_PROSE,
+            text=self.report_text,
             tool_input=None,
             raw_response={"ok": True},
             request_snapshot={
@@ -73,6 +56,56 @@ class FakeClient:
                 **(pass2_audit or {}),
             },
         )
+
+    def run_substack_article(self, daily_state, report_markdown) -> tuple[SubstackArticle, dict[str, str]]:
+        raise AssertionError("injected engine tests should not generate Substack")
+
+
+class PublishingFakeClient(FakeClient):
+    def run_substack_article(self, daily_state, report_markdown):
+        article = SubstackArticle.model_validate(
+            {
+                "title": "Test article",
+                "subtitle": "Test subtitle",
+                "sections": {section: "Test content." for section in SUBSTACK_SECTIONS},
+            }
+        )
+        return article, {"model": "test-model"}
+
+
+@patch("src.analysis_engine.run_precompute")
+@patch("src.analysis_engine._resolve_pipeline_client")
+def test_report_validation_failure_is_logged_without_stopping(
+    mock_resolve, mock_precompute, tmp_path, settings
+):
+    date = "2026-06-12"
+    run_dir = build_run_dir(tmp_path, date=date, n=1)
+    mock_precompute.return_value = sample_analysis_context(date)
+    state = dict(SAMPLE_STATE)
+    state["date"] = date
+    state["conflicting_evidence"] = [
+        {
+            "id": "uncovered_conflict",
+            "layers": ["sentiment"],
+            "bullish_read": "Quixotic zorblax indicators flipping upward",
+            "bearish_read": "Wobblequark structure decaying without warning",
+            "framework_rule": "Distinctive framework clause",
+            "weight": "medium",
+            "chart_refs": ["01_chart.png"],
+        }
+    ]
+    client = PublishingFakeClient(state)
+    mock_resolve.return_value = client
+
+    result = run_daily_analysis(date, str(run_dir), settings=settings)
+
+    run_log = json.loads((result.output_dir / "run_log.json").read_text(encoding="utf-8"))
+    assert not result.report_validation.passed
+    assert run_log["status"] == "ok"
+    assert run_log["report_validation"]["passed"] is False
+    assert any("missing_conflict" in warning for warning in run_log["warnings"])
+    assert run_log["substack"]["status"] == "ok"
+    assert (result.output_dir / f"{date}-substack.md").is_file()
 
 
 @patch("src.analysis_engine.run_precompute")
@@ -380,6 +413,13 @@ def test_pass2_engine_subset_on_full_manifest(mock_precompute, tmp_path, setting
         },
     )
     client = FakeClient(state.model_dump(mode="json"))
+    client.report_text = PASS2_PROSE.replace(
+        "## Evidence and Tensions",
+        "## Evidence and Tensions\n\n"
+        "**extension_vs_credit**\n"
+        "- Bullish read: Trend holds.\n"
+        "- Bearish read: Credit stress.\n",
+    )
     result = run_daily_analysis(date, str(run_dir), settings=settings, client=client)
 
     assert result.report_validation.passed
@@ -423,32 +463,3 @@ def test_pass2_engine_zero_charts_completes(mock_precompute, tmp_path, settings)
     assert run_log["pass2_chart_count"] == 0
     assert run_log["pass2_charts_attached"] == []
     assert run_log["pass2_selection_reasons"] == {}
-
-
-@patch("src.analysis_engine.run_precompute")
-def test_rag_index_failure_emits_retry_hint(
-    mock_precompute, tmp_path, settings, monkeypatch, capsys
-):
-    date = "2026-06-12"
-    run_dir = build_run_dir(tmp_path, date=date, n=1)
-    mock_precompute.return_value = sample_analysis_context(date)
-    state = dict(SAMPLE_STATE)
-    state["date"] = date
-    client = FakeClient(state)
-
-    from src.rag_index import RagIndexError, index_rag_or_fail
-
-    def failing_report_rag(date, *, settings=None, client=None):
-        raise RagIndexError("missing required OpenAI env var(s): OPENAI_API_KEY")
-
-    monkeypatch.setattr("src.rag_index.index_report_rag", failing_report_rag)
-    monkeypatch.setattr("src.rag_index.index_rag_or_fail", index_rag_or_fail)
-
-    from src.analysis_engine import RunError, run_daily_analysis
-
-    with pytest.raises(RunError, match="RAG indexing failed"):
-        run_daily_analysis(date, str(run_dir), settings=settings, client=client)
-
-    err = capsys.readouterr().err
-    assert f"Retry: python -m src.cli index-rag --date {date}" in err
-    assert "report saved to memory/" in err

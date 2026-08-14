@@ -342,19 +342,19 @@ def generate_substack(
     if not report_path.is_file() or not state_path.is_file():
         typer.secho(f"No completed analysis found for {date}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
-    if not settings.openai_api_key:
-        typer.secho("OPENAI_API_KEY is not set", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
     from .files import write_text
-    from .openai_pipeline_client import OpenAIPipelineClient
+    from .analysis_engine import RunError, _resolve_pipeline_client
+    from .pipeline_client import PipelineClientError
     from .schemas import DailyState
     from .substack import render_substack_html, render_substack_markdown
 
     state = DailyState.model_validate(read_json(state_path))
-    article, _audit = OpenAIPipelineClient(settings).run_substack_article(
-        state, read_text(report_path)
-    )
+    try:
+        client = _resolve_pipeline_client(settings)
+        article, _audit = client.run_substack_article(state, read_text(report_path))
+    except (AttributeError, PipelineClientError, RunError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
     substack_md = render_substack_markdown(article)
     html = render_substack_html(article)
     out = settings.output_dir / date
@@ -433,39 +433,6 @@ def rebuild_bias_history(
     _setup_logging(verbose)
     _, path = rebuild_structural_bias_history(as_of_date=date)
     typer.secho(f"Wrote structural-bias history to {path}", fg=typer.colors.GREEN)
-
-
-@app.command("index-rag")
-def index_rag(
-    date: str = typer.Option(None, help="Trade date YYYY-MM-DD to index."),
-    backfill: bool = typer.Option(False, help="Index all reports in memory/daily_reports/."),
-    verbose: bool = typer.Option(False, "--verbose", "-v"),
-) -> None:
-    """Upload report sections to the OpenAI vector store for historical retrieval."""
-    _setup_logging(verbose)
-    from .rag_index import RagIndexError, backfill_rag_index, index_report_rag
-
-    try:
-        if backfill:
-            manifests = backfill_rag_index()
-            typer.secho(f"Indexed {len(manifests)} report(s)", fg=typer.colors.GREEN)
-            for manifest in manifests:
-                typer.echo(f"  {manifest.date}: {len(manifest.sections)} sections")
-            return
-
-        if not date:
-            typer.secho("Provide --date YYYY-MM-DD or --backfill", fg=typer.colors.RED, err=True)
-            raise typer.Exit(code=1)
-
-        manifest = index_report_rag(date)
-    except RagIndexError as exc:
-        typer.secho(str(exc), fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
-    typer.secho(
-        f"Indexed {len(manifest.sections)} sections for {manifest.date}",
-        fg=typer.colors.GREEN,
-    )
 
 
 @app.command("prepare")

@@ -39774,6 +39774,11 @@
       "effective_from": "2026-08-12",
       "forward_eps": 384.63,
       "trailing_eps": 326.52
+    },
+    {
+      "effective_from": "2026-08-13",
+      "forward_eps": 384.63,
+      "trailing_eps": 326.52
     }
   ]
 }

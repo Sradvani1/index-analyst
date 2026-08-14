@@ -42,6 +42,32 @@ def test_validate_report_good_with_mixed_state():
     assert report.passed
 
 
+def test_validate_report_matrix_echo_unescapes_pipe_cells():
+    state = DailyState.model_validate(SAMPLE_STATE)
+    rows = list(state.decision_matrix.rows)
+    rows[0] = rows[0].model_copy(update={"current_reading": "A | B"})
+    decision_matrix = state.decision_matrix.model_copy(update={"rows": rows})
+    state = state.model_copy(update={"decision_matrix": decision_matrix})
+    md = assembled_report_for_state(state, date="2026-06-12")
+
+    report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
+
+    assert report.passed
+
+
+def test_validate_report_matrix_echo_normalizes_published_dash_style():
+    state = DailyState.model_validate(SAMPLE_STATE)
+    rows = list(state.decision_matrix.rows)
+    rows[0] = rows[0].model_copy(update={"signal": "Trim bias — patience"})
+    decision_matrix = state.decision_matrix.model_copy(update={"rows": rows})
+    state = state.model_copy(update={"decision_matrix": decision_matrix})
+    md = assembled_report_for_state(state, date="2026-06-12")
+
+    report = validate_report(md, "2026-06-12", max_chars=24000, daily_state=state)
+
+    assert report.passed
+
+
 def test_validate_report_missing_matrix():
     md = GOOD_REPORT.split("## Updated Decision Matrix")[0]
     report = validate_report(md, "2026-06-12", max_chars=24000)
@@ -96,13 +122,13 @@ Primary tension: Bullish trend extension versus cautious valuation bucket.
 **Extension vs valuation** (high)
 - Bullish read: Price trend remains bullish with momentum intact (see SPX charts).
 - Bearish read: Forward P/E in cautious bucket limits add aggression.
-- Framework rule: Forward PE calibration — cautious bucket.
+- Framework rule: Forward PE calibration - cautious bucket.
 - Blocks action: Neither trim nor buy reaches confluence; hold and monitor.
 """
 
 
 def test_validate_report_missing_primary_tension():
-    state = DailyState.model_validate(SAMPLE_STATE)
+    state = DailyState.model_validate({**SAMPLE_STATE, "conflicting_evidence": []})
     unrelated = (
         "## Evidence and Tensions\n"
         "We focus only on liquidity plumbing today.\n\n"
@@ -124,7 +150,11 @@ def test_validate_report_paraphrased_long_tension_passes():
         "ERP pinned at 0.31% inside the valuation-ceiling band on a 4.686% 10-year, and the "
         "Monte Carlo edge still failing the 70% threshold for an eighth consecutive session."
     )
-    state = DailyState.model_validate({**SAMPLE_STATE, "primary_tension": long_tension})
+    state = DailyState.model_validate({
+        **SAMPLE_STATE,
+        "primary_tension": long_tension,
+        "conflicting_evidence": [],
+    })
     paraphrased = (
         "## Evidence and Tensions\n"
         "Record price versus stale internals defines today's picture, and the validated posture "
@@ -177,6 +207,25 @@ def test_validate_report_unaddressed_high_weight_conflict_is_error():
         i.code == "missing_high_weight_conflict" and i.severity == "error"
         for i in report.issues
     )
+
+
+def test_validate_report_unaddressed_medium_weight_conflict_is_error():
+    data = copy.deepcopy(SAMPLE_STATE)
+    data["conflicting_evidence"] = [
+        {
+            "id": "zeta_signal",
+            "layers": ["sentiment"],
+            "bullish_read": "Quixotic zorblax indicators flipping upward",
+            "bearish_read": "Wobblequark structure decaying without warning",
+            "framework_rule": "Distinctive framework clause",
+            "weight": "medium",
+            "chart_refs": ["01_chart.png"],
+        }
+    ]
+    state = DailyState.model_validate(data)
+    report = validate_report(GOOD_REPORT, "2026-06-12", max_chars=24000, daily_state=state)
+    assert not report.passed
+    assert any(i.code == "missing_conflict" and i.severity == "error" for i in report.issues)
 
 
 def test_validate_report_matrix_state_mismatch():

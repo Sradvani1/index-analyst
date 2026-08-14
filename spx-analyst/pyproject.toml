@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "spx-analyst"
 version = "0.1.0"
-description = "SPX daily tactical analysis engine with yfinance precompute and two-pass Claude pipeline."
+description = "SPX daily tactical analysis engine with yfinance precompute and configurable multi-provider pipeline."
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.40.0",
@@ -17,6 +17,7 @@ dependencies = [
     "tenacity>=8.3.0",
     "fastapi>=0.115.0",
     "openai>=1.82.0",
+    "google-genai>=1.0.0",
     "uvicorn[standard]>=0.32.0",
     "yfinance>=0.2.40",
     "numpy>=1.26.0",

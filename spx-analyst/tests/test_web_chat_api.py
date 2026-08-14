@@ -84,7 +84,6 @@ def chat_client(tmp_path, monkeypatch):
             "chat_assistant_instructions_path_raw": str(instructions),
             "openai_api_key": "test-key",
             "openai_chat_model": "gpt-5",
-            "openai_vector_store_id": "vs_test",
         }
     )
     write_state(settings, "2026-06-12")
@@ -199,7 +198,6 @@ def test_post_refusal_message_streams_and_persists(tmp_path, monkeypatch):
             "chat_assistant_instructions_path_raw": str(instructions),
             "openai_api_key": "test-key",
             "openai_chat_model": "gpt-5",
-            "openai_vector_store_id": "vs_test",
         }
     )
     write_state(settings, "2026-06-12")
@@ -239,7 +237,6 @@ def test_post_message_stream_failure_does_not_touch_updated_at(tmp_path, monkeyp
             "chat_assistant_instructions_path_raw": str(instructions),
             "openai_api_key": "test-key",
             "openai_chat_model": "gpt-5",
-            "openai_vector_store_id": "vs_test",
         }
     )
     write_state(settings, "2026-06-12")

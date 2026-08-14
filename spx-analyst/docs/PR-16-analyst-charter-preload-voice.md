@@ -1,5 +1,7 @@
 # PR-16: Analyst charter + preload voice
 
+> Historical record. The prior vector-store and `file_search` integration described below has been retired.
+
 **Status:** Implementation complete — operator sign-off pending (AC-4, AC-5)  
 **Framework version:** `daily-2026-06`  
 **Builds on:** [PR-10](PR-10-research-assistant-phase1.md) · [PR-15](PR-15-compact-chat-preload.md)  
