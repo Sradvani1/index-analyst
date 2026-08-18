@@ -95,6 +95,19 @@ class SubstackSections(BaseModel):
         return self.model_dump(by_alias=True)
 
 
+class PodcastScript(BaseModel):
+    """Condensed single-host script for the ~3-minute daily podcast.
+
+    ``script`` is continuous prose optimized for text-to-speech: no headings,
+    no Markdown, numbers spelled out, no em dashes/colons/semicolons.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(..., min_length=1)
+    script: str = Field(..., min_length=1)
+
+
 class EpsHistoryEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

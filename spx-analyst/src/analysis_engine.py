@@ -311,11 +311,18 @@ def run_daily_analysis(
     }
     if substack_article is not None and substack_audit is not None:
         assert substack_md is not None
+        telemetry = substack_audit.get("telemetry")
+        if not isinstance(telemetry, dict):
+            telemetry = {}
         run_log["substack"] = {
             "status": "ok",
             "title": substack_article.title,
             "word_count": len(substack_md.split()),
             "model": substack_audit["model"],
+            "input_tokens": telemetry.get("input_tokens"),
+            "output_tokens": telemetry.get("output_tokens"),
+            "cache_read_tokens": telemetry.get("cache_read_tokens"),
+            "latency_ms": telemetry.get("latency_ms"),
         }
     if memory_load is not None:
         run_log["memory_load"] = memory_load

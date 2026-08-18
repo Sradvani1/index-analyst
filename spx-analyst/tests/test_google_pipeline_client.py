@@ -253,6 +253,23 @@ def test_invalid_structured_output_raises(tmp_path):
         client.run_structured_state(_bundle(), [])
 
 
+def test_podcast_script_uses_gemini_default_thinking_and_schema(tmp_path):
+    payload = {"title": "Daily SPX Brief", "script": " ".join(["market"] * 450)}
+    client, sdk_client = _client(tmp_path, _response(json.dumps(payload)))
+
+    script, audit = client.run_podcast_script("# Article\n\nBody.")
+
+    assert script.title == "Daily SPX Brief"
+    assert len(script.script.split()) == 450
+    assert audit["mode"] == "podcast_script"
+    assert audit["telemetry"]["provider"] == "google"
+    config = sdk_client.models.generate_content.call_args.kwargs["config"]
+    assert config.max_output_tokens == 4000
+    assert not hasattr(config, "thinking_config")
+    assert config.response_mime_type == "application/json"
+    assert config.response_json_schema["properties"]["script"]["type"] == "string"
+
+
 def test_transient_retry_filter_does_not_retry_permanent_api_error():
     assert _is_transient_error(_StatusError(400)) is False
     assert _is_transient_error(_StatusError(429)) is True

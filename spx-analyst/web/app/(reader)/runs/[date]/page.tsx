@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { BackendUnavailable } from "@/components/backend-unavailable";
+import { PodcastView } from "@/components/podcast-view";
 import { ReportView } from "@/components/report-view";
 import { PublishView } from "@/components/publish-view";
 import { getRun } from "@/lib/api";
@@ -28,6 +29,13 @@ export default async function RunPage({ params }: RunPageProps) {
       <ReportView markdown={run.report_markdown} dailyState={run.daily_state} />
       {run.substack_markdown ? (
         <PublishView markdown={run.substack_markdown} html={run.substack_html ?? undefined} />
+      ) : null}
+      {run.podcast_script ? (
+        <PodcastView
+          date={run.date}
+          script={run.podcast_script}
+          audioAvailable={run.podcast_audio ?? false}
+        />
       ) : null}
     </>
   );

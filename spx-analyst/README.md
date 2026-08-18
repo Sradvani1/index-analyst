@@ -232,6 +232,9 @@ python -m src.cli validate --date 2026-06-12
 # Rebuild memory/rolling/recent_summary.md from archived states (also runs automatically after every successful run)
 python -m src.cli rebuild-summary --days 6
 
+# Generate the ~3-minute daily podcast (script + MP3) from the Substack article
+python -m src.cli generate-podcast --date 2026-08-14
+
 # Research assistant REPL (OpenAI Responses + three-layer preload)
 python -m src.cli chat
 python -m src.cli chat --session-id <uuid>

@@ -35,6 +35,8 @@ class RunDetail(BaseModel):
     daily_state: DailyState
     substack_markdown: str | None = None
     substack_html: str | None = None
+    podcast_script: str | None = None
+    podcast_audio: bool = False
 
 
 class FrameworkResponse(BaseModel):

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from ..config import get_settings
 from ..files import InputError
 from .chat_api import router as chat_router
 from .models import FrameworkResponse, HealthResponse, RunDetail, RunSummary
-from .service import RunNotFoundError, get_framework, get_run, list_runs
+from .service import RunNotFoundError, get_framework, get_run, list_runs, podcast_audio_path
 
 app = FastAPI(title="SPX Analyst Viewer", version="0.1.0")
 
@@ -52,3 +53,14 @@ def api_get_run(date: str) -> RunDetail:
         return get_run(date)
     except RunNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/runs/{date}/podcast.mp3")
+def api_podcast_audio(date: str) -> FileResponse:
+    try:
+        path = podcast_audio_path(date)
+    except RunNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="podcast audio not found")
+    return FileResponse(path, media_type="audio/mpeg")

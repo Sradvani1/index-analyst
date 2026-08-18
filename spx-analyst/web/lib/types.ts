@@ -118,6 +118,8 @@ export interface RunDetail {
   daily_state: DailyState;
   substack_markdown?: string | null;
   substack_html?: string | null;
+  podcast_script?: string | null;
+  podcast_audio?: boolean;
 }
 
 export interface FrameworkResponse {

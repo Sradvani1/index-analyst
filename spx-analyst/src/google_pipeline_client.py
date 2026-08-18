@@ -14,8 +14,9 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 from .config import Settings, get_settings
 from .pipeline_client import CallResult, PassTelemetry, PipelineClientError
 from .pipeline_utils import encode_image
+from .podcast import PODCAST_INSTRUCTIONS, build_podcast_prompt, parse_podcast_response
 from .prompts import PromptBundle
-from .schemas import DailyState, EmitDailyStateInput, SubstackArticle
+from .schemas import DailyState, EmitDailyStateInput, PodcastScript, SubstackArticle
 from .substack import SUBSTACK_INSTRUCTIONS, build_substack_prompt, parse_substack_response
 
 
@@ -409,6 +410,55 @@ class GooglePipelineClient:
         return article, {
             "model": self._model,
             "mode": "substack",
+            "thinking_level": None,
+            "telemetry": dataclasses.asdict(telemetry),
+            "body_chars": len(body),
+            "response_raw": _model_dump(response),
+        }
+
+    def run_podcast_script(
+        self, substack_markdown: str
+    ) -> tuple[PodcastScript, dict[str, Any]]:
+        """Generate the condensed ~3-minute podcast script from the Substack article."""
+        body = build_podcast_prompt(substack_markdown)
+        t0 = time.monotonic()
+        types = self._types()
+        try:
+            response = self._call(
+                system_instruction=PODCAST_INSTRUCTIONS,
+                contents=[types.Content(
+                    role="user", parts=[types.Part.from_text(text=body)]
+                )],
+                schema=PodcastScript,
+                # Empty thinking_level intentionally leaves Gemini's default behavior enabled.
+                thinking_level="",
+                max_output_tokens=self.settings.google_podcast_max_output_tokens,
+            )
+        except GooglePipelineError:
+            raise
+        except Exception as exc:
+            raise GooglePipelineError("Gemini podcast request failed") from exc
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        raw_text = _response_text(response)
+        input_tokens, output_tokens, cached_tokens = _usage(response)
+        telemetry = PassTelemetry(
+            provider="google",
+            model=self._model,
+            pass_name="podcast_script",
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cache_read_tokens=cached_tokens,
+            latency_ms=elapsed_ms,
+            image_count=0,
+            request_shape_version="google-generate-content-1.0",
+        )
+        try:
+            script = parse_podcast_response(raw_text)
+        except ValueError as exc:
+            raise GooglePipelineError("Gemini podcast response was invalid") from exc
+        return script, {
+            "model": self._model,
+            "mode": "podcast_script",
             "thinking_level": None,
             "telemetry": dataclasses.asdict(telemetry),
             "body_chars": len(body),

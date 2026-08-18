@@ -51,6 +51,13 @@ class Settings(BaseSettings):
     google_substack_max_output_tokens: int = Field(
         default=8000, alias="SPX_GOOGLE_SUBSTACK_MAX_OUTPUT_TOKENS"
     )
+    google_podcast_max_output_tokens: int = Field(
+        default=4000, alias="SPX_GOOGLE_PODCAST_MAX_OUTPUT_TOKENS"
+    )
+    google_tts_model: str = Field(
+        default="gemini-3.1-flash-tts-preview", alias="SPX_GOOGLE_TTS_MODEL"
+    )
+    podcast_voice: str = Field(default="Orus", alias="SPX_PODCAST_VOICE")
     openai_substack_model: str = Field(
         default="gpt-5.6-luna", alias="SPX_OPENAI_SUBSTACK_MODEL"
     )

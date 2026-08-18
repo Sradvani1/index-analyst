@@ -39,15 +39,16 @@ spx-analyst --help                   # after pip install -e ".[dev]"
 # Daily pipeline:
 python -m src.cli import-run --date YYYY-MM-DD    # import charts from Images/<date>/
 python -m src.cli run --date YYYY-MM-DD           # full two-pass analysis
+python -m src.cli generate-podcast --date YYYY-MM-DD  # ~3-min podcast MP3 + script from the Substack article
 
 # Tests:
 pytest                                          # all tests (mock provider, offline)
 pytest -m live                                  # tests requiring live API keys
 ```
 
-Key env vars (`.env`): `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENAI_VECTOR_STORE_ID`.
+Key env vars (`.env`): `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENAI_VECTOR_STORE_ID`. Podcast extras: `GOOGLE_API_KEY`, `SPX_GOOGLE_TTS_MODEL` (default `gemini-3.1-flash-tts-preview`), `SPX_PODCAST_VOICE` (default `Orus`). ffmpeg/ffprobe are required for MP3 encoding.
 
-Run artifacts are gitignored (`output/*/`, `data/runs/*/charts/`, `memory/`). `memory/` dirs exist for the web viewer but their JSON/MD content is not committed.
+Run artifacts are gitignored (`output/*/`, `data/runs/*/charts/`, `memory/`). `memory/` dirs exist for the web viewer but their JSON/MD content is not committed; the podcast MP3 lives in `output/<date>/` (gitignored), while the script text is mirrored to `memory/daily_reports/` for the web viewer.
 
 ## Web UI
 

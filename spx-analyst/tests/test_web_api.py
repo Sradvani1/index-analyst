@@ -162,6 +162,79 @@ def test_get_run_includes_substack_artifacts(tmp_path, monkeypatch) -> None:
     assert response.json()["substack_html"] == "<h1>Daily Take</h1>"
 
 
+def test_get_run_includes_podcast_artifacts(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    date = "2026-06-12"
+    write_state(settings, date)
+    _write_report(settings, date)
+    settings.daily_reports_dir.mkdir(parents=True, exist_ok=True)
+    (settings.daily_reports_dir / f"{date}-podcast-script.md").write_text(
+        "# Daily Brief\n\nThe market settled higher.\n", encoding="utf-8"
+    )
+    audio = settings.output_dir / date / f"{date}-podcast.mp3"
+    audio.parent.mkdir(parents=True, exist_ok=True)
+    audio.write_bytes(b"ID3 fake mp3")
+
+    response = TestClient(app).get(f"/api/runs/{date}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["podcast_script"].startswith("# Daily Brief")
+    assert data["podcast_audio"] is True
+
+
+def test_get_run_reports_podcast_missing(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    date = "2026-06-12"
+    write_state(settings, date)
+    _write_report(settings, date)
+
+    response = TestClient(app).get(f"/api/runs/{date}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["podcast_script"] is None
+    assert data["podcast_audio"] is False
+
+
+def test_podcast_audio_endpoint_returns_mp3(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    date = "2026-06-12"
+    audio = settings.output_dir / date / f"{date}-podcast.mp3"
+    audio.parent.mkdir(parents=True, exist_ok=True)
+    audio.write_bytes(b"ID3 fake mp3 content")
+
+    response = TestClient(app).get(f"/api/runs/{date}/podcast.mp3")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "audio/mpeg"
+    assert response.content == b"ID3 fake mp3 content"
+
+
+def test_podcast_audio_endpoint_404_when_missing(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    response = TestClient(app).get("/api/runs/2026-06-12/podcast.mp3")
+
+    assert response.status_code == 404
+
+
+def test_podcast_audio_endpoint_rejects_bad_date(tmp_path, monkeypatch) -> None:
+    settings = make_settings(tmp_path)
+    monkeypatch.setattr("src.web.service.get_settings", lambda: settings)
+
+    response = TestClient(app).get("/api/runs/not-a-date/podcast.mp3")
+
+    assert response.status_code == 404
+
+
 def test_list_runs_includes_posture_lead_from_report(tmp_path, monkeypatch) -> None:
     settings = make_settings(tmp_path)
     monkeypatch.setattr("src.web.service.get_settings", lambda: settings)

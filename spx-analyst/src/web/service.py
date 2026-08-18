@@ -109,13 +109,28 @@ def get_run(date: str, settings: Settings | None = None) -> RunDetail:
     report_markdown = read_text(report_path)
     substack_path = settings.daily_reports_dir / f"{date}-substack.md"
     html_path = settings.daily_reports_dir / f"{date}-substack.html"
+    podcast_script_path = settings.daily_reports_dir / f"{date}-podcast-script.md"
     return RunDetail(
         date=date,
         report_markdown=report_markdown,
         daily_state=daily_state,
         substack_markdown=read_text(substack_path) if substack_path.is_file() else None,
         substack_html=read_text(html_path) if html_path.is_file() else None,
+        podcast_script=(
+            read_text(podcast_script_path) if podcast_script_path.is_file() else None
+        ),
+        podcast_audio=podcast_audio_path(date, settings).is_file(),
     )
+
+
+def podcast_audio_path(date: str, settings: Settings | None = None) -> Path:
+    """Resolve the (gitignored) podcast MP3 path for a date."""
+    settings = settings or get_settings()
+    _validate_date(date)
+    path = (settings.output_dir / date / f"{date}-podcast.mp3").resolve()
+    if not path.is_relative_to(settings.output_dir.resolve()):
+        raise RunNotFoundError(f"no podcast audio found for {date}")
+    return path
 
 
 def get_framework(settings: Settings | None = None) -> FrameworkResponse:

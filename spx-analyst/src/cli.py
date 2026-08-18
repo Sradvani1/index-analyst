@@ -366,6 +366,76 @@ def generate_substack(
     typer.secho("Substack article generated", fg=typer.colors.GREEN)
 
 
+@app.command("generate-podcast")
+def generate_podcast(
+    date: str = typer.Option(None, help="Trade date YYYY-MM-DD (default: today)."),
+) -> None:
+    """Generate the ~3-minute daily podcast from an existing Substack article."""
+    date = date or _today()
+    try:
+        date = dt.date.fromisoformat(date).isoformat()
+    except ValueError:
+        typer.secho("Date must be YYYY-MM-DD", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+    settings = get_settings()
+    substack_path = settings.daily_reports_dir / f"{date}-substack.md"
+    if not substack_path.is_file():
+        typer.secho(f"No Substack article found for {date}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    from .analysis_engine import RunError, _resolve_pipeline_client
+    from .files import write_json, write_text
+    from .pipeline_client import PipelineClientError
+    from .podcast import PodcastScript, render_podcast_script
+    from .podcast_tts import PodcastTTSError, PodcastTTSClient
+
+    substack_md = read_text(substack_path)
+    try:
+        client = _resolve_pipeline_client(settings)
+        run_podcast_script = getattr(client, "run_podcast_script", None)
+        if run_podcast_script is None:
+            raise AttributeError("podcast generation requires the Google Gemini provider")
+        script, audit = run_podcast_script(substack_md)
+    except (AttributeError, PipelineClientError, RunError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    if not isinstance(script, PodcastScript):
+        typer.secho("Podcast generation returned an invalid result", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    out = settings.output_dir / date
+    out.mkdir(parents=True, exist_ok=True)
+    mp3_path = out / f"{date}-podcast.mp3"
+    try:
+        duration = PodcastTTSClient(settings=settings).synthesize(script.script, mp3_path)
+    except PodcastTTSError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+
+    script_md = render_podcast_script(script)
+    write_text(out / f"{date}-podcast-script.md", script_md)
+    write_text(settings.daily_reports_dir / f"{date}-podcast-script.md", script_md)
+    write_json(
+        out / f"{date}-podcast-script.json",
+        {
+            "date": date,
+            "script": script.model_dump(mode="json"),
+            "audit": audit,
+        },
+    )
+
+    word_count = len(script.script.split())
+    typer.secho(
+        f"Wrote {mp3_path} ({duration:.1f}s, {word_count} words)",
+        fg=typer.colors.GREEN,
+    )
+    if not 120 <= duration <= 240:
+        typer.secho(
+            f"Warning: duration {duration:.1f}s outside the ~3 minute target",
+            fg=typer.colors.YELLOW,
+        )
+
+
 @app.command("migrate-perplexity")
 def migrate_perplexity(
     history: Path = typer.Option(..., "--history", help="Path to perplexity_analysis_history.md."),
