@@ -1,0 +1,206 @@
+{
+  "date": "2026-08-20",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7641.16015625,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Orderly pullback continues toward primary 38.2% Fibonacci support at 7,624.64 and the 50-day SMA at 7,532.90 to retest structural demand before any sustainable rally re-emerges.",
+  "trend_regime": "Macro bullish (50-day > 200-day), intermediate corrective (below 20-day SMA)",
+  "valuation_bucket": "Valuation ceiling (Forward PE 19.87x, ERP 0.34%)",
+  "signals": {
+    "pct_vs_50dma": 1.44,
+    "pct_vs_200dma": 7.7493,
+    "bollinger_position": "Below 20-day SMA, testing lower band",
+    "rsi14": 50.8,
+    "mfi": 61.0,
+    "vix_regime": "Standard operating regime (15-20); VIX 16.01 below 50-day MA (17.20)",
+    "fear_greed": 52,
+    "fear_greed_zone": "Neutral",
+    "put_call": 0.76,
+    "high_yield_spread": 1.22,
+    "intraday_close_position": "Bottom third",
+    "middle_band_regime": "Below 20-day SMA / Middle Band breakdown"
+  },
+  "what_changed_today": [
+    "PRICE BROKE DOWN TO POST A FRESH PULLBACK LOW AND TEST 38.2% FIBONACCI SUPPORT: SPX fell -0.87% (-66.82 pts) to close at 7,641.16 at the session low (bottom third of range), breaking decisively below the 23.6% retracement (7,698.04) and approaching primary 38.2% Fibonacci support at 7,624.64.",
+    "MONTE CARLO PROBABILITIES ROTATED SHARPLY TO ASYMMETRIC DOWNSIDE-FIRST SKEW: Downside-first probability surged to 75.50% (prob_up_first fell to 24.50%, median 2d down vs 12d up), failing the 70% Late Bull threshold and signaling high odds of hitting 7,624.64 before any upside recovery.",
+    "SHORT-TERM MOMENTUM AND MONEY FLOW ENTERED OVERSOLD TERRITORY AS VIX TICKED HIGHER: 5-day RSI fell to 23.2 and 5-day MFI compressed to 25.0 with intraday lower Bollinger Band pierces, while VIX rose to 16.01 (Score 50), maintaining an orderly rather than panicky correction.",
+    "BREADTH DETERIORATION DEEPENED ALONGSIDE FEAR & GREED COOLING: NYSE Net New Highs score dropped to 28 (0.56 strength) and Fear & Greed slid to 52 (Neutral), confirming broadening pullback pressure despite tight credit spreads (1.22%)."
+  ],
+  "narrative_summary": "The S&P 500 experienced a decisive distribution session, sliding -0.87% to close at 7,641.16 at the day's low and decisively invalidating the 23.6% Fibonacci pause level. Monte Carlo simulations now heavily favor a test of primary 38.2% Fibonacci support at 7,624.64 (75.50% downside-first, median 2 days). With daily structure breaking below the 20-day SMA and breadth continuing to deteriorate against a compressed 0.34% ERP, tactical discipline dictates defensive patience until clear re-entry confirmation appears at primary support.",
+  "open_questions": [
+    "Will the primary 38.2% Fibonacci retracement at 7,624.64 hold and trigger a technical re-entry confirmation checklist signal?",
+    "Will market breadth and net new highs stabilize to support a defense of the 50-day SMA at 7,532.90, or will forced selling accelerate toward the 7,582 caution zone?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "fails"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1314",
+        "signal": "σ=0.1314"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0700",
+        "signal": "μ=0.0700"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50-day SMA (+1.44%) > 200-day SMA (+7.75%), price below 20-day SMA",
+        "signal": "Bullish macro, short-term corrective"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Bottom third (closed at daily lows near 7,641)",
+        "signal": "Distribution / selling pressure"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "Daily RSI 50.8 / MFI 61.0; 5-day RSI 23.2 / MFI 25.0 (oversold)",
+        "signal": "Short-term oversold, daily neutral"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Price (7,641.16) below 20-day SMA (~7,695)",
+        "signal": "Short-term breakdown / regime shift"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Trading in lower band half, piercing 5-day lower band",
+        "signal": "Short-term oversold test"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.34% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk spread 1.22% (Score 95), near cycle tights",
+        "signal": "Confirming macro strength / no credit stress"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "NYSE Net New Highs Score 28 (0.56), McClellan Summation 1038.70 (Score 56)",
+        "signal": "Narrow leadership / breadth divergence"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "VIX 16.01, below 50-day MA (17.20)",
+        "signal": "Standard operating regime (orderly pullback)"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "Caution zone at 7,582.20; spot 7,641.16 above all liquidation thresholds",
+        "signal": "Low immediate forced-selling risk"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "24%",
+        "signal": "downside_tilt"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "Mixed signals: macro trend and credit intact vs short-term breakdown and breadth decay",
+        "signal": "Mixed / Defensive Patience"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Hold and monitor; await primary 38.2% Fib test at 7,624.64 and re-entry confirmation",
+        "signal": "Defensive patience / Monitor primary support"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 2,
+    "buy_signals_met": 1,
+    "overall": "mixed"
+  },
+  "confirming_evidence": [
+    "50-day SMA (7,532.90) remains well above a rising 200-day SMA (7,091.61), preserving the primary structural macro bull trend.",
+    "High-yield credit spreads remain near historical tights at 1.22% (Score 95), signaling that credit markets perceive zero systemic distress.",
+    "Realized 20-day volatility (13.14%) and VIX (16.01) remain within standard operating bounds, indicating an orderly technical correction rather than a liquidity shock."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "breadth_divergence_vs_bull_trend",
+      "layers": [
+        "Technical Structure",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "Macro trend structure remains intact with 50-day SMA > 200-day SMA and price +7.75% above the 200-day SMA.",
+      "bearish_read": "NYSE net new highs have decayed to 0.56 (Score 28) and McClellan Summation is flattening near 1,038.70, reflecting weak participation at highs.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not yet broken down; headline strength with weak breadth indicates narrow leadership.",
+      "weight": "high",
+      "chart_refs": [
+        "04_spx_3month.png",
+        "10_breadth_52wk_highs_lows.png",
+        "11_breadth_mcclellan.png"
+      ]
+    },
+    {
+      "id": "credit_tightness_vs_short_term_breakdown",
+      "layers": [
+        "Technical Structure",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "Junk bond yield spreads are pinned at cycle lows (1.22%, Score 95), providing zero indication of credit contraction or debt distress.",
+      "bearish_read": "Price broke below the 20-day SMA (~7,695) and 23.6% Fib (7,698.04) with an intraday bottom-third close at session lows.",
+      "framework_rule": "A close below the 20-day SMA after an extended advance is a regime shift, not just a normal dip.",
+      "weight": "high",
+      "chart_refs": [
+        "02_spx_5day.png",
+        "03_spx_1month.png",
+        "15_junk_bond_spread.png"
+      ]
+    },
+    {
+      "id": "erp_valuation_ceiling_vs_oversold_pullback",
+      "layers": [
+        "Fundamental Valuation",
+        "Technical Structure"
+      ],
+      "bullish_read": "Short-term 5-day RSI (23.2) and 5-day MFI (25.0) are reaching oversold territory near lower Bollinger bands, setting up potential bounce conditions.",
+      "bearish_read": "ERP is pinned at 0.34% in the valuation ceiling zone, with the ERP-confirmed re-entry floor down at 7,402.42.",
+      "framework_rule": "ERP 0.0% to 0.5% = valuation ceiling: trim bias, no aggressive adds. The ERP-confirmed floor defines the re-entry level.",
+      "weight": "medium",
+      "chart_refs": [
+        "02_spx_5day.png",
+        "03_spx_1month.png"
+      ]
+    }
+  ],
+  "primary_tension": "The pristine macro backdrop and historically tight credit spreads (junk spread 1.22%) are colliding with acute short-term technical deterioration below the 20-day SMA, a 75.50% Monte Carlo downside-first tilt toward 7,624.64, persistent breadth divergence (NYSE net new highs Score 28), and a valuation ceiling (ERP 0.34%) that eliminates margin for error.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.245,
+    "prob_down_first_raw": 0.755,
+    "prob_up_first_adjusted": 0.245,
+    "prob_down_first_adjusted": 0.755,
+    "sigma": 0.131425,
+    "mu": 0.07,
+    "upside_target": 7816.7001953125,
+    "downside_target": 7624.638130859375,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7625 breaks, P(7565)=88%; If 7817 breaks, P(7914)=84%",
+    "median_days": "upside 12d / downside 2d",
+    "drift_path": "5d=7650.47; 10d=7659.79; 20d=7678.46; 30d=7697.18; 60d=7753.62",
+    "cash_drag_prob": 0.1221,
+    "probability_regime": "downside_tilt"
+  }
+}

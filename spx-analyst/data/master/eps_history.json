@@ -39779,6 +39779,26 @@
       "effective_from": "2026-08-13",
       "forward_eps": 384.63,
       "trailing_eps": 326.52
+    },
+    {
+      "effective_from": "2026-08-14",
+      "forward_eps": 384.63,
+      "trailing_eps": 326.52
+    },
+    {
+      "effective_from": "2026-08-17",
+      "forward_eps": 384.63,
+      "trailing_eps": 326.52
+    },
+    {
+      "effective_from": "2026-08-18",
+      "forward_eps": 384.63,
+      "trailing_eps": 326.52
+    },
+    {
+      "effective_from": "2026-08-19",
+      "forward_eps": 384.63,
+      "trailing_eps": 326.52
     }
   ]
 }

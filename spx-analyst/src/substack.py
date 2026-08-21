@@ -37,7 +37,7 @@ Audience and style:
 
 Required output:
 - Return only the JSON object defined by the response schema.
-- Return a useful title and subtitle, followed by exactly these sections in this order:
+- Return a catchy title and subtitle anchored in the day's most important market developments. Follow with exactly these sections in this order:
   The Takeaway
   What Happened Today
   Why It Matters

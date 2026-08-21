@@ -1,0 +1,208 @@
+{
+  "date": "2026-08-19",
+  "framework_version": "daily-2026-06",
+  "spx_close": 7707.97998046875,
+  "structural_bias": "Late Bull / Topping",
+  "base_case": "Orderly consolidation within the 7,625–7,817 range over the next 30–60 days, with a test of primary 38.2% Fibonacci support (7,624.64) favored before any confirmed breakout above 7,816.70.",
+  "trend_regime": "Bullish (50-Day SMA > 200-Day SMA, +8.75% above 200-Day SMA)",
+  "valuation_bucket": "Valuation Ceiling (ERP 0.34%, Forward PE 20.04x)",
+  "signals": {
+    "pct_vs_50dma": 2.39,
+    "pct_vs_200dma": 8.75,
+    "bollinger_position": "Upper-Middle Band",
+    "rsi14": 57.0,
+    "mfi": 65.0,
+    "vix_regime": "Complacent (14.89, below 50d MA)",
+    "fear_greed": 56,
+    "fear_greed_zone": "Greed",
+    "put_call": 0.73,
+    "high_yield_spread": 1.23,
+    "intraday_close_position": "Bottom Third",
+    "middle_band_regime": "Above Middle Band"
+  },
+  "what_changed_today": [
+    "PRICE STABILIZED WITH A MODEST BOUNCE TO RECLAIM THE 23.6% FIBONACCI LEVEL: SPX rose +0.21% (+16.22 pts) to close at 7,707.98, halting a three-session losing streak and reclaiming the 23.6% retracement (7,698.04), though an intraday reversal from 7,745.00 produced a bottom-third close.",
+    "MONTE CARLO PROBABILITIES BALANCED WITH NO DIRECTIONAL EDGE: Adjusted prob_up_first ticked to 48.36% (vs 51.64% down-first), failing the governing 70% Late Bull / Topping threshold for a fourth consecutive session with median days favoring downside first (5d to 7,624.64 vs 7d to 7,816.70).",
+    "SHORT-TERM MOMENTUM AND MONEY FLOW REBOUNDED FROM OVERSOLD EXTREMES: 5-day RSI recovered from 26.5 to ~40.0 and 5-day MFI rebounded from 10.8 to ~40.0, relieving immediate short-term liquidation pressure while daily indicators remained balanced (RSI 57.0, MFI 65.0).",
+    "BREADTH DETERIORATION PERSISTED DESPITE PRICE STABILIZATION: NYSE Net New 52-Week Highs/Lows weakened to +0.44 (Score 26) and McClellan Summation remained flat at 1,051.27 (Score 58), sustaining the multi-week negative breadth divergence against record index levels."
+  ],
+  "narrative_summary": "The S&P 500 stabilized on Wednesday, gaining +0.21% to close at 7,707.98 and reclaiming the 23.6% Fibonacci retracement level (7,698.04) after three sessions of distribution. However, an intraday failure from morning highs of 7,745.00 left the close in the bottom third of the daily range, while market breadth continued to erode and valuation remains constrained at an ERP of 0.34%. With Monte Carlo edge balanced (48.36% up-first) and failing the 70% Late Bull threshold, the framework mandates patience—holding core allocations, maintaining trim discipline, and deferring fresh re-entry until primary 38.2% Fibonacci support at 7,624.64 is tested.",
+  "open_questions": [
+    "Will the 23.6% Fibonacci pause level at 7,698.04 hold against renewed afternoon selling pressure, or will price continue lower toward primary 38.2% Fibonacci support at 7,624.64?",
+    "Can market breadth stabilize and expand from depressed levels (Score 26) to validate another push toward the unconfirmed 7,816.70 swing high?",
+    "Will corporate credit spreads maintain their historic tightness (1.23%) if consolidation deepens toward the 50-day moving average (7,527.81)?"
+  ],
+  "decision_matrix": {
+    "rows": [
+      {
+        "signal_layer": "Structural Bias",
+        "current_reading": "Late Bull / Topping",
+        "signal": "Late Bull / Topping"
+      },
+      {
+        "signal_layer": "Monte Carlo Threshold",
+        "current_reading": "70%",
+        "signal": "fails"
+      },
+      {
+        "signal_layer": "Volatility Input",
+        "current_reading": "0.1355",
+        "signal": "σ=0.1355"
+      },
+      {
+        "signal_layer": "Drift Input",
+        "current_reading": "0.0700",
+        "signal": "μ=0.0700"
+      },
+      {
+        "signal_layer": "Rally Exhaustion Score",
+        "current_reading": "Low",
+        "signal": "Low"
+      },
+      {
+        "signal_layer": "Trend Regime",
+        "current_reading": "50-day (7,527.81) > 200-day (7,087.61); Price +8.75% vs 200-day",
+        "signal": "Bullish intact / maturing"
+      },
+      {
+        "signal_layer": "Intraday Close Position",
+        "current_reading": "Bottom third (7,707.98 of 7,700.08–7,745.00 range)",
+        "signal": "Distribution / intraday fade"
+      },
+      {
+        "signal_layer": "RSI / MFI State",
+        "current_reading": "Daily RSI 57.0, MFI 65.0; 5-day RSI 40.0, MFI 40.0",
+        "signal": "Neutral daily / oversold relief short-term"
+      },
+      {
+        "signal_layer": "20-Day SMA Status",
+        "current_reading": "Price above daily 20-day SMA (7,620); below 5-day MA (7,725)",
+        "signal": "Regime intact daily / short-term pullback"
+      },
+      {
+        "signal_layer": "Bollinger Band State",
+        "current_reading": "Upper-middle band on daily; rejection at intraday upper band",
+        "signal": "Consolidation"
+      },
+      {
+        "signal_layer": "ERP State and Trend",
+        "current_reading": "ERP 0.34% / stable",
+        "signal": "neutral"
+      },
+      {
+        "signal_layer": "Credit Condition",
+        "current_reading": "Junk bond spread 1.23% (Score: 93)",
+        "signal": "Strong confirmation / risk appetite high"
+      },
+      {
+        "signal_layer": "Breadth Condition",
+        "current_reading": "NYSE 52-wk highs/lows 0.44 (Score 26); McClellan 1051.27 (Score 58)",
+        "signal": "Bearish divergence / narrow participation"
+      },
+      {
+        "signal_layer": "VIX Regime",
+        "current_reading": "14.89 (below 50-day MA ~17.2, Score 50)",
+        "signal": "Complacent / orderly consolidation"
+      },
+      {
+        "signal_layer": "Leverage Risk State",
+        "current_reading": "Drawdown -1.39% from 7,816.70 peak (above 3% Caution at 7,582.20)",
+        "signal": "Normal / low liquidation risk"
+      },
+      {
+        "signal_layer": "Monte Carlo Edge",
+        "current_reading": "48%",
+        "signal": "balanced"
+      },
+      {
+        "signal_layer": "Overall Signal Balance",
+        "current_reading": "3 trim signals, 0 buy signals met; macro trend vs narrow breadth/ERP ceiling",
+        "signal": "Mixed / hold and monitor"
+      },
+      {
+        "signal_layer": "Recommended Action",
+        "current_reading": "Hold core; maintain trim discipline; defer re-entry until 38.2% Fib (7,624.64) or confirmed setup",
+        "signal": "Patience / monitor pullback"
+      }
+    ]
+  },
+  "signal_alignment": {
+    "trim_signals_met": 3,
+    "buy_signals_met": 0,
+    "overall": "mixed"
+  },
+  "confirming_evidence": [
+    "Primary moving average structure remains intact with the 50-day SMA (7,527.81) trending firmly above the rising 200-day SMA (7,087.61).",
+    "Junk bond yield spreads remain pinned near multi-year tights at 1.23% (Score 93), confirming robust institutional credit demand and zero systemic stress.",
+    "VIX remains in a complacent regime at 14.89, trading below its 50-day moving average (~17.2) and indicating an orderly pullback rather than panic selling.",
+    "Price successfully closed back above the 23.6% Fibonacci retracement level (7,698.04), relieving acute short-term oversold conditions on the 5-day chart."
+  ],
+  "conflicting_evidence": [
+    {
+      "id": "breadth_divergence_vs_record_trend",
+      "layers": [
+        "Technical Structure",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "Primary moving average trend remains intact with the 50-day SMA well above the 200-day SMA and credit spreads near historic lows (1.23%), confirming broad macro stability.",
+      "bearish_read": "Net new 52-week highs have deteriorated to +0.44 (Score 26) and the McClellan summation index is flat at 1,051.27, reflecting narrow participation beneath the recent record high.",
+      "framework_rule": "When breadth and credit both diverge from price, elevate caution even if price has not yet broken down; headline strength with weak breadth indicates narrow leadership.",
+      "weight": "high",
+      "chart_refs": [
+        "10_breadth_52wk_highs_lows.png",
+        "11_breadth_mcclellan.png",
+        "04_spx_3month.png"
+      ]
+    },
+    {
+      "id": "erp_valuation_ceiling_vs_credit_cushion",
+      "layers": [
+        "Fundamental Valuation",
+        "Sentiment and Leverage"
+      ],
+      "bullish_read": "High yield spreads remain pristine at 1.23% (Score 93), providing a solid financial cushion against credit-driven market shocks.",
+      "bearish_read": "Equity Risk Premium is compressed at 0.34%, situated in the valuation ceiling band (0.0%–0.5%), with the ERP-confirmed re-entry floor at 7,464.20 (3.16% below spot).",
+      "framework_rule": "ERP 0.0% to 0.5% = valuation ceiling: trim bias, no aggressive adds. The ERP-confirmed floor defines the re-entry level.",
+      "weight": "high",
+      "chart_refs": [
+        "15_junk_bond_spread.png",
+        "06_spx_1year.png"
+      ]
+    },
+    {
+      "id": "short_term_oversold_bounce_vs_monte_carlo_downside_drift",
+      "layers": [
+        "Technical Structure",
+        "Monte Carlo Probability Analysis"
+      ],
+      "bullish_read": "5-day RSI (40.0) and MFI (40.0) rebounded from deeply oversold levels (26.5 and 10.8), holding the 23.6% Fibonacci retracement at 7,698.04.",
+      "bearish_read": "Monte Carlo probabilities show 51.64% probability of reaching the 38.2% Fibonacci target (7,624.64) first in 5 median days vs 48.36% upside (7,816.70) in 7 days, failing all actionable thresholds.",
+      "framework_rule": "The 23.6% retracement is not a standard re-entry trigger in Late Bull conditions; it is a pause zone and monitoring level, not a deployment level.",
+      "weight": "medium",
+      "chart_refs": [
+        "01_spx_intraday.png",
+        "02_spx_5day.png",
+        "03_spx_1month.png"
+      ]
+    }
+  ],
+  "primary_tension": "A durable macro bull trend supported by historic credit strength (junk spreads at 1.23%) is colliding with acute valuation compression (ERP 0.34% in the valuation ceiling), persistent breadth decay (NYSE net new highs Score 26), and a non-actionable Monte Carlo regime (48.36% up-first vs 70% Late Bull threshold) where a shallow bounce at the 23.6% Fibonacci pause zone (7,698.04) lacks re-entry confirmation.",
+  "monte_carlo": {
+    "effective_threshold": 70,
+    "meets_threshold": false,
+    "prob_up_first_raw": 0.4836,
+    "prob_down_first_raw": 0.5164,
+    "prob_up_first_adjusted": 0.4836,
+    "prob_down_first_adjusted": 0.5164,
+    "sigma": 0.135511,
+    "mu": 0.07,
+    "upside_target": 7816.7001953125,
+    "downside_target": 7624.638130859375,
+    "rally_exhaustion_score": "Low",
+    "conditional_cascade": "If 7625 breaks, P(7565)=87%; If 7817 breaks, P(7914)=85%",
+    "median_days": "upside 7d / downside 5d",
+    "drift_path": "5d=7717.29; 10d=7726.61; 20d=7745.28; 30d=7763.99; 60d=7820.41",
+    "cash_drag_prob": 0.2323,
+    "probability_regime": "balanced"
+  }
+}
