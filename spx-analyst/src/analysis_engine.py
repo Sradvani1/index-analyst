@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -11,7 +12,12 @@ from . import files
 from .anthropic_client import AnthropicClient
 from .config import Settings, get_settings
 from .pipeline_client import PipelineLLMClient
-from .eps_history import eps_resolution_log, load_eps_history, require_eps_for_run
+from .eps_history import (
+    eps_resolution_log,
+    load_eps_history,
+    require_eps_for_run,
+    select_completed_weekly_eps,
+)
 from .memory import (
     build_recent_summary,
     build_structural_bias_arcs,
@@ -21,6 +27,11 @@ from .memory import (
     rebuild_structural_bias_history,
     structural_bias_arc_prompt,
     one_year_before,
+)
+from .market_data import (
+    MARKET_HISTORY_FILENAME,
+    TNX_LOOKBACK_SESSIONS,
+    market_series_from_cache,
 )
 from .pass2_images import Pass2ImagePlan, resolve_pass2_images
 from .precompute import run_precompute
@@ -37,6 +48,32 @@ logger = logging.getLogger(__name__)
 
 class RunError(Exception):
     """Hard failure that aborts the run."""
+
+
+def _load_treasury_yields(
+    run_dir: Path, required_dates: Collection[str]
+) -> dict[str, float] | None:
+    """Load cached Treasury closes for prompt context without blocking mocked runs."""
+    try:
+        market_series = market_series_from_cache(
+            files.read_json(run_dir / MARKET_HISTORY_FILENAME)
+        )
+        if len(market_series.tnx) < TNX_LOOKBACK_SESSIONS:
+            raise ValueError(
+                f"Treasury history has {len(market_series.tnx)} sessions; "
+                f"{TNX_LOOKBACK_SESSIONS} required"
+            )
+        treasury_yields = {
+            day.isoformat(): float(value)
+            for day, value in market_series.tnx.items()
+        }
+        missing_dates = sorted(set(required_dates) - treasury_yields.keys())
+        if missing_dates:
+            raise ValueError(f"Treasury history missing EPS dates: {missing_dates}")
+    except (files.InputError, KeyError, TypeError, ValueError) as exc:
+        logger.warning("could not load Treasury history for prompt context: %s", exc)
+        return None
+    return treasury_yields
 
 
 def _pipeline_model(settings: Settings) -> str:
@@ -120,6 +157,12 @@ def run_daily_analysis(
         force_fetch=force_fetch,
     )
     warnings.extend(analysis_context.market_data.precompute_warnings)
+    required_treasury_dates = (
+        [entry.effective_from for entry in select_completed_weekly_eps(eps_history, date)]
+        if eps_history is not None
+        else []
+    )
+    treasury_yields = _load_treasury_yields(run_dir, required_treasury_dates)
 
     recent_summary: str | None = None
     prior_bias_states = load_all_states(before_date=date, settings=settings)
@@ -167,6 +210,7 @@ def run_daily_analysis(
         analysis_context=analysis_context,
         recent_summary=recent_summary,
         eps_history=eps_history,
+        treasury_yields=treasury_yields,
         structural_bias_arc=prior_bias_arc,
     )
     state_call = client.run_structured_state(state_bundle, image_paths)
@@ -239,6 +283,7 @@ def run_daily_analysis(
         pass2_reference_only=pass2_plan.reference_only,
         pass2_optimization_enabled=settings.pass2_image_optimization_enabled,
         eps_history=eps_history,
+        treasury_yields=treasury_yields,
         structural_bias_arc=current_bias_arc,
     )
     report_call = client.run_markdown_report(

@@ -139,15 +139,17 @@ def test_eps_history_block_present_when_provided(sample_state):
             "resolved_eps": _context(),
             "analysis_context": sample_analysis_context(),
             "eps_history": history,
+            "treasury_yields": {"2026-03-13": 4.25},
         }
         if builder is build_report_prompt:
             kwargs["daily_state"] = sample_state
         body = builder(**kwargs).body
-        assert "Recent weekly EPS trend" in body
+        assert "Recent weekly EPS and Treasury yield trend" in body
         assert '"as_of_date": "2026-03-13"' in body
+        assert '"us10y": 4.25' in body
         assert '"as_of_date": "2026-03-06"' not in body
         assert "resolved EPS block above is authoritative" in body
-        assert body.index("EPS inputs") < body.index("Recent weekly EPS trend")
+        assert body.index("EPS inputs") < body.index("Recent weekly EPS and Treasury yield trend")
 
 
 def test_eps_history_block_absent_when_none(sample_state):

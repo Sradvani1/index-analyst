@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from .eps_history import select_completed_weekly_eps
@@ -110,19 +111,30 @@ def _eps_block(eps: ResolvedEps) -> str:
     return "## EPS inputs (resolved from master history)\n```json\n" + json.dumps(payload, indent=2) + "\n```"
 
 
-def _eps_trend_block(history: EpsHistory | None, run_date: str) -> str:
+def _eps_trend_block(
+    history: EpsHistory | None,
+    run_date: str,
+    treasury_yields: Mapping[str, float] | None = None,
+) -> str:
     if history is None:
         return ""
-    payload = [
-        {
+    payload = []
+    for entry in select_completed_weekly_eps(history, run_date):
+        row: dict[str, object] = {
             "as_of_date": entry.effective_from,
             "forward_eps": entry.forward_eps,
             "trailing_eps": entry.trailing_eps,
         }
-        for entry in select_completed_weekly_eps(history, run_date)
-    ]
+        if treasury_yields is not None:
+            row["us10y"] = treasury_yields.get(entry.effective_from)
+        payload.append(row)
+    trend_label = (
+        "Recent weekly EPS and Treasury yield trend"
+        if treasury_yields is not None
+        else "Recent weekly EPS trend"
+    )
     return (
-        "## Recent weekly EPS trend (context only — the resolved EPS block above is "
+        f"## {trend_label} (context only — the resolved EPS block above is "
         "authoritative for this run)\n```json\n"
         + json.dumps(payload, indent=2)
         + "\n```"
@@ -295,12 +307,13 @@ def build_state_prompt(
     analysis_context: AnalysisContext,
     recent_summary: str | None = None,
     eps_history: EpsHistory | None = None,
+    treasury_yields: Mapping[str, float] | None = None,
     structural_bias_arc: str | None = None,
 ) -> PromptBundle:
     parts = [
         _analysis_context_block(analysis_context),
         _eps_block(resolved_eps),
-        _eps_trend_block(eps_history, manifest.date),
+        _eps_trend_block(eps_history, manifest.date, treasury_yields),
         _manifest_block(manifest),
     ]
     mem = _optional_memory_block(recent_summary)
@@ -361,6 +374,7 @@ def build_report_prompt(
     pass2_reference_only: list[ChartEntry] | None = None,
     pass2_optimization_enabled: bool = True,
     eps_history: EpsHistory | None = None,
+    treasury_yields: Mapping[str, float] | None = None,
     structural_bias_arc: str | None = None,
 ) -> PromptBundle:
     state_json = json.dumps(daily_state.model_dump(mode="json"), indent=2)
@@ -381,7 +395,7 @@ def build_report_prompt(
     parts = [
         _analysis_context_block(analysis_context),
         _eps_block(resolved_eps),
-        _eps_trend_block(eps_history, manifest.date),
+        _eps_trend_block(eps_history, manifest.date, treasury_yields),
         chart_block,
         _investor_fact_snippets(analysis_context),
         f"## Validated daily state (immutable)\n```json\n{state_json}\n```",

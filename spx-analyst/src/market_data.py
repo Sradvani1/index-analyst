@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -23,7 +22,7 @@ MARKET_HISTORY_FILENAME = "market_history.json"
 MANIFEST_CLOSE_WARN_PCT = 0.0015
 GSPC_LOOKBACK_DAYS = 300
 VIX_LOOKBACK_DAYS = 60
-TNX_LOOKBACK_SESSIONS = 25
+TNX_LOOKBACK_SESSIONS = 75
 
 
 @dataclass(frozen=True)
@@ -329,7 +328,11 @@ def load_or_fetch_market_series(
         from .files import read_json
 
         cached = market_series_from_cache(read_json(cache_path))
-        if series_has_valid_bars(cached) and _cache_covers_run_date(cached, run_date):
+        if (
+            series_has_valid_bars(cached)
+            and _cache_covers_run_date(cached, run_date)
+            and len(cached.tnx) >= TNX_LOOKBACK_SESSIONS
+        ):
             return cached
         logger.warning(
             "cached %s is stale or invalid; refetching from yfinance",
